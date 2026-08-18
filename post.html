@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F6F7F9">
+<title>sniper</title>
+<link rel="icon" href="./icon.svg">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body data-page="post">
+
+<header class="top">
+  <div class="topin">
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
+    <button class="ico" id="btnEdit"  title="고치기" hidden>✎</button>
+    <button class="ico" id="btnHist"  title="수정 이력" hidden>🕘</button>
+    <button class="ico" id="btnShare" title="주소 복사">🔗</button>
+    <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
+  </div>
+</header>
+
+<main class="wrap post" id="main">
+  <div class="skel" style="height:32px"></div>
+  <div class="skel" style="height:220px"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+<script src="./ai-chat.js" defer></script>
+<script src="./music.js" defer></script>
+<script>
+const { sb, $, $$, esc, fmtDate, toast, qs } = App;
+let POST = null;
+
+(async function start(){
+  await App.loadSettings();
+  await App.refreshMe();
+
+  $("#btnTheme").onclick = () => {
+    const n = App.settings.theme === "dark" ? "light" : "dark";
+    App.saveSettings({ theme: n });
+  };
+  $("#btnShare").onclick = async () => {
+    try{
+      if(navigator.share) await navigator.share({ title: POST?.title || "sniper", url: location.href });
+      else { await navigator.clipboard.writeText(location.href); toast("주소를 복사했습니다"); }
+    }catch{}
+  };
+
+  const id = qs("id");
+  if(!id){ $("#main").innerHTML = `<div class="empty">어떤 글인지 알 수 없습니다.</div>`; return; }
+  if(!sb){ $("#main").innerHTML = `<div class="empty">Supabase 설정이 비어 있습니다.</div>`; return; }
+
+  await load(id);
+})();
+
+async function load(id){
+  const [{ data:p, error }, { data:cats }] = await Promise.all([
+    sb.from("blog_posts").select("*").eq("id", id).single(),
+    sb.from("blog_categories").select("id,name,emoji,color"),
+  ]);
+
+  if(error || !p){
+    $("#main").innerHTML = `<div class="empty">글을 찾지 못했습니다.<br>
+      <span class="muted sm">${esc(error?.message || "지워졌거나 아직 공개되지 않은 글일 수 있습니다.")}</span><br><br>
+      <a href="./index.html">← 목록으로</a></div>`;
+    return;
+  }
+
+  POST = p;
+  document.title = p.title + " · " + (App.settings.title || "sniper");
+
+  const c = (cats||[]).find(x => x.id === p.category_id);
+
+  $("#main").innerHTML = `
+    ${p.cover_url ? `<img src="${esc(p.cover_url)}" alt="" style="width:100%;border-radius:14px;margin-bottom:18px">` : ""}
+    <h1>${esc(p.title)}</h1>
+    <div class="pmeta">
+      ${c ? `<span class="dot" style="width:8px;height:8px;border-radius:50%;background:${esc(c.color||"#999")}"></span>
+             <span>${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>` : ""}
+      <span>${fmtDate(p.published_at || p.created_at)}</span>
+      ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}
+      <span style="margin-left:auto">조회 ${p.view_count ?? 0}</span>
+    </div>
+    <article class="body" id="body">${p.body_html || (p.body_json ? App.blocksToHtml(p.body_json) : "") || "<p class='muted'>(내용이 비어 있습니다)</p>"}</article>
+    ${(p.tags||[]).length ? `<div class="tags" style="margin-top:26px">${p.tags.map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
+    <div class="row" style="margin-top:34px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="location.href='./index.html'">← 목록</button>
+      <button class="btn ghost" id="askSum">AI 로 요약</button>
+      <button class="btn ghost" id="askQ">이 글에 대해 묻기</button>
+    </div>`;
+
+  if(App.canEdit()){
+    $("#btnEdit").hidden = false;
+    $("#btnHist").hidden = false;
+    $("#btnEdit").onclick = () => location.href = "./write.html?id=" + p.id;
+    $("#btnHist").onclick = () => histBox(p.id);
+  }
+
+  // AI 에게 "지금 이 글" 을 알려 준다
+  const ready = setInterval(() => {
+    if(!window.AIChat) return;
+    clearInterval(ready);
+    window.AIChat.setContext({
+      label: p.title,
+      text: `제목: ${p.title}\n\n${($("#body").innerText || "").slice(0, 12000)}`,
+      system: "사용자가 자기 블로그 글을 읽고 있습니다. 아래 글 내용을 근거로 답하고, 글에 없는 내용을 지어내지 마세요.",
+    });
+  }, 200);
+
+  $("#askSum").onclick = () => window.AIChat?.ask("이 글을 세 줄로 요약하고, 빠진 내용이나 더 넣으면 좋을 부분을 짚어 줘.");
+  $("#askQ").onclick   = () => window.AIChat?.open();
+
+  // 조회수는 슬쩍 올린다(실패해도 그만)
+  sb.rpc("blog_bump_view", { p_id: p.id }).catch(()=>{});
+}
+
+/* ── 수정 이력 ─────────────────────────────────────── */
+async function histBox(postId){
+  const { data, error } = await sb.from("blog_revisions")
+    .select("id,title,note,created_at").eq("post_id", postId)
+    .order("created_at", { ascending:false }).limit(50);
+
+  const ov = document.createElement("div");
+  ov.className = "ov";
+  ov.innerHTML = `<div class="ovbox">
+    <h3>수정 이력</h3>
+    ${error ? `<p class="err">${esc(error.message)}</p>` : ""}
+    <div id="hl">${
+      (data||[]).length
+        ? data.map(r => `<div class="row" style="align-items:center;margin:0 0 8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title||"제목 없음")}</div>
+              <div class="muted sm">${new Date(r.created_at).toLocaleString("ko-KR")} · ${esc(r.note||"")}</div>
+            </div>
+            <button class="btn ghost sm" data-see="${r.id}">보기</button>
+            <button class="btn sm" data-back="${r.id}">되돌리기</button>
+          </div>`).join("")
+        : `<p class="muted">아직 저장된 이력이 없습니다. 글을 한 번 고쳐서 저장하면 여기에 쌓입니다.</p>`
+    }</div>
+    <div class="row"><button class="btn ghost" id="hClose">닫기</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick = e => { if(e.target === ov) ov.remove(); };
+  $("#hClose", ov).onclick = () => ov.remove();
+
+  $$("[data-see]", ov).forEach(b => b.onclick = async () => {
+    const { data:r } = await sb.from("blog_revisions").select("body_html,title").eq("id", b.dataset.see).single();
+    if(!r) return;
+    $("#body").innerHTML = r.body_html || "";
+    toast("예전 모습을 보고 있습니다 — 새로고침하면 원래대로");
+    ov.remove();
+  });
+
+  $$("[data-back]", ov).forEach(b => b.onclick = async () => {
+    if(!confirm("이 시점으로 되돌립니다. 지금 내용은 이력에 남습니다.")) return;
+    const { data:r } = await sb.from("blog_revisions")
+      .select("title,body_json,body_html,body_text").eq("id", b.dataset.back).single();
+    if(!r) return;
+    const { error } = await sb.from("blog_posts").update({
+      title: r.title, body_json: r.body_json, body_html: r.body_html, body_text: r.body_text,
+    }).eq("id", postId);
+    if(error) return toast(error.message, "err");
+    toast("되돌렸습니다");
+    ov.remove();
+    location.reload();
+  });
+}
+</script>
+</body>
+</html>
