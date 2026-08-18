@@ -1,11 +1,59 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   ai-chat.js — 안정화 전체 교체본
-   뷰어 / 블로그 공용 AI 대화창
+
+   ai-chat.js — 뷰어와 블로그가 함께 쓰는 AI 대화 상자
+
+   모델 동기화 버전
+   ───────────────────────────────────────────────────────────────────────
+
+   ★ 모델명은 이 파일에서 관리하지 않습니다.
+
+   실제 모델 목록 / 기본 모델:
+       Worker /ai/models
+
+   구조:
+
+       OpenAI ─┐
+               ├── Worker /ai/models ──→ ai-chat.js
+       Gemini ─┘
+
+   따라서 OpenAI/Gemini 모델이 바뀌어도
+   Worker의 /ai/models만 수정하면 프론트가 자동 동기화됩니다.
+
+
+
+   붙이는 법:
+
+       <script src="./ai-chat.js" defer></script>
+
+
+
+   config.js:
+
+       AI_WORKER_URL : "https://sniper-ai.<계정>.workers.dev"
+       AI_APP_KEY    : "…"
+       AI_APP_NAME   : "viewer" 또는 "blog"
+
+
+
+   외부 API:
+
+       AIChat.open()
+       AIChat.close()
+       AIChat.ask("이 문항 풀이해줘")
+       AIChat.fill("질문")
+       AIChat.setContext({ ... })
+       AIChat.setContextProvider(fn)
+       AIChat.attachFiles(FileList)
+
    ═══════════════════════════════════════════════════════════════════════ */
 
+
 (function () {
+
 "use strict";
 
+
+/* 중복 로드 방지 */
 if (window.AIChat) return;
 
 
@@ -13,44 +61,90 @@ if (window.AIChat) return;
    0. 기본 설정
    ═══════════════════════════════════════════════════════════════════════ */
 
-const CFG  = window.APP_CONFIG || {};
-const BASE = (CFG.AI_WORKER_URL || "").replace(/\/+$/, "");
-const KEY  = CFG.AI_APP_KEY || "";
-const APP  = CFG.AI_APP_NAME ||
-  (location.pathname.includes("sniper") ? "blog" : "viewer");
+const CFG =
+  window.APP_CONFIG || {};
 
 
-/* 브라우저별 장치 ID */
+const BASE =
+  (CFG.AI_WORKER_URL || "")
+    .replace(/\/+$/, "");
+
+
+const KEY =
+  CFG.AI_APP_KEY || "";
+
+
+const APP =
+  CFG.AI_APP_NAME ||
+  (
+    location.pathname.includes("sniper")
+      ? "blog"
+      : "viewer"
+  );
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   브라우저별 장치 ID
+   ═══════════════════════════════════════════════════════════════════════ */
+
 const DEVICE = (() => {
+
   try {
-    let v = localStorage.getItem("ai:device");
+
+    let v =
+      localStorage.getItem(
+        "ai:device"
+      );
+
 
     if (!v) {
-      v = crypto.randomUUID
-        ? crypto.randomUUID()
-        : String(Math.random()).slice(2);
 
-      localStorage.setItem("ai:device", v);
+      v =
+        crypto.randomUUID
+          ? crypto.randomUUID()
+          : String(
+              Math.random()
+            ).slice(2);
+
+
+      localStorage.setItem(
+        "ai:device",
+        v
+      );
+
     }
 
+
     return v;
+
   } catch {
+
     return "anon";
+
   }
+
 })();
 
 
-/* Supabase */
+/* ═══════════════════════════════════════════════════════════════════════
+   Supabase
+   ═══════════════════════════════════════════════════════════════════════ */
+
 const sb =
-  (window.supabase &&
-   CFG.SUPABASE_URL &&
-   CFG.SUPABASE_ANON_KEY)
+  (
+    window.supabase &&
+    CFG.SUPABASE_URL &&
+    CFG.SUPABASE_ANON_KEY
+  )
+
     ? (
-        window.__aiSb ||= window.supabase.createClient(
-          CFG.SUPABASE_URL,
-          CFG.SUPABASE_ANON_KEY
-        )
+        window.__aiSb ||=
+          window.supabase.createClient(
+            CFG.SUPABASE_URL,
+            CFG.SUPABASE_ANON_KEY
+          )
       )
+
     : null;
 
 
@@ -59,210 +153,693 @@ const sb =
    ═══════════════════════════════════════════════════════════════════════ */
 
 const ALLOWED =
-  (CFG.AI_ALLOWED_EMAILS ||
-   CFG.ADMIN_EMAILS ||
-   []).map(
-     x => String(x).toLowerCase()
-   );
+  (
+    CFG.AI_ALLOWED_EMAILS ||
+    CFG.ADMIN_EMAILS ||
+    []
+  ).map(
+    x =>
+      String(x).toLowerCase()
+  );
+
 
 let USER = null;
+
 let TOKEN = null;
 
+
 async function readSession() {
+
   if (!sb) {
+
     USER = null;
+
     TOKEN = null;
+
     return null;
+
   }
+
 
   try {
-    const { data } = await sb.auth.getSession();
-    const ses = data?.session || null;
 
-    USER  = ses?.user || null;
-    TOKEN = ses?.access_token || null;
+    const {
+      data
+    } =
+      await sb.auth.getSession();
+
+
+    const ses =
+      data?.session ||
+      null;
+
+
+    USER =
+      ses?.user ||
+      null;
+
+
+    TOKEN =
+      ses?.access_token ||
+      null;
+
+
   } catch {
+
     USER = null;
+
     TOKEN = null;
+
   }
 
+
   return USER;
+
 }
+
 
 function allowed() {
-  if (!USER) return false;
-  if (!ALLOWED.length) return true;
+
+  if (!USER)
+    return false;
+
+
+  if (!ALLOWED.length)
+    return true;
+
 
   return ALLOWED.includes(
-    (USER.email || "").toLowerCase()
+    (
+      USER.email ||
+      ""
+    ).toLowerCase()
   );
+
 }
 
-async function doLogin(email, password) {
+
+async function doLogin(
+  email,
+  password
+) {
+
   if (!sb) {
+
     throw new Error(
       "Supabase 연결이 없습니다. config.js를 확인해 주세요."
     );
+
   }
 
-  const { error } =
+
+  const {
+    error
+  } =
     await sb.auth.signInWithPassword({
+
       email,
+
       password
+
     });
 
+
   if (error) {
+
     throw new Error(
-      /invalid/i.test(error.message)
+
+      /invalid/i.test(
+        error.message
+      )
+
         ? "이메일이나 비밀번호가 맞지 않습니다."
+
         : error.message
+
     );
+
   }
+
 
   await readSession();
 
+
   if (!allowed()) {
+
     await sb.auth.signOut();
+
     await readSession();
+
 
     throw new Error(
       "이 계정에는 AI 사용 권한이 없습니다."
     );
+
   }
+
 }
 
+
 async function doLogout() {
+
   try {
+
     await sb?.auth.signOut();
+
   } catch {}
 
+
   await readSession();
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   2. 모델
+   2. 모델 목록
+   ═══════════════════════════════════════════════════════════════════════
+
+   ★★★ 중요 ★★★
+
+   여기에는 모델 ID를 하드코딩하지 않습니다.
+
+   Worker의:
+
+       GET /ai/models
+
+   응답을 그대로 사용합니다.
+
+   기대 형식:
+
+   {
+     "catalog": {
+       "openai": [
+         { "id": "...", "label": "GPT · 최고급" },
+         { "id": "...", "label": "GPT · 균형" },
+         { "id": "...", "label": "GPT · 빠름" }
+       ],
+
+       "gemini": [
+         { "id": "...", "label": "Gemini · 최고급" },
+         { "id": "...", "label": "Gemini · 균형" },
+         { "id": "...", "label": "Gemini · 빠름" }
+       ]
+     },
+
+     "defaults": {
+       "openai": "...",
+       "gemini": "..."
+     }
+   }
+
    ═══════════════════════════════════════════════════════════════════════ */
+
 
 let CATALOG = {
 
-  openai: [
-    {
-      id: "gpt-5.6-sol",
-      label: "GPT · 최고급"
-    },
-    {
-      id: "gpt-5.6-terra",
-      label: "GPT · 균형"
-    },
-    {
-      id: "gpt-5.6-luna",
-      label: "GPT · 빠름"
-    }
-  ],
+  openai: [],
 
-  gemini: [
-    {
-      id: "gemini-3.5-flash",
-      label: "Gemini · 최고급"
-    },
-    {
-      id: "gemini-3.6-flash",
-      label: "Gemini · 균형"
-    },
-    {
-      id: "gemini-3.5-flash-lite",
-      label: "Gemini · 빠름"
-    }
-  ]
+  gemini: []
 
 };
+
 
 let DEFAULTS = {
-  openai: "gpt-5.6-terra",
-  gemini: "gemini-3.6-flash"
+
+  openai: null,
+
+  gemini: null
+
 };
 
+
+let MODELS_READY =
+  false;
+
+
+let MODEL_ERROR =
+  "";
+
+
 const TIER = [
+
   "균형",
+
   "최고급",
+
   "빠름"
+
 ];
 
 
+/* ═══════════════════════════════════════════════════════════════════════
+   state
+   ═══════════════════════════════════════════════════════════════════════ */
+
 const state = {
 
-  mode: load(
-    "ai:mode",
-    "auto"
-  ),
+  mode:
+    load(
+      "ai:mode",
+      "auto"
+    ),
 
-  tier: load(
-    "ai:tier",
-    "균형"
-  ),
+  tier:
+    load(
+      "ai:tier",
+      "균형"
+    ),
 
-  model: null,
+  model:
+    null,
 
-  thread: null,
+  thread:
+    null,
 
-  msgs: [],
+  msgs:
+    [],
 
-  files: [],
+  files:
+    [],
 
-  ctx: null,
+  ctx:
+    null,
 
-  ctxFn: null,
+  ctxFn:
+    null,
 
-  busy: false,
+  busy:
+    false,
 
-  abort: null
+  abort:
+    null
 
 };
 
 
-function load(k, d) {
+function load(
+  k,
+  d
+) {
+
   try {
-    return localStorage.getItem(k) || d;
+
+    return (
+      localStorage.getItem(
+        k
+      ) ||
+      d
+    );
+
   } catch {
+
     return d;
+
   }
+
 }
 
-function save(k, v) {
+
+function save(
+  k,
+  v
+) {
+
   try {
-    localStorage.setItem(k, v);
+
+    localStorage.setItem(
+      k,
+      v
+    );
+
   } catch {}
+
 }
 
 
-function pickFrom(provider, tier) {
+/* ═══════════════════════════════════════════════════════════════════════
+   3. 모델 처리
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function normalizeCatalog(
+  input
+) {
+
+  const source =
+    input || {};
+
+
+  const openai =
+    Array.isArray(
+      source.openai
+    )
+
+      ? source.openai
+          .filter(
+            m =>
+              m &&
+              m.id
+          )
+          .map(
+            m => ({
+              id:
+                String(m.id),
+
+              label:
+                String(
+                  m.label ||
+                  m.id
+                )
+            })
+          )
+
+      : [];
+
+
+  const gemini =
+    Array.isArray(
+      source.gemini
+    )
+
+      ? source.gemini
+          .filter(
+            m =>
+              m &&
+              m.id
+          )
+          .map(
+            m => ({
+              id:
+                String(m.id),
+
+              label:
+                String(
+                  m.label ||
+                  m.id
+                )
+            })
+          )
+
+      : [];
+
+
+  return {
+
+    openai,
+
+    gemini
+
+  };
+
+}
+
+
+function normalizeDefaults(
+  input
+) {
+
+  return {
+
+    openai:
+      input?.openai
+        ? String(
+            input.openai
+          )
+        : null,
+
+    gemini:
+      input?.gemini
+        ? String(
+            input.gemini
+          )
+        : null
+
+  };
+
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Worker /ai/models
+   ═══════════════════════════════════════════════════════════════════════ */
+
+async function loadCatalog() {
+
+  MODELS_READY =
+    false;
+
+  MODEL_ERROR =
+    "";
+
+
+  if (!BASE) {
+
+    MODEL_ERROR =
+      "AI_WORKER_URL이 없습니다.";
+
+    renderModelBar();
+
+    renderHint();
+
+    return false;
+
+  }
+
+
+  try {
+
+    const r =
+      await fetch(
+
+        BASE +
+        "/ai/models",
+
+        {
+
+          method:
+            "GET",
+
+          headers:
+            KEY
+
+              ? {
+                  "x-app-key":
+                    KEY
+                }
+
+              : {},
+
+          cache:
+            "no-store"
+
+        }
+
+      );
+
+
+    if (!r.ok) {
+
+      throw new Error(
+        `모델 목록 조회 실패 (${r.status})`
+      );
+
+    }
+
+
+    const d =
+      await r.json();
+
+
+    if (
+      !d ||
+      !d.catalog
+    ) {
+
+      throw new Error(
+        "Worker /ai/models가 catalog를 반환하지 않았습니다."
+      );
+
+    }
+
+
+    const catalog =
+      normalizeCatalog(
+        d.catalog
+      );
+
+
+    const defaults =
+      normalizeDefaults(
+        d.defaults
+      );
+
+
+    if (
+      !catalog.openai.length &&
+      !catalog.gemini.length
+    ) {
+
+      throw new Error(
+        "사용 가능한 OpenAI/Gemini 모델이 없습니다."
+      );
+
+    }
+
+
+    CATALOG =
+      catalog;
+
+
+    DEFAULTS =
+      defaults;
+
+
+    /*
+      기본 모델이 비어 있으면
+      각 provider의 첫 번째 모델 사용
+    */
+    if (
+      !DEFAULTS.openai &&
+      CATALOG.openai.length
+    ) {
+
+      DEFAULTS.openai =
+        CATALOG.openai[0].id;
+
+    }
+
+
+    if (
+      !DEFAULTS.gemini &&
+      CATALOG.gemini.length
+    ) {
+
+      DEFAULTS.gemini =
+        CATALOG.gemini[0].id;
+
+    }
+
+
+    MODELS_READY =
+      true;
+
+
+    renderModelBar();
+
+    renderHint();
+
+
+    return true;
+
+
+  } catch (e) {
+
+    MODELS_READY =
+      false;
+
+
+    MODEL_ERROR =
+      e.message ||
+      String(e);
+
+
+    console.error(
+      "[AIChat] /ai/models 실패:",
+      e
+    );
+
+
+    renderModelBar();
+
+    renderHint();
+
+
+    return false;
+
+  }
+
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   모델 하나 선택
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function pickFrom(
+  provider,
+  tier
+) {
 
   const list =
-    CATALOG[provider] || [];
+    Array.isArray(
+      CATALOG[provider]
+    )
 
+      ? CATALOG[provider]
+
+      : [];
+
+
+  if (
+    !list.length
+  ) {
+
+    return null;
+
+  }
+
+
+  /*
+    label에 "최고급/균형/빠름"이 있으면
+    해당 모델 선택
+  */
   const exact =
     list.find(
       m =>
-        m &&
-        m.id &&
-        (m.label || "").includes(tier)
+        (
+          m.label ||
+          ""
+        ).includes(
+          tier
+        )
     );
+
 
   if (exact) {
+
     return exact.id;
+
   }
 
-  const first =
-    list.find(
-      m => m && m.id
-    );
 
-  if (first) {
-    return first.id;
+  /*
+    기본 모델이 목록에 있으면 사용
+  */
+  const defaultId =
+    DEFAULTS[provider];
+
+
+  if (
+    defaultId &&
+    list.some(
+      m =>
+        m.id ===
+        defaultId
+    )
+  ) {
+
+    return defaultId;
+
   }
 
-  return DEFAULTS[provider] || "";
+
+  /*
+    없으면 첫 번째 모델
+  */
+  return (
+    list[0]?.id ||
+    null
+  );
+
 }
 
 
@@ -270,31 +847,61 @@ function pickFrom(provider, tier) {
    자동 모델 선택
    ═══════════════════════════════════════════════════════════════════════ */
 
-function autoPick(text, files) {
+function autoPick(
+  text,
+  files
+) {
+
+  if (
+    !MODELS_READY
+  ) {
+
+    return null;
+
+  }
+
 
   const t =
-    (text || "").toLowerCase();
+    (
+      text ||
+      ""
+    ).toLowerCase();
+
 
   const hasImage =
     files.some(
-      f => /^image\//i.test(f.mime)
+      f =>
+        /^image\//i.test(
+          f.mime
+        )
     );
+
 
   const hasDoc =
     files.some(
-      f => !/^image\//i.test(f.mime)
+      f =>
+        !/^image\//i.test(
+          f.mime
+        )
     );
 
+
   const long =
-    (text || "").length > 700;
+    (
+      text ||
+      ""
+    ).length > 700;
+
 
   const coding =
     /코드|코딩|디버그|오류|버그|javascript|typescript|python|sql|html|css|react|node|api|알고리즘|정규식|자바/
       .test(t);
 
+
   const heavy =
     /분석|검토|설계|계산|증명|비교|정리해|보고서|근거|왜|이유|오답|풀이|해설|전략/
       .test(t);
+
 
   const quick =
     /번역|요약해?줘|맞아|뜻|무슨 ?뜻|용어|한 ?줄/
@@ -304,142 +911,204 @@ function autoPick(text, files) {
 
 
   /*
-    이미지 / PDF / 문서
-    → Gemini
+    이미지 / 문서가 있으면 Gemini
   */
-  if (hasImage || hasDoc) {
+  if (
+    hasImage ||
+    hasDoc
+  ) {
 
     const tier =
-      heavy || long
+      heavy ||
+      long
+
         ? "최고급"
+
         : "균형";
 
-    return {
-      provider: "gemini",
-      model: pickFrom(
+
+    const model =
+      pickFrom(
         "gemini",
         tier
-      ),
+      );
+
+
+    if (!model)
+      return null;
+
+
+    return {
+
+      provider:
+        "gemini",
+
+      model,
+
       tier
+
     };
+
   }
 
 
   /*
     코드 / 복잡한 분석
-    → GPT 최고급
   */
-  if (coding || heavy || long) {
+  if (
+    coding ||
+    heavy ||
+    long
+  ) {
 
-    return {
-      provider: "openai",
-      model: pickFrom(
+    const model =
+      pickFrom(
         "openai",
         "최고급"
-      ),
-      tier: "최고급"
+      );
+
+
+    if (!model)
+      return null;
+
+
+    return {
+
+      provider:
+        "openai",
+
+      model,
+
+      tier:
+        "최고급"
+
     };
+
   }
 
 
   /*
     짧은 질문
-    → Gemini 빠름
   */
-  if (quick) {
+  if (
+    quick
+  ) {
 
-    return {
-      provider: "gemini",
-      model: pickFrom(
+    const model =
+      pickFrom(
         "gemini",
         "빠름"
-      ),
-      tier: "빠름"
+      );
+
+
+    if (!model)
+      return null;
+
+
+    return {
+
+      provider:
+        "gemini",
+
+      model,
+
+      tier:
+        "빠름"
+
     };
+
   }
 
 
   /*
     일반 질문
-    → GPT 균형
   */
-  return {
-    provider: "openai",
-    model: pickFrom(
+  const model =
+    pickFrom(
       "openai",
       "균형"
-    ),
-    tier: "균형"
+    );
+
+
+  if (!model)
+    return null;
+
+
+  return {
+
+    provider:
+      "openai",
+
+    model,
+
+    tier:
+      "균형"
+
   };
+
 }
 
 
-function resolveModel(text) {
+function resolveModel(
+  text
+) {
 
-  if (state.mode === "auto") {
+  if (
+    !MODELS_READY
+  ) {
+
+    return null;
+
+  }
+
+
+  if (
+    state.mode ===
+    "auto"
+  ) {
+
     return autoPick(
       text,
       state.files
     );
+
   }
+
 
   const provider =
     state.mode;
 
-  return {
-    provider,
-    model: pickFrom(
+
+  const model =
+    pickFrom(
       provider,
       state.tier
-    ),
-    tier: state.tier
+    );
+
+
+  if (!model) {
+
+    return null;
+
+  }
+
+
+  return {
+
+    provider,
+
+    model,
+
+    tier:
+      state.tier
+
   };
-}
 
-
-/* Worker에서 모델 목록 가져오기 */
-
-async function loadCatalog() {
-
-  if (!BASE) return;
-
-  try {
-
-    const r =
-      await fetch(
-        BASE + "/ai/models",
-        {
-          headers:
-            KEY
-              ? {
-                  "x-app-key": KEY
-                }
-              : {}
-        }
-      );
-
-    if (!r.ok) return;
-
-    const d =
-      await r.json();
-
-    if (d.catalog) {
-      CATALOG = d.catalog;
-    }
-
-    if (d.defaults) {
-      DEFAULTS = d.defaults;
-    }
-
-    renderModelBar();
-    renderHint();
-
-  } catch {}
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   3. CSS
+   4. CSS
    ═══════════════════════════════════════════════════════════════════════ */
 
 const CSS = `
@@ -544,6 +1213,10 @@ const CSS = `
   justify-content:center
 }
 
+.aic-ico:active{
+  background:var(--accent-soft,#eef2ff)
+}
+
 .aic-bar{
   display:flex;
   gap:6px;
@@ -633,7 +1306,8 @@ const CSS = `
 .aic-bub h2,
 .aic-bub h3{
   margin:.7em 0 .3em;
-  font-weight:700
+  font-weight:700;
+  font-size:1.03em
 }
 
 .aic-bub ul,
@@ -657,7 +1331,8 @@ const CSS = `
   background:rgba(125,140,160,.13);
   padding:10px 12px;
   border-radius:10px;
-  overflow-x:auto
+  overflow-x:auto;
+  margin:.5em 0
 }
 
 .aic-bub pre code{
@@ -757,7 +1432,8 @@ const CSS = `
 .aic-pill b{
   cursor:pointer;
   color:var(--ink-2,#8894a5);
-  font-weight:700
+  font-weight:700;
+  padding:0 3px
 }
 
 .aic-inputRow{
@@ -780,6 +1456,10 @@ const CSS = `
   outline:none
 }
 
+.aic-ta:focus{
+  border-color:var(--accent,#1D4ED8)
+}
+
 .aic-send{
   flex:0 0 auto;
   width:44px;
@@ -790,6 +1470,10 @@ const CSS = `
   color:#fff;
   font-size:17px;
   cursor:pointer
+}
+
+.aic-send:disabled{
+  opacity:.45
 }
 
 .aic-hint{
@@ -808,6 +1492,12 @@ const CSS = `
   font:500 12.5px/1.55 var(--font-d,system-ui)
 }
 
+html[data-theme="dark"] .aic-err{
+  background:#3a1c1c;
+  border-color:#5d2b28;
+  color:#f6c9c5
+}
+
 .aic-lock{
   display:flex;
   flex-direction:column;
@@ -820,6 +1510,12 @@ const CSS = `
   font:700 15.5px/1.4 var(--font-d,system-ui)
 }
 
+.aic-lock p{
+  margin:0;
+  color:var(--ink-2,#8894a5);
+  font:500 12.8px/1.65 var(--font-d,system-ui)
+}
+
 .aic-lock input{
   padding:10px 12px;
   border-radius:10px;
@@ -828,6 +1524,10 @@ const CSS = `
   color:inherit;
   font:400 15px/1.4 var(--font-b,system-ui);
   outline:none
+}
+
+.aic-lock input:focus{
+  border-color:var(--accent,#1D4ED8)
 }
 
 .aic-lock button{
@@ -865,46 +1565,69 @@ const CSS = `
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   4. DOM
+   5. DOM 생성
    ═══════════════════════════════════════════════════════════════════════ */
 
 let el = {};
 
+
 function build() {
 
   const st =
-    document.createElement("style");
+    document.createElement(
+      "style"
+    );
 
-  st.textContent = CSS;
-  document.head.appendChild(st);
+
+  st.textContent =
+    CSS;
+
+
+  document.head.appendChild(
+    st
+  );
 
 
   const fab =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
+
 
   fab.className =
     "aic-fab";
 
+
   fab.type =
     "button";
+
 
   fab.title =
     "AI에게 묻기";
 
+
   fab.textContent =
     "AI";
+
 
   fab.onclick =
     open;
 
-  document.body.appendChild(fab);
+
+  document.body.appendChild(
+    fab
+  );
 
 
   const wrap =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
+
 
   wrap.className =
     "aic-wrap";
+
 
   wrap.innerHTML = `
 
@@ -994,9 +1717,13 @@ function build() {
       >
 
     </div>
+
   `;
 
-  document.body.appendChild(wrap);
+
+  document.body.appendChild(
+    wrap
+  );
 
 
   el = {
@@ -1006,48 +1733,68 @@ function build() {
     wrap,
 
     panel:
-      wrap.querySelector(".aic-panel"),
+      wrap.querySelector(
+        ".aic-panel"
+      ),
 
     veil:
-      wrap.querySelector(".aic-veil"),
+      wrap.querySelector(
+        ".aic-veil"
+      ),
 
     bar:
-      wrap.querySelector(".aic-bar"),
+      wrap.querySelector(
+        ".aic-bar"
+      ),
 
     log:
-      wrap.querySelector(".aic-log"),
+      wrap.querySelector(
+        ".aic-log"
+      ),
 
     tray:
-      wrap.querySelector(".aic-tray"),
+      wrap.querySelector(
+        ".aic-tray"
+      ),
 
     ta:
-      wrap.querySelector(".aic-ta"),
+      wrap.querySelector(
+        ".aic-ta"
+      ),
 
     send:
-      wrap.querySelector(".aic-send"),
+      wrap.querySelector(
+        ".aic-send"
+      ),
 
     hint:
-      wrap.querySelector(".aic-hint"),
+      wrap.querySelector(
+        ".aic-hint"
+      ),
 
     file:
       wrap.querySelector(
         'input[type="file"]'
       )
+
   };
 
 
   el.veil.onclick =
     close;
 
+
   wrap.querySelector(
     '[data-act="close"]'
   ).onclick =
     close;
 
+
   wrap.querySelector(
     '[data-act="new"]'
   ).onclick =
     newThread;
+
 
   wrap.querySelector(
     '[data-act="history"]'
@@ -1060,33 +1807,49 @@ function build() {
   ).onclick =
     async () => {
 
-      if (USER && allowed()) {
+      if (
+        USER &&
+        allowed()
+      ) {
 
         if (
           !confirm(
             `${USER.email}에서 로그아웃할까요?`
           )
         ) {
+
           return;
+
         }
 
-        if (state.busy) {
+
+        if (
+          state.busy
+        ) {
+
           stop();
+
         }
+
 
         await doLogout();
 
+
         newThread();
+
       }
 
+
       await refreshGate();
+
     };
 
 
   wrap.querySelector(
     '[data-act="attach"]'
   ).onclick =
-    () => el.file.click();
+    () =>
+      el.file.click();
 
 
   el.file.onchange =
@@ -1096,18 +1859,26 @@ function build() {
         e.target.files
       );
 
+
       e.target.value =
         "";
+
     };
 
 
   el.send.onclick =
     () => {
 
-      if (state.busy) {
+      if (
+        state.busy
+      ) {
+
         stop();
+
       } else {
+
         send();
+
       }
 
     };
@@ -1120,13 +1891,17 @@ function build() {
       el.ta.style.height =
         "auto";
 
+
       el.ta.style.height =
         Math.min(
           el.ta.scrollHeight,
-          window.innerHeight * .34
+          window.innerHeight *
+            0.34
         ) + "px";
 
+
       renderHint();
+
     }
   );
 
@@ -1135,17 +1910,19 @@ function build() {
     "keydown",
     e => {
 
-      /*
-        Ctrl+Enter / Cmd+Enter
-      */
       if (
-        e.key === "Enter" &&
-        (e.ctrlKey || e.metaKey)
+        e.key ===
+          "Enter" &&
+        (
+          e.ctrlKey ||
+          e.metaKey
+        )
       ) {
 
         e.preventDefault();
 
         send();
+
       }
 
     }
@@ -1160,15 +1937,24 @@ function build() {
     e => {
 
       const fs =
-        [...(
-          e.clipboardData?.files || []
-        )];
+        [
+          ...(
+            e.clipboardData?.files ||
+            []
+          )
+        ];
 
-      if (fs.length) {
+
+      if (
+        fs.length
+      ) {
 
         e.preventDefault();
 
-        attachFiles(fs);
+        attachFiles(
+          fs
+        );
+
       }
 
     }
@@ -1184,6 +1970,7 @@ function build() {
       e.preventDefault()
   );
 
+
   el.panel.addEventListener(
     "drop",
     e => {
@@ -1197,21 +1984,30 @@ function build() {
         attachFiles(
           e.dataTransfer.files
         );
+
       }
 
     }
   );
 
 
+  /*
+    Escape
+  */
   document.addEventListener(
     "keydown",
     e => {
 
       if (
-        e.key === "Escape" &&
-        el.wrap.classList.contains("on")
+        e.key ===
+          "Escape" &&
+        el.wrap.classList.contains(
+          "on"
+        )
       ) {
+
         close();
+
       }
 
     }
@@ -1219,48 +2015,86 @@ function build() {
 
 
   renderModelBar();
+
   renderHint();
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   5. 모델 UI
+   6. 모델 UI
    ═══════════════════════════════════════════════════════════════════════ */
 
 function renderModelBar() {
 
-  if (!el.bar) return;
+  if (!el.bar)
+    return;
+
 
   const modes = [
-    ["auto", "자동"],
-    ["openai", "GPT"],
-    ["gemini", "Gemini"]
+
+    [
+      "auto",
+      "자동"
+    ],
+
+    [
+      "openai",
+      "GPT"
+    ],
+
+    [
+      "gemini",
+      "Gemini"
+    ]
+
   ];
 
+
   let html =
-    modes.map(
-      ([k, t]) => `
-        <button
-          class="aic-chip${state.mode === k ? " on" : ""}"
-          data-mode="${k}"
-        >${t}</button>
-      `
-    ).join("");
+    modes
+      .map(
+        ([k, t]) => `
+          <button
+            class="aic-chip${
+              state.mode === k
+                ? " on"
+                : ""
+            }"
+            data-mode="${k}"
+          >
+            ${t}
+          </button>
+        `
+      )
+      .join("");
 
 
-  if (state.mode !== "auto") {
+  if (
+    state.mode !==
+    "auto"
+  ) {
 
     html +=
       `<div class="aic-sep"></div>` +
 
-      TIER.map(
-        t => `
-          <button
-            class="aic-chip${state.tier === t ? " on" : ""}"
-            data-tier="${t}"
-          >${t}</button>
-        `
-      ).join("");
+      TIER
+        .map(
+          t => `
+            <button
+              class="aic-chip${
+                state.tier === t
+                  ? " on"
+                  : ""
+              }"
+              data-tier="${t}"
+            >
+              ${t}
+            </button>
+          `
+        )
+        .join("");
+
   }
 
 
@@ -1281,13 +2115,17 @@ function renderModelBar() {
             state.mode =
               b.dataset.mode;
 
+
             save(
               "ai:mode",
               state.mode
             );
 
+
             renderModelBar();
+
             renderHint();
+
           };
 
       }
@@ -1307,13 +2145,17 @@ function renderModelBar() {
             state.tier =
               b.dataset.tier;
 
+
             save(
               "ai:tier",
               state.tier
             );
 
+
             renderModelBar();
+
             renderHint();
+
           };
 
       }
@@ -1322,81 +2164,134 @@ function renderModelBar() {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════
+   모델 힌트
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function renderHint() {
 
-  if (!el.hint) return;
+  if (!el.hint)
+    return;
+
 
   if (!BASE) {
 
     el.hint.innerHTML =
-      `⚠ config.js에 <b>AI_WORKER_URL</b>을 넣어 주세요.`;
+      `
+        ⚠ config.js에
+        <b>AI_WORKER_URL</b>
+        을 넣어 주세요.
+      `;
 
     return;
+
   }
+
+
+  if (!MODELS_READY) {
+
+    el.hint.textContent =
+      MODEL_ERROR
+        ? `⚠ ${MODEL_ERROR}`
+        : "모델 목록 불러오는 중…";
+
+    return;
+
+  }
+
 
   const p =
     resolveModel(
-      el.ta?.value || ""
+      el.ta?.value ||
+      ""
     );
 
 
-  el.hint.textContent =
-    state.mode === "auto"
+  if (!p) {
 
-      ? `자동 — ${p.model || "Worker 모델"}`
-      
-      : (
-          p.model ||
-          "Worker 모델"
-        );
+    el.hint.textContent =
+      "사용 가능한 모델이 없습니다.";
+
+    return;
+
+  }
+
+
+  el.hint.textContent =
+    state.mode ===
+      "auto"
+
+      ? `자동 — ${p.model}`
+
+      : p.model;
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   6. 첨부 파일
+   7. 첨부
    ═══════════════════════════════════════════════════════════════════════ */
 
 const IMG =
   /^image\//i;
 
+
 const TEXTY =
   /\.(txt|md|csv|json|js|ts|jsx|tsx|py|sql|html|css|log|ya?ml|ini|conf|sh)$/i;
 
 
-function fileToBase64(file) {
+function fileToBase64(
+  file
+) {
 
   return new Promise(
-    (resolve, reject) => {
+    (
+      res,
+      rej
+    ) => {
 
       const r =
         new FileReader();
 
+
       r.onload =
         () =>
-          resolve(
-            String(r.result)
-              .split(",")[1] || ""
+          res(
+            String(
+              r.result
+            )
+            .split(",")[1] ||
+            ""
           );
 
-      r.onerror =
-        reject;
 
-      r.readAsDataURL(file);
+      r.onerror =
+        rej;
+
+
+      r.readAsDataURL(
+        file
+      );
+
     }
   );
+
 }
 
 
+/* 이미지 압축 */
 async function shrinkImage(
   file,
   max = 1400,
-  quality = .82
+  quality = 0.82
 ) {
 
   try {
 
     const bmp =
-      await createImageBitmap(file);
+      await createImageBitmap(
+        file
+      );
 
 
     if (
@@ -1409,6 +2304,7 @@ async function shrinkImage(
     ) {
 
       return file;
+
     }
 
 
@@ -1422,12 +2318,15 @@ async function shrinkImage(
 
     const w =
       Math.round(
-        bmp.width * scale
+        bmp.width *
+        scale
       );
+
 
     const h =
       Math.round(
-        bmp.height * scale
+        bmp.height *
+        scale
       );
 
 
@@ -1436,22 +2335,26 @@ async function shrinkImage(
         "canvas"
       );
 
+
     cv.width =
       w;
+
 
     cv.height =
       h;
 
 
-    cv.getContext(
-      "2d"
-    ).drawImage(
-      bmp,
-      0,
-      0,
-      w,
-      h
-    );
+    cv
+      .getContext(
+        "2d"
+      )
+      .drawImage(
+        bmp,
+        0,
+        0,
+        w,
+        h
+      );
 
 
     const blob =
@@ -1466,23 +2369,31 @@ async function shrinkImage(
 
 
     return blob
+
       ? new File(
           [blob],
+
           file.name.replace(
             /\.\w+$/,
             ""
-          ) + ".jpg",
+          ) +
+          ".jpg",
+
           {
             type:
               "image/jpeg"
           }
         )
+
       : file;
+
 
   } catch {
 
     return file;
+
   }
+
 }
 
 
@@ -1496,22 +2407,30 @@ let pdfjsReady =
 
 function loadPdfjs() {
 
-  if (window.pdfjsLib) {
+  if (
+    window.pdfjsLib
+  ) {
+
     return Promise.resolve(
       window.pdfjsLib
     );
+
   }
 
 
   return (
     pdfjsReady ||=
       new Promise(
-        (resolve, reject) => {
+        (
+          res,
+          rej
+        ) => {
 
           const s =
             document.createElement(
               "script"
             );
+
 
           s.src =
             "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
@@ -1525,19 +2444,26 @@ function loadPdfjs() {
                 .workerSrc =
                   "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
-              resolve(
+
+              res(
                 window.pdfjsLib
               );
+
             };
 
 
           s.onerror =
-            reject;
+            rej;
 
-          document.head.appendChild(s);
+
+          document.head.appendChild(
+            s
+          );
+
         }
       )
   );
+
 }
 
 
@@ -1557,29 +2483,33 @@ async function pdfToText(
   const doc =
     await lib
       .getDocument({
-        data: buf
+        data:
+          buf
       })
       .promise;
 
 
-  const total =
+  const n =
     Math.min(
       doc.numPages,
       maxPages
     );
 
 
-  const out = [];
+  const out =
+    [];
 
 
   for (
     let i = 1;
-    i <= total;
+    i <= n;
     i++
   ) {
 
     const page =
-      await doc.getPage(i);
+      await doc.getPage(
+        i
+      );
 
 
     const tc =
@@ -1590,38 +2520,47 @@ async function pdfToText(
       `— ${i}쪽 —\n` +
       tc.items
         .map(
-          t => t.str
+          t =>
+            t.str
         )
         .join(" ")
     );
+
   }
 
 
   if (
     doc.numPages >
-    total
+    n
   ) {
 
     out.push(
-      `(전체 ${doc.numPages}쪽 중 ${total}쪽까지만 읽었습니다)`
+      `(전체 ${doc.numPages}쪽 중 ${n}쪽까지만 읽었습니다)`
     );
+
   }
 
 
   return out.join(
     "\n\n"
   );
+
 }
 
 
-async function attachFiles(list) {
+async function attachFiles(
+  list
+) {
 
   const files =
-    [...list];
+    [
+      ...list
+    ];
 
 
   for (
-    const f of files
+    const f of
+    files
   ) {
 
     const id =
@@ -1654,45 +2593,65 @@ async function attachFiles(list) {
       item
     );
 
+
     renderTray();
 
 
     try {
 
       if (
-        IMG.test(f.type)
+        IMG.test(
+          f.type
+        )
       ) {
 
         const small =
-          await shrinkImage(f);
+          await shrinkImage(
+            f
+          );
+
 
         item.mime =
           small.type;
+
 
         item.data =
           await fileToBase64(
             small
           );
 
+
         item.preview =
           URL.createObjectURL(
             small
           );
+
 
         item.status =
           "";
 
 
       } else if (
-        /pdf$/i.test(f.type) ||
-        /\.pdf$/i.test(f.name)
+
+        /pdf$/i.test(
+          f.type
+        ) ||
+
+        /\.pdf$/i.test(
+          f.name
+        )
+
       ) {
 
         item.text =
-          await pdfToText(f);
+          await pdfToText(
+            f
+          );
+
 
         item.kind =
           "text";
+
 
         item.status =
           item.text.trim()
@@ -1701,8 +2660,15 @@ async function attachFiles(list) {
 
 
       } else if (
-        TEXTY.test(f.name) ||
-        /^text\//.test(f.type)
+
+        TEXTY.test(
+          f.name
+        ) ||
+
+        /^text\//.test(
+          f.type
+        )
+
       ) {
 
         item.text =
@@ -1713,8 +2679,10 @@ async function attachFiles(list) {
             200000
           );
 
+
         item.kind =
           "text";
+
 
         item.status =
           "";
@@ -1725,8 +2693,10 @@ async function attachFiles(list) {
         item.status =
           "지원하지 않는 형식";
 
+
         item.bad =
           true;
+
       }
 
 
@@ -1734,63 +2704,79 @@ async function attachFiles(list) {
 
       item.status =
         "읽기 실패: " +
-        (e.message || e);
+        (
+          e.message ||
+          e
+        );
+
 
       item.bad =
         true;
+
     }
 
 
     renderTray();
+
   }
+
 }
 
 
 function renderTray() {
 
-  if (!el.tray) return;
+  if (!el.tray)
+    return;
 
 
   el.tray.innerHTML =
-    state.files.map(
-      f => `
-        <span
-          class="aic-pill"
-          title="${esc(f.name)}"
-        >
-          ${
-            f.preview
-              ? `
-                <img
-                  src="${f.preview}"
-                  style="
-                    width:20px;
-                    height:20px;
-                    border-radius:4px;
-                    object-fit:cover
-                  "
-                >
-              `
-              : "📄"
-          }
+    state.files
+      .map(
+        f =>
+          `
+            <span
+              class="aic-pill"
+              title="${esc(f.name)}"
+            >
 
-          <span>
-            ${esc(f.name)}
-            ${
-              f.status
-                ? " · " +
-                  esc(f.status)
-                : ""
-            }
-          </span>
+              ${
+                f.preview
 
-          <b data-rm="${f.id}">
-            ✕
-          </b>
+                  ? `
+                      <img
+                        src="${f.preview}"
+                        style="
+                          width:20px;
+                          height:20px;
+                          border-radius:4px;
+                          object-fit:cover
+                        "
+                      >
+                    `
 
-        </span>
-      `
-    ).join("");
+                  : "📄"
+              }
+
+              <span>
+                ${esc(f.name)}
+
+                ${
+                  f.status
+                    ? ` · ${esc(f.status)}`
+                    : ""
+                }
+              </span>
+
+              <b
+                data-rm="${f.id}"
+              >
+                ✕
+              </b>
+
+            </span>
+          `
+      )
+      .join("");
 
 
   el.tray
@@ -1810,17 +2796,21 @@ function renderTray() {
                   b.dataset.rm
               );
 
+
             renderTray();
+
             renderHint();
+
           };
 
       }
     );
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   7. Markdown
+   8. Markdown
    ═══════════════════════════════════════════════════════════════════════ */
 
 function esc(s) {
@@ -1829,29 +2819,56 @@ function esc(s) {
     s ?? ""
   ).replace(
     /[&<>"']/g,
-    c => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[c])
+    c =>
+      ({
+        "&":
+          "&amp;",
+
+        "<":
+          "&lt;",
+
+        ">":
+          "&gt;",
+
+        '"':
+          "&quot;",
+
+        "'":
+          "&#39;"
+
+      }[c])
   );
+
 }
 
 
-function md(src) {
+function md(
+  src
+) {
 
-  const blocks = [];
+  const blocks =
+    [];
+
 
   let s =
-    esc(src || "");
+    esc(
+      src ||
+      ""
+    );
 
 
+  /*
+    코드 블록
+  */
   s =
     s.replace(
       /```(\w*)\n?([\s\S]*?)```/g,
-      (_, lang, code) => {
+
+      (
+        _,
+        lang,
+        code
+      ) => {
 
         blocks.push(
           `<pre><code data-lang="${lang}">${
@@ -1862,11 +2879,16 @@ function md(src) {
           }</code></pre>`
         );
 
+
         return (
           "" +
-          (blocks.length - 1) +
+          (
+            blocks.length -
+            1
+          ) +
           ""
         );
+
       }
     );
 
@@ -1877,11 +2899,13 @@ function md(src) {
       "<code>$1</code>"
     );
 
+
   s =
     s.replace(
       /\*\*([^*\n]+)\*\*/g,
       "<strong>$1</strong>"
     );
+
 
   s =
     s.replace(
@@ -1889,72 +2913,106 @@ function md(src) {
       "$1<em>$2</em>"
     );
 
+
   s =
     s.replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+
       '<a href="$2" target="_blank" rel="noopener">$1</a>'
     );
 
 
-  const out = [];
-
-  let list = null;
-  let para = [];
-  let table = null;
+  const out =
+    [];
 
 
-  function flushPara() {
-
-    if (!para.length)
-      return;
-
-    out.push(
-      `<p>${para.join("<br>")}</p>`
-    );
-
-    para = [];
-  }
+  let list =
+    null;
 
 
-  function flushList() {
-
-    if (!list)
-      return;
-
-    out.push(
-      `</${list}>`
-    );
-
-    list =
-      null;
-  }
+  let para =
+    [];
 
 
-  function flushTable() {
-
-    if (!table)
-      return;
-
-    out.push(
-      `<table>${table.join("")}</table>`
-    );
-
-    table =
-      null;
-  }
+  let table =
+    null;
 
 
-  function flushAll() {
+  const flushPara =
+    () => {
 
-    flushPara();
-    flushList();
-    flushTable();
-  }
+      if (
+        para.length
+      ) {
+
+        out.push(
+          `<p>${para.join("<br>")}</p>`
+        );
+
+
+        para =
+          [];
+
+      }
+
+    };
+
+
+  const flushList =
+    () => {
+
+      if (
+        list
+      ) {
+
+        out.push(
+          `</${list}>`
+        );
+
+
+        list =
+          null;
+
+      }
+
+    };
+
+
+  const flushTable =
+    () => {
+
+      if (
+        table
+      ) {
+
+        out.push(
+          `<table>${table.join("")}</table>`
+        );
+
+
+        table =
+          null;
+
+      }
+
+    };
+
+
+  const flushAll =
+    () => {
+
+      flushPara();
+
+      flushList();
+
+      flushTable();
+
+    };
 
 
   for (
-    const raw
-    of s.split("\n")
+    const raw of
+    s.split("\n")
   ) {
 
     const line =
@@ -1974,54 +3032,84 @@ function md(src) {
       );
 
       continue;
+
     }
 
 
-    if (!line.trim()) {
+    if (
+      !line.trim()
+    ) {
 
       flushAll();
 
       continue;
+
     }
 
 
     let m;
 
 
+    /*
+      제목
+    */
     if (
-      (m =
-        line.match(
-          /^(#{1,4})\s+(.*)$/
-        ))
+      (
+        m =
+          line.match(
+            /^(#{1,4})\s+(.*)$/
+          )
+      )
     ) {
 
       flushAll();
 
+
       const h =
         Math.min(
-          m[1].length + 1,
+          m[1].length +
+            1,
+
           4
         );
+
 
       out.push(
         `<h${h}>${m[2]}</h${h}>`
       );
 
 
+    /*
+      UL
+    */
     } else if (
-      /^\s*[-*\u2022]\s+/.test(
-        line
-      )
+
+      /^\s*[-*\u2022]\s+/
+        .test(line)
+
     ) {
 
       flushPara();
+
       flushTable();
 
-      if (list !== "ul") {
+
+      if (
+        list !==
+        "ul"
+      ) {
+
         flushList();
-        out.push("<ul>");
-        list = "ul";
+
+        out.push(
+          "<ul>"
+        );
+
+        list =
+          "ul";
+
       }
+
 
       out.push(
         `<li>${
@@ -2033,20 +3121,37 @@ function md(src) {
       );
 
 
+    /*
+      OL
+    */
     } else if (
-      /^\s*\d+[.)]\s+/.test(
-        line
-      )
+
+      /^\s*\d+[.)]\s+/
+        .test(line)
+
     ) {
 
       flushPara();
+
       flushTable();
 
-      if (list !== "ol") {
+
+      if (
+        list !==
+        "ol"
+      ) {
+
         flushList();
-        out.push("<ol>");
-        list = "ol";
+
+        out.push(
+          "<ol>"
+        );
+
+        list =
+          "ol";
+
       }
+
 
       out.push(
         `<li>${
@@ -2058,13 +3163,18 @@ function md(src) {
       );
 
 
+    /*
+      인용
+    */
     } else if (
-      /^&gt;\s?/.test(
-        line
-      )
+
+      /^&gt;\s?/
+        .test(line)
+
     ) {
 
       flushAll();
+
 
       out.push(
         `<blockquote>${
@@ -2076,13 +3186,18 @@ function md(src) {
       );
 
 
+    /*
+      표
+    */
     } else if (
-      /^\s*\|.*\|\s*$/.test(
-        line
-      )
+
+      /^\s*\|.*\|\s*$/
+        .test(line)
+
     ) {
 
       flushPara();
+
       flushList();
 
 
@@ -2095,30 +3210,44 @@ function md(src) {
           )
           .split("|")
           .map(
-            c => c.trim()
+            c =>
+              c.trim()
           );
 
 
       if (
         cells.every(
           c =>
-            /^:?-{2,}:?$/.test(c)
+            /^:?-{2,}:?$/.test(
+              c
+            )
         )
       ) {
+
         continue;
+
       }
 
 
       const head =
-        table === null;
+        table ===
+        null;
+
 
       const tag =
         head
           ? "th"
           : "td";
 
-      if (head)
-        table = [];
+
+      if (
+        head
+      ) {
+
+        table =
+          [];
+
+      }
 
 
       table.push(
@@ -2133,26 +3262,39 @@ function md(src) {
       );
 
 
+    /*
+      구분선
+    */
     } else if (
-      /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(
-        line
-      )
+
+      /^\s*(-{3,}|\*{3,}|_{3,})\s*$/
+        .test(line)
+
     ) {
 
       flushAll();
 
-      out.push("<hr>");
+
+      out.push(
+        "<hr>"
+      );
 
 
+    /*
+      일반 문단
+    */
     } else {
 
       flushList();
+
       flushTable();
 
       para.push(
         line.trim()
       );
+
     }
+
   }
 
 
@@ -2163,14 +3305,21 @@ function md(src) {
     .join("\n")
     .replace(
       /(\d+)/g,
-      (_, i) =>
-        blocks[+i] || ""
+      (
+        _,
+        i
+      ) =>
+        blocks[
+          +i
+        ] ||
+        ""
     );
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   8. 화면 렌더링
+   9. 대화 그리기
    ═══════════════════════════════════════════════════════════════════════ */
 
 function bubble(
@@ -2183,6 +3332,7 @@ function bubble(
     document.createElement(
       "div"
     );
+
 
   row.className =
     "aic-row " +
@@ -2197,12 +3347,13 @@ function bubble(
     (
       meta
         ? `
-          <div class="aic-meta">
-            ${esc(meta)}
-          </div>
-        `
+            <div class="aic-meta">
+              ${esc(meta)}
+            </div>
+          `
         : ""
     ) +
+
     `
       <div class="aic-bub">
         ${html}
@@ -2221,6 +3372,7 @@ function bubble(
   return row.querySelector(
     ".aic-bub"
   );
+
 }
 
 
@@ -2228,50 +3380,77 @@ function scroll() {
 
   requestAnimationFrame(
     () => {
+
       el.log.scrollTop =
         el.log.scrollHeight;
+
     }
   );
+
 }
 
 
-function showErr(msg) {
+function showErr(
+  msg
+) {
 
   const d =
     document.createElement(
       "div"
     );
 
+
   d.className =
     "aic-err";
 
+
   d.textContent =
     msg;
+
 
   el.log.appendChild(
     d
   );
 
+
   scroll();
+
 }
 
 
-/*
-  ★★★★★ 핵심 수정 ★★★★★
+/* ═══════════════════════════════════════════════════════════════════════
+   10. redraw
 
-  AI 생성 중에는 절대 전체 대화를 다시 그리지 않는다.
-*/
+   ★ AI가 생성 중이면 절대 실행하지 않는다.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function redraw() {
 
-  if (state.busy)
+  if (
+    state.busy
+  ) {
+
     return;
+
+  }
+
+
+  if (
+    !el.log
+  ) {
+
+    return;
+
+  }
 
 
   el.log.innerHTML =
     "";
 
 
-  if (!state.msgs.length) {
+  if (
+    !state.msgs.length
+  ) {
 
     const c =
       currentContext();
@@ -2279,92 +3458,149 @@ function redraw() {
 
     const ctxLine =
       c?.label
+
         ? `
-          <p style="color:var(--ink-2,#8894a5)">
-            지금 보고 있는 것:
-            <b>${esc(c.label)}</b>
-            — 그대로 물어보시면 됩니다.
-          </p>
-        `
+            <p
+              style="
+                color:
+                  var(--ink-2,#8894a5)
+              "
+            >
+              지금 보고 있는 것:
+              <b>
+                ${esc(c.label)}
+              </b>
+              — 그대로 물어보시면 됩니다.
+            </p>
+          `
+
         : "";
 
 
     bubble(
+
       "assistant",
+
       `
         <p>
-          <b>무엇을 도와드릴까요?</b>
+          <b>
+            무엇을 도와드릴까요?
+          </b>
         </p>
+
+        ${
+          MODELS_READY
+            ? `
+              <ul>
+
+                <li>
+                  사진·PDF를 붙이면
+                  읽고 분석해 드립니다.
+                </li>
+
+                <li>
+                  위쪽에서
+                  <b>GPT / Gemini</b>
+                  를 선택할 수 있습니다.
+                </li>
+
+                <li>
+                  <b>자동</b>으로 두면
+                  질문 성격에 맞는 모델을
+                  Worker 목록에서 자동 선택합니다.
+                </li>
+
+              </ul>
+            `
+
+            : `
+              <p
+                style="
+                  color:
+                    var(--ink-2,#8894a5)
+                "
+              >
+                ${esc(
+                  MODEL_ERROR ||
+                  "Worker에서 모델 목록을 불러오는 중입니다."
+                )}
+              </p>
+            `
+        }
 
         ${ctxLine}
 
-        <ul>
-
-          <li>
-            사진·PDF를 붙이면
-            읽고 분석해 드립니다.
-          </li>
-
-          <li>
-            위쪽에서
-            <b>GPT / Gemini</b>를
-            선택할 수 있습니다.
-          </li>
-
-          <li>
-            <b>자동</b>으로 두면
-            질문 성격에 따라
-            모델을 자동 선택합니다.
-          </li>
-
-        </ul>
       `
+
     );
 
+
     return;
+
   }
 
 
   for (
-    const m of state.msgs
+    const m of
+    state.msgs
   ) {
 
     const thumbs =
-      (m.files || [])
+      (
+        m.files ||
+        []
+      )
         .filter(
-          f => f.preview
+          f =>
+            f.preview
         )
         .map(
           f =>
-            `<img
-              class="aic-thumb"
-              src="${f.preview}"
-            >`
+            `
+              <img
+                class="aic-thumb"
+                src="${f.preview}"
+              >
+            `
         )
         .join("");
 
 
     const tags =
-      (m.files || [])
+      (
+        m.files ||
+        []
+      )
         .filter(
-          f => !f.preview
+          f =>
+            !f.preview
         )
         .map(
           f =>
-            `<span class="aic-fileTag">
-              📄 ${esc(f.name)}
-            </span>`
+            `
+              <span
+                class="aic-fileTag"
+              >
+                📄 ${esc(f.name)}
+              </span>
+            `
         )
         .join(" ");
 
 
     const b =
       bubble(
+
         m.role === "user"
           ? "user"
           : "assistant",
-        md(m.content),
+
+        md(
+          m.content
+        ),
+
         m.meta
+
       );
 
 
@@ -2378,44 +3614,60 @@ function redraw() {
           "div"
         );
 
+
       holder.className =
         "aic-thumbs";
 
+
       holder.innerHTML =
-        thumbs + tags;
+        thumbs +
+        tags;
 
 
-      b.parentElement.insertBefore(
-        holder,
-        b
-      );
+      b.parentElement
+        .insertBefore(
+          holder,
+          b
+        );
+
     }
+
   }
 
 
   scroll();
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   9. Context
+   11. Context
    ═══════════════════════════════════════════════════════════════════════ */
 
 function currentContext() {
 
-  if (state.ctxFn) {
+  if (
+    state.ctxFn
+  ) {
 
     try {
+
       return (
         state.ctxFn() ||
         state.ctx
       );
+
     } catch {
+
       return state.ctx;
+
     }
+
   }
 
+
   return state.ctx;
+
 }
 
 
@@ -2444,14 +3696,20 @@ function buildSystem() {
     currentContext();
 
 
-  if (ctx?.system) {
+  if (
+    ctx?.system
+  ) {
+
     s +=
       "\n\n" +
       ctx.system;
+
   }
 
 
-  if (ctx?.text) {
+  if (
+    ctx?.text
+  ) {
 
     s +=
       "\n\n[사용자가 지금 보고 있는 화면]\n" +
@@ -2461,39 +3719,55 @@ function buildSystem() {
         0,
         6000
       );
+
   }
 
 
   return s;
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   10. 서버 전송 형식
+   12. Wire
    ═══════════════════════════════════════════════════════════════════════ */
 
-function toWire(msgs) {
+function toWire(
+  msgs
+) {
 
   return msgs.map(
     m => {
 
       let content =
-        m.content || "";
+        m.content ||
+        "";
 
-      const files = [];
+
+      const files =
+        [];
 
 
       for (
         const f of
-        (m.files || [])
+        (
+          m.files ||
+          []
+        )
       ) {
 
-        if (f.bad)
+        if (
+          f.bad
+        ) {
+
           continue;
+
+        }
 
 
         if (
-          f.kind === "text" &&
+          f.kind ===
+            "text" &&
           f.text
         ) {
 
@@ -2515,32 +3789,59 @@ function toWire(msgs) {
 
             name:
               f.name
+
           });
+
         }
+
       }
 
 
       return {
+
         role:
           m.role,
 
         content,
 
         files
+
       };
+
     }
   );
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   11. 보내기
+   13. 보내기
+
+   ★ 여기서 대화가 사라지던 문제 해결
+
+   기존:
+      state.msgs.push()
+      redraw()
+      state.busy = true
+
+   수정:
+      state.busy = true
+      state.msgs.push()
+      직접 DOM 추가
+      스트리밍 중 redraw 금지
    ═══════════════════════════════════════════════════════════════════════ */
 
-async function send(preset) {
+async function send(
+  preset
+) {
 
-  if (state.busy)
+  if (
+    state.busy
+  ) {
+
     return;
+
+  }
 
 
   const text =
@@ -2552,7 +3853,8 @@ async function send(preset) {
 
   const files =
     state.files.filter(
-      f => !f.bad
+      f =>
+        !f.bad
     );
 
 
@@ -2560,7 +3862,9 @@ async function send(preset) {
     !text &&
     !files.length
   ) {
+
     return;
+
   }
 
 
@@ -2570,7 +3874,9 @@ async function send(preset) {
       "config.js에 AI_WORKER_URL이 없습니다."
     );
 
+
     return;
+
   }
 
 
@@ -2580,22 +3886,55 @@ async function send(preset) {
   await readSession();
 
 
-  if (!allowed()) {
+  if (
+    !allowed()
+  ) {
 
     await refreshGate(
       "로그인이 풀렸습니다. 다시 들어와 주세요."
     );
 
+
     return;
+
   }
 
 
   /*
-    ★★★★★
-    여기부터 busy=true.
+    ★ 모델 목록이 준비되어 있어야 한다.
+  */
+  if (
+    !MODELS_READY
+  ) {
 
-    이후 refreshGate/redraw가
-    대화를 덮지 못하게 한다.
+    /*
+      혹시 페이지 시작 직후라면
+      여기서 한 번 더 시도한다.
+    */
+    await loadCatalog();
+
+
+    if (
+      !MODELS_READY
+    ) {
+
+      showErr(
+        MODEL_ERROR ||
+        "사용 가능한 AI 모델 목록을 불러오지 못했습니다."
+      );
+
+
+      return;
+
+    }
+
+  }
+
+
+  /*
+    ★★★★★★ 핵심 ★★★★★★
+
+    반드시 redraw보다 먼저 busy=true
   */
   state.busy =
     true;
@@ -2607,8 +3946,30 @@ async function send(preset) {
     );
 
 
+  if (
+    !pick ||
+    !pick.model
+  ) {
+
+    state.busy =
+      false;
+
+
+    showErr(
+      "선택할 수 있는 AI 모델이 없습니다."
+    );
+
+
+    renderHint();
+
+
+    return;
+
+  }
+
+
   /*
-    첨부파일을 메시지에 고정
+    현재 첨부파일을 메시지에 고정
   */
   const sentFiles =
     files.map(
@@ -2635,62 +3996,77 @@ async function send(preset) {
   });
 
 
+  /*
+    입력창 초기화
+  */
   state.files =
     [];
+
 
   el.ta.value =
     "";
 
+
   el.ta.style.height =
     "auto";
+
 
   renderTray();
 
 
   /*
-    ★ redraw()를 쓰지 않는다.
-    사용자 메시지를 직접 그린다.
+    ★★★ redraw하지 않는다.
+    직접 사용자 말풍선을 만든다.
   */
+  const userBubble =
+    bubble(
+      "user",
+      md(
+        text
+      )
+    );
 
-  const userThumbs =
+
+  const thumbs =
     sentFiles
       .filter(
-        f => f.preview
+        f =>
+          f.preview
       )
       .map(
         f =>
-          `<img
-            class="aic-thumb"
-            src="${f.preview}"
-          >`
+          `
+            <img
+              class="aic-thumb"
+              src="${f.preview}"
+            >
+          `
       )
       .join("");
 
 
-  const userTags =
+  const tags =
     sentFiles
       .filter(
-        f => !f.preview
+        f =>
+          !f.preview
       )
       .map(
         f =>
-          `<span class="aic-fileTag">
-            📄 ${esc(f.name)}
-          </span>`
+          `
+            <span
+              class="aic-fileTag"
+            >
+              📄 ${esc(f.name)}
+            </span>
+          `
       )
       .join(" ");
 
 
-  const userBubble =
-    bubble(
-      "user",
-      md(text)
-    );
-
-
   if (
-    userThumbs ||
-    userTags
+    thumbs ||
+    tags
   ) {
 
     const holder =
@@ -2698,36 +4074,45 @@ async function send(preset) {
         "div"
       );
 
+
     holder.className =
       "aic-thumbs";
 
+
     holder.innerHTML =
-      userThumbs +
-      userTags;
+      thumbs +
+      tags;
 
 
-    userBubble.parentElement.insertBefore(
-      holder,
-      userBubble
-    );
+    userBubble.parentElement
+      .insertBefore(
+        holder,
+        userBubble
+      );
+
   }
 
 
+  /*
+    AI 응답 자리
+  */
   const meta =
     `${
-      pick.provider === "openai"
+      pick.provider ===
+        "openai"
         ? "GPT"
         : "Gemini"
-    } · ${
-      pick.model ||
-      "Worker 기본 모델"
-    }`;
+    } · ${pick.model}`;
 
 
   const bub =
     bubble(
       "assistant",
-      `<span class="aic-dots"></span>`,
+      `
+        <span
+          class="aic-dots"
+        ></span>
+      `,
       meta
     );
 
@@ -2735,12 +4120,14 @@ async function send(preset) {
   el.send.textContent =
     "■";
 
+
   el.send.title =
     "멈추기";
 
 
   const ctrl =
     new AbortController();
+
 
   state.abort =
     ctrl;
@@ -2754,7 +4141,10 @@ async function send(preset) {
 
     const res =
       await fetch(
-        BASE + "/ai/chat",
+
+        BASE +
+        "/ai/chat",
+
         {
 
           method:
@@ -2809,60 +4199,91 @@ async function send(preset) {
             })
 
         }
+
       );
 
 
-    if (!res.ok) {
+    if (
+      !res.ok
+    ) {
 
       let msg =
         `서버가 ${res.status}로 답했습니다.`;
 
+
       try {
+
         msg =
-          (await res.json()).error ||
+          (
+            await res.json()
+          ).error ||
           msg;
+
       } catch {}
 
 
       if (
-        res.status === 401 ||
-        res.status === 403
+        res.status ===
+          401 ||
+        res.status ===
+          403
       ) {
 
-        bub.parentElement.remove();
+        if (
+          bub.parentElement
+        ) {
 
+          bub.parentElement
+            .remove();
+
+        }
+
+
+        /*
+          실패한 질문 제거
+        */
         state.msgs.pop();
+
 
         state.busy =
           false;
+
 
         await refreshGate(
           msg
         );
 
+
         return;
+
       }
 
 
       throw new Error(
         msg
       );
+
     }
 
 
-    if (!res.body) {
+    if (
+      !res.body
+    ) {
 
       throw new Error(
-        "스트리밍 응답을 받을 수 없습니다."
+        "서버에서 스트리밍 응답을 받을 수 없습니다."
       );
+
     }
 
 
     const reader =
       res.body.getReader();
 
+
     const dec =
       new TextDecoder();
+
 
     let buf =
       "";
@@ -2877,15 +4298,21 @@ async function send(preset) {
         await reader.read();
 
 
-      if (done)
+      if (
+        done
+      ) {
+
         break;
+
+      }
 
 
       buf +=
         dec.decode(
           value,
           {
-            stream: true
+            stream:
+              true
           }
         );
 
@@ -2894,8 +4321,12 @@ async function send(preset) {
 
 
       while (
-        (cut =
-          buf.indexOf("\n\n")) !== -1
+        (
+          cut =
+            buf.indexOf(
+              "\n\n"
+            )
+        ) !== -1
       ) {
 
         const block =
@@ -2921,7 +4352,9 @@ async function send(preset) {
               "data:"
             )
           ) {
+
             continue;
+
           }
 
 
@@ -2933,9 +4366,12 @@ async function send(preset) {
 
           if (
             !raw ||
-            raw === "[DONE]"
+            raw ===
+              "[DONE]"
           ) {
+
             continue;
+
           }
 
 
@@ -2943,56 +4379,81 @@ async function send(preset) {
 
 
           try {
+
             o =
               JSON.parse(
                 raw
               );
+
           } catch {
+
             continue;
+
           }
 
 
-          if (o.error) {
+          if (
+            o.error
+          ) {
+
             throw new Error(
               o.error
             );
+
           }
 
 
-          if (o.delta) {
+          if (
+            o.delta
+          ) {
 
             acc +=
               o.delta;
 
 
             /*
-              ★ 스트리밍 중에는
-              redraw() 절대 호출 안 함.
+              ★ 스트리밍 중
+              redraw 금지
             */
             bub.innerHTML =
-              md(acc);
+              md(
+                acc
+              );
+
 
             scroll();
+
           }
+
         }
+
       }
+
     }
 
 
-    if (!acc.trim()) {
+    if (
+      !acc.trim()
+    ) {
 
       bub.innerHTML =
         `
-          <p style="color:var(--ink-2,#8894a5)">
+          <p
+            style="
+              color:
+                var(--ink-2,#8894a5)
+            "
+          >
             답이 비어 있습니다.
             다시 물어봐 주세요.
           </p>
         `;
+
     }
 
 
     /*
-      AI 답변 확정
+      AI 답변 state 저장
     */
     state.msgs.push({
 
@@ -3003,9 +4464,13 @@ async function send(preset) {
         acc,
 
       meta
+
     });
 
 
+    /*
+      저장
+    */
     await persist(
       pick
     );
@@ -3013,15 +4478,25 @@ async function send(preset) {
 
   } catch (e) {
 
+    /*
+      중지
+    */
     if (
       e.name ===
       "AbortError"
     ) {
 
       bub.innerHTML =
-        md(acc) +
+        md(
+          acc
+        ) +
         `
-          <p style="color:var(--ink-2,#8894a5)">
+          <p
+            style="
+              color:
+                var(--ink-2,#8894a5)
+            "
+          >
             — 여기서 멈췄습니다.
           </p>
         `;
@@ -3040,18 +4515,28 @@ async function send(preset) {
             acc,
 
           meta
+
         });
 
 
         await persist(
           pick
         );
+
       }
 
 
     } else {
 
-      bub.parentElement.remove();
+      if (
+        bub.parentElement
+      ) {
+
+        bub.parentElement
+          .remove();
+
+      }
+
 
       showErr(
         e.message ||
@@ -3063,6 +4548,7 @@ async function send(preset) {
         실패한 질문만 제거
       */
       state.msgs.pop();
+
     }
 
 
@@ -3071,33 +4557,53 @@ async function send(preset) {
     state.busy =
       false;
 
+
     state.abort =
       null;
+
 
     el.send.textContent =
       "➤";
 
+
     el.send.title =
       "보내기";
 
+
     renderHint();
+
+
+    /*
+      ★★★
+      여기서 redraw() 하지 않는다.
+      현재 DOM을 그대로 유지한다.
+    */
+
   }
+
 }
 
 
 function stop() {
 
-  if (state.abort) {
+  if (
+    state.abort
+  ) {
+
     state.abort.abort();
+
   }
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   12. 저장
+   14. 기록 저장
    ═══════════════════════════════════════════════════════════════════════ */
 
-async function persist(pick) {
+async function persist(
+  pick
+) {
 
   const title =
     (
@@ -3118,8 +4624,14 @@ async function persist(pick) {
   */
   try {
 
+    const key =
+      "ai:last:" +
+      APP;
+
+
     localStorage.setItem(
-      "ai:last:" + APP,
+
+      key,
 
       JSON.stringify({
 
@@ -3132,6 +4644,7 @@ async function persist(pick) {
           state.msgs
             .map(
               m => ({
+
                 role:
                   m.role,
 
@@ -3140,11 +4653,15 @@ async function persist(pick) {
 
                 meta:
                   m.meta
+
               })
             )
-            .slice(-40)
+            .slice(
+              -40
+            )
 
       })
+
     );
 
   } catch {}
@@ -3157,9 +4674,11 @@ async function persist(pick) {
   try {
 
     /*
-      새 Thread
+      새 대화
     */
-    if (!state.thread) {
+    if (
+      !state.thread
+    ) {
 
       const {
         data
@@ -3197,7 +4716,9 @@ async function persist(pick) {
       if (
         !state.thread
       ) {
+
         return;
+
       }
 
 
@@ -3217,6 +4738,7 @@ async function persist(pick) {
 
 
       return;
+
     }
 
 
@@ -3229,7 +4751,9 @@ async function persist(pick) {
       )
       .insert(
         state.msgs
-          .slice(-2)
+          .slice(
+            -2
+          )
           .map(
             m =>
               rowOf(
@@ -3239,7 +4763,9 @@ async function persist(pick) {
           )
       );
 
+
   } catch {}
+
 }
 
 
@@ -3257,22 +4783,33 @@ function rowOf(
       m.role,
 
     content:
-      m.content || "",
+      m.content ||
+      "",
 
     provider:
-      m.role === "assistant"
+      m.role ===
+        "assistant"
         ? pick.provider
         : null,
 
     model:
-      m.role === "assistant"
+      m.role ===
+        "assistant"
         ? pick.model
         : null,
 
     attachments:
-      (m.files || []).length
-        ? m.files.map(
+      (
+        m.files ||
+        []
+      ).length
+
+        ? (
+            m.files ||
+            []
+          ).map(
             f => ({
+
               name:
                 f.name,
 
@@ -3281,20 +4818,26 @@ function rowOf(
 
               size:
                 f.size
+
             })
           )
+
         : null
+
   };
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   13. 히스토리
+   15. 히스토리
    ═══════════════════════════════════════════════════════════════════════ */
 
 async function showHistory() {
 
-  if (state.busy)
+  if (
+    state.busy
+  )
     return;
 
 
@@ -3307,11 +4850,14 @@ async function showHistory() {
       "button"
     );
 
+
   back.className =
     "aic-chip";
 
+
   back.textContent =
     "← 대화로 돌아가기";
+
 
   back.style.margin =
     "0 0 8px";
@@ -3337,7 +4883,8 @@ async function showHistory() {
       last =
         JSON.parse(
           localStorage.getItem(
-            "ai:last:" + APP
+            "ai:last:" +
+            APP
           ) ||
           "null"
         );
@@ -3346,31 +4893,38 @@ async function showHistory() {
 
 
     bubble(
+
       "assistant",
 
       last
-        ? `
-          <p>
-            Supabase 연결이 없어
-            <b>마지막 대화 한 벌</b>만
-            갖고 있습니다.
-          </p>
 
-          <p>
-            <b>
-              ${esc(last.title)}
-            </b>
-          </p>
-        `
+        ? `
+            <p>
+              Supabase 연결이 없어
+              <b>마지막 대화 한 벌</b>만
+              갖고 있습니다.
+            </p>
+
+            <p>
+              <b>
+                ${esc(
+                  last.title
+                )}
+              </b>
+            </p>
+          `
+
         : `
-          <p>
-            저장된 대화가 없습니다.
-          </p>
-        `
+            <p>
+              저장된 대화가 없습니다.
+            </p>
+          `
+
     );
 
 
     return;
+
   }
 
 
@@ -3405,25 +4959,34 @@ async function showHistory() {
       );
 
 
-  if (error) {
+  if (
+    error
+  ) {
 
     showErr(
       "기록을 못 읽었습니다: " +
-      error.message
+      error.message +
+      " — 01-ai-chat.sql을 확인해 주세요."
     );
 
+
     return;
+
   }
 
 
-  if (!data?.length) {
+  if (
+    !data?.length
+  ) {
 
     bubble(
       "assistant",
       "<p>아직 저장된 대화가 없습니다.</p>"
     );
 
+
     return;
+
   }
 
 
@@ -3432,49 +4995,60 @@ async function showHistory() {
       "div"
     );
 
+
   list.style.cssText =
     "display:flex;flex-direction:column;gap:6px";
 
 
   list.innerHTML =
-    data.map(
-      t => `
-        <button
-          class="aic-chip"
-          data-t="${t.id}"
-          style="
-            text-align:left;
-            border-radius:10px;
-            padding:9px 12px;
-            white-space:normal
-          "
-        >
-          <div style="font-weight:700">
-            ${esc(
-              t.title ||
-              "제목 없음"
-            )}
-          </div>
+    data
+      .map(
+        t =>
+          `
+            <button
+              class="aic-chip"
+              data-t="${t.id}"
+              style="
+                text-align:left;
+                border-radius:10px;
+                padding:9px 12px;
+                white-space:normal
+              "
+            >
 
-          <div
-            style="
-              opacity:.65;
-              font-size:11px;
-              margin-top:2px
-            "
-          >
-            ${
-              new Date(
-                t.updated_at
-              ).toLocaleString(
-                "ko-KR"
-              )
-            }
-          </div>
+              <div
+                style="
+                  font-weight:700
+                "
+              >
+                ${
+                  esc(
+                    t.title ||
+                    "제목 없음"
+                  )
+                }
+              </div>
 
-        </button>
-      `
-    ).join("");
+              <div
+                style="
+                  opacity:.65;
+                  font-size:11px;
+                  margin-top:2px
+                "
+              >
+                ${
+                  new Date(
+                    t.updated_at
+                  ).toLocaleString(
+                    "ko-KR"
+                  )
+                }
+              </div>
+
+            </button>
+          `
+      )
+      .join("");
 
 
   el.log.appendChild(
@@ -3494,14 +5068,20 @@ async function showHistory() {
             openThread(
               b.dataset.t
             );
+
       }
     );
+
 }
 
 
-async function openThread(id) {
+async function openThread(
+  id
+) {
 
-  if (state.busy)
+  if (
+    state.busy
+  )
     return;
 
 
@@ -3525,13 +5105,17 @@ async function openThread(id) {
       );
 
 
-  if (error) {
+  if (
+    error
+  ) {
 
     showErr(
       error.message
     );
 
+
     return;
+
   }
 
 
@@ -3540,7 +5124,10 @@ async function openThread(id) {
 
 
   state.msgs =
-    (data || []).map(
+    (
+      data ||
+      []
+    ).map(
       m => ({
 
         role:
@@ -3550,11 +5137,13 @@ async function openThread(id) {
           m.content,
 
         meta:
-          m.role === "assistant" &&
+          m.role ===
+            "assistant" &&
           m.model
 
             ? `${
-                m.provider === "openai"
+                m.provider ===
+                  "openai"
                   ? "GPT"
                   : "Gemini"
               } · ${m.model}`
@@ -3566,34 +5155,45 @@ async function openThread(id) {
 
 
   redraw();
+
 }
 
 
 function newThread() {
 
-  if (state.busy)
+  if (
+    state.busy
+  )
     return;
 
 
   state.thread =
     null;
 
+
   state.msgs =
     [];
+
 
   state.files =
     [];
 
+
   renderTray();
+
+
   redraw();
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   14. 로그인 화면
+   16. 로그인 화면
    ═══════════════════════════════════════════════════════════════════════ */
 
-function drawLock(msg) {
+function drawLock(
+  msg
+) {
 
   el.log.innerHTML =
     "";
@@ -3603,6 +5203,7 @@ function drawLock(msg) {
     document.createElement(
       "div"
     );
+
 
   box.className =
     "aic-lock";
@@ -3628,13 +5229,17 @@ function drawLock(msg) {
       autocomplete="current-password"
     >
 
-    <button id="aicIn">
+    <button
+      id="aicIn"
+    >
       들어가기
     </button>
 
     <p
       id="aicErr"
-      style="color:#c0392b"
+      style="
+        color:#c0392b
+      "
     ></p>
 
   `;
@@ -3645,12 +5250,15 @@ function drawLock(msg) {
   );
 
 
-  if (msg) {
+  if (
+    msg
+  ) {
 
     box.querySelector(
       "#aicErr"
     ).textContent =
       msg;
+
   }
 
 
@@ -3661,6 +5269,7 @@ function drawLock(msg) {
         box.querySelector(
           "#aicErr"
         );
+
 
       err.textContent =
         "확인하는 중…";
@@ -3682,16 +5291,20 @@ function drawLock(msg) {
               "#aicPw"
             )
             .value
+
         );
 
 
         await refreshGate();
 
+
       } catch (e) {
 
         err.textContent =
           e.message;
+
       }
+
     };
 
 
@@ -3710,7 +5323,9 @@ function drawLock(msg) {
         e.key ===
         "Enter"
       ) {
+
         go();
+
       }
 
     };
@@ -3728,16 +5343,20 @@ function drawLock(msg) {
         }),
     60
   );
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   15. Gate
+   17. Gate
    ═══════════════════════════════════════════════════════════════════════ */
 
-async function refreshGate(msg) {
+async function refreshGate(
+  msg
+) {
 
   await readSession();
+
 
   const ok =
     allowed();
@@ -3757,24 +5376,20 @@ async function refreshGate(msg) {
       : "none";
 
 
-  el.wrap
-    .querySelector(
-      '[data-act="history"]'
-    )
-    .style.display =
-      ok
-        ? ""
-        : "none";
+  el.wrap.querySelector(
+    '[data-act="history"]'
+  ).style.display =
+    ok
+      ? ""
+      : "none";
 
 
-  el.wrap
-    .querySelector(
-      '[data-act="new"]'
-    )
-    .style.display =
-      ok
-        ? ""
-        : "none";
+  el.wrap.querySelector(
+    '[data-act="new"]'
+  ).style.display =
+    ok
+      ? ""
+      : "none";
 
 
   const who =
@@ -3792,35 +5407,45 @@ async function refreshGate(msg) {
       : "";
 
 
-  el.wrap
-    .querySelector(
-      '[data-act="user"]'
-    )
-    .textContent =
-      ok
-        ? "🔓"
-        : "👤";
+  el.wrap.querySelector(
+    '[data-act="user"]'
+  ).textContent =
+    ok
+      ? "🔓"
+      : "👤";
 
 
   if (!ok) {
 
     /*
-      생성 중에는 대화를 건드리지 않는다.
+      AI 답변 중이면 기존 대화를
+      로그인 화면으로 덮지 않는다.
     */
-    if (!state.busy) {
-      drawLock(msg);
+    if (
+      !state.busy
+    ) {
+
+      drawLock(
+        msg
+      );
+
     }
 
+
     return false;
+
   }
 
 
   /*
-    ★ 생성 중에는 redraw 금지
+    AI 생성 중에는 redraw 금지
   */
-  if (!state.busy) {
+  if (
+    !state.busy
+  ) {
 
     redraw();
+
     renderHint();
 
 
@@ -3830,18 +5455,22 @@ async function refreshGate(msg) {
         if (
           el.ta &&
           !state.busy &&
-          el.wrap.classList.contains("on")
+          el.wrap.classList.contains(
+            "on"
+          )
         ) {
 
           el.ta.focus({
             preventScroll:
               true
           });
+
         }
 
       },
       60
     );
+
 
   } else {
 
@@ -3850,12 +5479,25 @@ async function refreshGate(msg) {
   }
 
 
+  /*
+    모델 목록은 별도로 로드한다.
+  */
+  if (
+    !MODELS_READY
+  ) {
+
+    loadCatalog();
+
+  }
+
+
   return true;
+
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   16. 외부 API
+   18. 열기 / 닫기
    ═══════════════════════════════════════════════════════════════════════ */
 
 function open() {
@@ -3864,31 +5506,39 @@ function open() {
     "on"
   );
 
+
   el.fab.hidden =
     true;
 
 
   /*
-    refreshGate를 await하지 않는다.
-    사용자가 바로 타이핑해도 send에서 다시 세션 확인한다.
+    로그인 확인
+    + 모델 목록 확인
   */
   refreshGate();
+
 }
 
 
 function close() {
 
   /*
-    닫는다고 대화 삭제 안 함
+    닫는다고 대화 삭제하지 않음
   */
   el.wrap.classList.remove(
     "on"
   );
 
+
   el.fab.hidden =
     false;
+
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   19. 외부 API
+   ═══════════════════════════════════════════════════════════════════════ */
 
 const AIChat = {
 
@@ -3900,21 +5550,30 @@ const AIChat = {
     newThread,
 
 
-  ask(text) {
+  ask(
+    text
+  ) {
 
     open();
 
+
     setTimeout(
-      () => send(text),
+      () =>
+        send(
+          text
+        ),
       100
     );
 
   },
 
 
-  fill(text) {
+  fill(
+    text
+  ) {
 
     open();
+
 
     setTimeout(
       () => {
@@ -3922,9 +5581,13 @@ const AIChat = {
         el.ta.value =
           text;
 
+
         el.ta.dispatchEvent(
-          new Event("input")
+          new Event(
+            "input"
+          )
         );
+
 
         el.ta.focus();
 
@@ -3935,21 +5598,32 @@ const AIChat = {
   },
 
 
-  setContext(ctx) {
+  setContext(
+    ctx
+  ) {
 
     state.ctx =
-      ctx || null;
+      ctx ||
+      null;
+
 
     renderHint();
+
   },
 
 
-  setContextProvider(fn) {
+  setContextProvider(
+    fn
+  ) {
 
     state.ctxFn =
-      typeof fn === "function"
+      typeof fn ===
+        "function"
+
         ? fn
+
         : null;
+
   },
 
 
@@ -3960,14 +5634,51 @@ const AIChat = {
 
     return currentContext();
 
+  },
+
+  
+  /*
+    현재 모델 목록 확인용
+  */
+  get models() {
+
+    return {
+
+      ready:
+        MODELS_READY,
+
+      catalog:
+        CATALOG,
+
+      defaults:
+        DEFAULTS,
+
+      error:
+        MODEL_ERROR
+
+    };
+
   }
 
 };
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   17. 초기화
+   20. 초기화
    ═══════════════════════════════════════════════════════════════════════ */
+
+function init() {
+
+  build();
+
+  /*
+    UI가 먼저 뜨고
+    모델 목록은 Worker에서 가져온다.
+  */
+  loadCatalog();
+
+}
+
 
 if (
   document.readyState ===
@@ -3976,20 +5687,12 @@ if (
 
   document.addEventListener(
     "DOMContentLoaded",
-    () => {
-
-      build();
-
-      loadCatalog();
-
-    }
+    init
   );
 
 } else {
 
-  build();
-
-  loadCatalog();
+  init();
 
 }
 
