@@ -1,0 +1,26 @@
+name = "sniper-ai"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# ── 여기 값은 «비밀이 아닌» 설정만 둡니다. API 키는 절대 여기 쓰지 마세요.
+[vars]
+# 이 Worker 를 부를 수 있는 주소 목록(쉼표로 구분).
+# 비워 두면 전부 허용됩니다 — 개발이 끝나면 꼭 채워 두세요.
+ALLOWED_ORIGINS = "https://gichul-viewer.pages.dev,https://sniper.pages.dev,http://localhost:8788,http://127.0.0.1:5500"
+
+# ── 요금이 새지 않게 하는 자물쇠 ──────────────────────────────
+# "1" 이면 Supabase 에 로그인한 사람만 AI 를 쓸 수 있습니다.
+# Worker 가 Supabase 에 토큰을 직접 확인하므로, 브라우저를 조작해도 못 뚫습니다.
+REQUIRE_AUTH = "1"
+
+# 위 확인에 쓸 Supabase 주소·공개키 (둘 다 원래 공개되는 값이라 여기 적어도 됩니다)
+SUPABASE_URL      = "https://nfyyctinvlytykucbgzk.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_tRyg8GTus9I2_wt-VSmaRA_6gbU-lt5"
+
+# 로그인했더라도 이 이메일만 AI 를 쓸 수 있습니다. 비우면 로그인한 사람 전부 허용.
+ALLOWED_EMAILS = "amirbatikunari@gmail.com"
+
+# ── 비밀값은 아래 명령으로 따로 넣습니다(파일에 남지 않습니다).
+#   npx wrangler secret put OPENAI_API_KEY
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put APP_KEY        ← 선택(문지기 암구호)
