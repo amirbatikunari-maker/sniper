@@ -12,9 +12,9 @@ window.APP_CONFIG = {
   SUPABASE_ANON_KEY: "sb_publishable_tRyg8GTus9I2_wt-VSmaRA_6gbU-lt5",
 
   /* AI 중계 Worker — `npx wrangler deploy` 하면 나오는 주소 */
-  AI_WORKER_URL: "https://sniper.amirbatikunari.workers.dev/",     // 예: https://sniper-ai.amirbatikunari.workers.dev
-  AI_APP_KEY:    "1234",     // Worker 에 APP_KEY 를 등록했을 때만
-  AI_APP_NAME:   "blog",
+AI_WORKER_URL: "https://sniper-ai.amirbatikunari.workers.dev", // 끝에 쉼표 필수!
+AI_APP_KEY: "1234",  // 끝에 쉼표 필수!
+AI_APP_NAME: "blog",
 
   /* 글쓰기·설정 화면을 열 수 있는 계정(Supabase Authentication 에 만든 이메일).
      AI 대화도 같은 계정으로 잠깁니다 — 물어볼 때마다 요금이 붙기 때문입니다.
