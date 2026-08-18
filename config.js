@@ -13,7 +13,7 @@ window.APP_CONFIG = {
 
   /* AI 중계 Worker — `npx wrangler deploy` 하면 나오는 주소 */
   AI_WORKER_URL: "https://sniper.amirbatikunari.workers.dev/",     // 예: https://sniper-ai.amirbatikunari.workers.dev
-  AI_APP_KEY:    "",     // Worker 에 APP_KEY 를 등록했을 때만
+  AI_APP_KEY:    "1234",     // Worker 에 APP_KEY 를 등록했을 때만
   AI_APP_NAME:   "blog",
 
   /* 글쓰기·설정 화면을 열 수 있는 계정(Supabase Authentication 에 만든 이메일).
