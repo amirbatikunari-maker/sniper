@@ -12,7 +12,7 @@ window.APP_CONFIG = {
   SUPABASE_ANON_KEY: "sb_publishable_tRyg8GTus9I2_wt-VSmaRA_6gbU-lt5",
 
   /* AI 중계 Worker — `npx wrangler deploy` 하면 나오는 주소 */
-AI_WORKER_URL: "https://sniper-ai.amirbatikunari.workers.dev", // 끝에 쉼표 필수!
+AI_WORKER_URL: "https://sniper.pages.dev", // 끝에 쉼표 필수!
 AI_APP_KEY: "1234",  // 끝에 쉼표 필수!
 AI_APP_NAME: "blog",
 
