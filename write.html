@@ -3,40 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F6F7F9">
+<meta name="theme-color" content="#F4F5F7">
 <title>글쓰기 · sniper</title>
 <link rel="icon" href="./icon.svg">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="./style.css">
 <style>
-/* ── 글쓰기 화면만의 모양 ─────────────────────────── */
-.wbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;
-  max-width:var(--maxw);margin:0 auto;padding:9px 16px}
-.wstate{font:600 12px/1.3 var(--font);color:var(--ink-2);margin-left:auto;white-space:nowrap}
+/* ── 글쓰기 화면만의 모양 ──────────────────────────── */
+.wbar{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb, var(--paper) 90%, transparent);
+  backdrop-filter:saturate(1.6) blur(10px);
+  border-bottom:1px solid var(--rule)}
+.wbarIn{display:flex;gap:7px;align-items:center;flex-wrap:wrap;
+  max-width:1100px;margin:0 auto;padding:9px 16px}
+.wstate{font:600 11.5px/1.3 var(--font);color:var(--ink-2);margin-left:auto;white-space:nowrap}
 .wstate.saving{color:var(--accent)}
 .wstate.dirty{color:var(--warn)}
 
+/* 늘 보이는 도구 띠 */
+.tools{
+  position:sticky;top:51px;z-index:49;
+  background:var(--card);border-bottom:1px solid var(--rule)}
+.toolsIn{
+  max-width:1100px;margin:0 auto;padding:6px 12px;
+  display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}
+.toolsIn::-webkit-scrollbar{display:none}
+.tool{
+  flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+  min-width:52px;padding:5px 6px;border:0;border-radius:8px;background:none;cursor:pointer;
+  color:var(--ink-2);font:600 10.5px/1.2 var(--font)}
+.tool:hover{background:var(--accent-soft);color:var(--accent)}
+.tool .gl{font-size:16px;line-height:1.15}
+.toolSep{flex:none;width:1px;height:26px;background:var(--rule);margin:0 5px}
+
+.wmain{max-width:var(--maxw);margin:0 auto;padding:14px 16px 120px}
+
 #title{
   width:100%;border:0;outline:none;background:transparent;color:inherit;resize:none;overflow:hidden;
-  font:800 27px/1.34 var(--font);letter-spacing:-.02em;margin:10px 0 6px;padding:0
-}
+  font:800 26px/1.36 var(--font);letter-spacing:-.025em;margin:8px 0 6px;padding:0}
 #title::placeholder{color:var(--ink-3)}
 
-.subbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;
-  padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:8px}
+.subbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:8px}
 .subbar select,.subbar input{
-  padding:7px 11px;border-radius:9px;border:1px solid var(--rule);background:var(--card);
-  color:inherit;font:500 13px/1.3 var(--font);outline:none}
+  padding:6px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--card);
+  color:inherit;font:500 12.5px/1.3 var(--font);outline:none}
 .subbar input{flex:1;min-width:130px}
+.subbar select:focus,.subbar input:focus{border-color:var(--accent)}
 
 /* Editor.js 를 우리 색·글꼴에 맞춘다 */
 #ed{min-height:52dvh}
 .codex-editor{color:var(--ink)}
 .ce-block__content,.ce-toolbar__content{max-width:100%!important}
-.ce-paragraph,.ce-header{line-height:1.85}
-.ce-header{font-weight:700;letter-spacing:-.01em}
-.cdx-block{padding:.45em 0}
+.ce-paragraph,.ce-header{line-height:1.82}
+.ce-header{font-weight:700;letter-spacing:-.015em}
+.cdx-block{padding:.4em 0}
 .ce-toolbar__plus,.ce-toolbar__settings-btn{color:var(--ink-2);background:var(--card);border:1px solid var(--rule)}
 .ce-popover{background:var(--card);border-color:var(--rule);color:var(--ink)}
 .ce-popover-item__title{color:var(--ink)}
@@ -49,42 +72,71 @@
 .tc-wrap{--color-border:var(--rule);--color-background:var(--accent-soft)}
 .cdx-marker{background:#fef08a;color:#111827}
 html[data-theme="dark"] .cdx-marker{background:#78350f;color:#fef3c7}
-.image-tool__image-picture{border-radius:12px}
+.image-tool__image-picture{border-radius:10px}
+.cdx-attaches--with-file{background:var(--paper);border-color:var(--rule)}
+
+/* 수식 블록 */
+.mathBlock{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--paper)}
+.mathBlock textarea{
+  width:100%;border:0;border-bottom:1px dashed var(--rule);background:transparent;color:inherit;
+  font:500 13px/1.6 var(--font-m);padding:9px 12px;outline:none;resize:none;min-height:44px;display:block}
+.mathPrev{padding:12px;text-align:center;min-height:38px;overflow-x:auto}
+.mathPrev:empty::before{content:"위에 TeX 를 쓰면 여기에 그려집니다";color:var(--ink-3);font-size:12.5px}
 
 /* AI 곁창 */
-.aiSide{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:70;
-  display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-.aiSide button{padding:8px 13px;border-radius:999px;border:1px solid var(--rule);background:var(--card);
-  color:var(--ink);font:600 12.5px/1.2 var(--font);cursor:pointer;box-shadow:var(--shadow);white-space:nowrap}
-.aiSide button:active{background:var(--accent-soft)}
+.aiSide{position:fixed;right:14px;bottom:calc(132px + env(safe-area-inset-bottom));z-index:70;
+  display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+.aiSide button{padding:7px 12px;border-radius:999px;border:1px solid var(--rule);background:var(--card);
+  color:var(--ink);font:600 12px/1.2 var(--font);cursor:pointer;box-shadow:var(--shadow-2);white-space:nowrap}
+.aiSide button:hover{background:var(--accent-soft);border-color:var(--accent)}
 .aiSide.folded button:not(.aiToggle){display:none}
-
-/* 에디터 도구 창(＋ 목록)이 열리면 떠 있는 단추들은 잠시 비켜 준다 */
 body:has(.ce-popover--opened) .aiSide,
-body:has(.ce-popover--opened) .aic-fab{ display:none }
-.aiSide{z-index:60}
+body:has(.ce-popover--opened) .aic-fab{display:none}
 </style>
 </head>
 <body data-page="write">
 
-<header class="top">
-  <div class="wbar">
+<header class="wbar">
+  <div class="wbarIn">
     <button class="ico" id="btnBack" title="나가기">←</button>
-    <button class="btn ghost sm" id="btnDraft">초안으로 저장</button>
-    <button class="btn sm" id="btnPub">공개하기</button>
+    <button class="btn ghost sm" id="btnDraft">초안 저장</button>
+    <button class="btn sm" id="btnPub">게시</button>
     <button class="ico" id="btnMore" title="더보기">⋯</button>
     <span class="wstate" id="state">준비됨</span>
   </div>
 </header>
 
-<main class="wrap">
+<div class="tools">
+  <div class="toolsIn" id="tools">
+    <button class="tool" data-t="image"><span class="gl">🖼</span>사진</button>
+    <button class="tool" data-t="embed"><span class="gl">▶</span>동영상</button>
+    <button class="tool" data-t="attach"><span class="gl">📎</span>파일</button>
+    <span class="toolSep"></span>
+    <button class="tool" data-t="header"><span class="gl">H</span>제목</button>
+    <button class="tool" data-t="list"><span class="gl">≔</span>목록</button>
+    <button class="tool" data-t="checklist"><span class="gl">☑</span>할 일</button>
+    <button class="tool" data-t="quote"><span class="gl">❝</span>인용구</button>
+    <button class="tool" data-t="delimiter"><span class="gl">—</span>구분선</button>
+    <span class="toolSep"></span>
+    <button class="tool" data-t="link"><span class="gl">🔗</span>링크</button>
+    <button class="tool" data-t="table"><span class="gl">▦</span>표</button>
+    <button class="tool" data-t="math"><span class="gl">√</span>수식</button>
+    <button class="tool" data-t="code"><span class="gl">{ }</span>코드</button>
+    <button class="tool" data-t="warning"><span class="gl">⚠</span>짚고 갈 것</button>
+    <span class="toolSep"></span>
+    <button class="tool" data-t="cover"><span class="gl">🏞</span>표지</button>
+  </div>
+</div>
+
+<main class="wmain">
   <textarea id="title" rows="1" placeholder="제목을 쓰세요"></textarea>
 
   <div class="subbar">
     <select id="cat"><option value="">분류 없음</option></select>
     <input id="tags" placeholder="태그 · 쉼표로 구분">
-    <button class="btn ghost sm" id="btnCover">표지 사진</button>
     <input type="file" id="coverFile" accept="image/*" hidden>
+    <input type="file" id="pickImg" accept="image/*" hidden>
+    <input type="file" id="pickFile" hidden>
   </div>
   <div id="coverBox"></div>
 
@@ -94,11 +146,13 @@ body:has(.ce-popover--opened) .aic-fab{ display:none }
 <div class="aiSide folded" id="aiSide">
   <button class="aiToggle" id="aiToggle">AI 도움 ▾</button>
   <button data-ai="polish">문장 다듬기</button>
+  <button data-ai="spell">맞춤법 · 띄어쓰기</button>
   <button data-ai="outline">뼈대 잡아 주기</button>
   <button data-ai="expand">이어서 써 주기</button>
+  <button data-ai="table">표로 정리</button>
   <button data-ai="title">제목 후보</button>
-  <button data-ai="excerpt">한 줄 소개 만들기</button>
-  <button data-ai="check">사실·오타 점검</button>
+  <button data-ai="excerpt">한 줄 소개</button>
+  <button data-ai="check">사실 점검</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -112,19 +166,60 @@ body:has(.ce-popover--opened) .aic-fab{ display:none }
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.4.1/dist/table.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.3/dist/image.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/warning@1.4.1/dist/warning.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/attaches@1.3.0/dist/bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.7.6/dist/embed.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/marker@1.4.0/dist/marker.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@1.5.1/dist/inline-code.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/underline@1.1.0/dist/bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/editorjs-text-alignment-blocktune@1.0.3/dist/bundle.js"></script>
 <script src="./config.js"></script>
 <script src="./app.js"></script>
 <script src="./ai-chat.js" defer></script>
+<script src="./ai-plus.js" defer></script>
 <script src="./music.js" defer></script>
 <script>
-const { sb, $, $$, esc, toast, qs } = App;
+const { sb, $, $$, esc, toast, qs, ask } = App;
 
 let ED = null, POST = null, DIRTY = false, SAVING = false, COVER = null;
 const POST_ID = qs("id");
 const LOCAL = "blog:draft:" + (POST_ID || "new");
+
+/* ═══════════════ 수식 블록 ═══════════════
+   Editor.js 에 기본 수식 도구가 없어서 직접 만들었습니다.
+   TeX 를 위 칸에 쓰면 아래에 바로 그려집니다. */
+class MathTool {
+  static get toolbox(){ return { title:"수식", icon:'<span style="font-weight:700">√</span>' }; }
+  static get isReadOnlySupported(){ return true; }
+  constructor({ data }){ this.data = { tex: (data && data.tex) || "" }; }
+
+  render(){
+    const w = document.createElement("div");
+    w.className = "mathBlock";
+    this.ta = document.createElement("textarea");
+    this.ta.placeholder = "TeX 로 쓰세요 — 예: Q = m\\,c\\,\\Delta T";
+    this.ta.value = this.data.tex;
+    this.prev = document.createElement("div");
+    this.prev.className = "mathPrev";
+    w.append(this.ta, this.prev);
+
+    const grow = () => { this.ta.style.height = "auto"; this.ta.style.height = this.ta.scrollHeight + "px"; };
+    const paint = async () => {
+      this.data.tex = this.ta.value;
+      const tex = this.ta.value.trim();
+      if(!tex){ this.prev.innerHTML = ""; return; }
+      try{
+        const K = await App.loadKatex();
+        K.render(tex, this.prev, { displayMode:true, throwOnError:false, errorColor:"#B91C1C" });
+      }catch{ this.prev.textContent = tex; }
+    };
+    this.ta.addEventListener("input", () => { grow(); paint(); markDirty(); });
+    this.ta.addEventListener("keydown", e => { if(e.key === "Enter") e.stopPropagation(); });
+    setTimeout(() => { grow(); paint(); }, 0);
+    return w;
+  }
+  save(){ return { tex: this.ta.value }; }
+  static get sanitize(){ return { tex:false }; }
+}
 
 /* ── 시작 ───────────────────────────────────────────── */
 (async function start(){
@@ -148,10 +243,17 @@ const LOCAL = "blog:draft:" + (POST_ID || "new");
 function setState(t, cls=""){ const s = $("#state"); s.textContent = t; s.className = "wstate " + cls; }
 function markDirty(){ if(!DIRTY){ DIRTY = true; setState("저장 안 됨", "dirty"); } }
 
+/* 새 글이면 «게시», 이미 있는 글이면 «수정» */
+function syncPubLabel(){
+  $("#btnPub").textContent = POST_ID || POST?.id ? "수정" : "게시";
+}
+
 /* ── 위쪽 단추 ─────────────────────────────────────── */
 function wire(){
+  syncPubLabel();
+
   $("#btnBack").onclick = async () => {
-    if(DIRTY && !confirm("저장하지 않은 내용이 있습니다. 그냥 나갈까요?")) return;
+    if(DIRTY && !(await ask("아직 저장하지 않았습니다", "지금 나가면 쓴 내용이 사라집니다.", "그냥 나가기", true))) return;
     location.href = POST_ID ? "./post.html?id=" + POST_ID : "./index.html";
   };
   $("#btnDraft").onclick = () => save("draft");
@@ -169,9 +271,9 @@ function wire(){
   $("#tags").addEventListener("input", markDirty);
   $("#cat").addEventListener("change", markDirty);
 
-  $("#btnCover").onclick = () => $("#coverFile").click();
   $("#coverFile").onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
+    e.target.value = "";
     try{
       setState("표지 올리는 중…", "saving");
       const { url } = await App.uploadImage(f, "cover");
@@ -179,7 +281,6 @@ function wire(){
     }catch(err){ toast(err.message, "err"); setState("표지 올리기 실패"); }
   };
 
-  // Ctrl+S 로 저장
   document.addEventListener("keydown", e => {
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s"){
       e.preventDefault(); save(POST?.status === "published" ? "published" : "draft");
@@ -188,23 +289,153 @@ function wire(){
 
   window.addEventListener("beforeunload", e => { if(DIRTY){ e.preventDefault(); e.returnValue = ""; } });
 
-  // AI 곁창
   $("#aiToggle").onclick = () => {
     const s = $("#aiSide");
     s.classList.toggle("folded");
     $("#aiToggle").textContent = s.classList.contains("folded") ? "AI 도움 ▾" : "AI 도움 ▴";
   };
   $$("[data-ai]").forEach(b => b.onclick = () => aiHelp(b.dataset.ai));
+
+  $$("#tools .tool").forEach(b => b.onclick = () => useTool(b.dataset.t));
 }
 
 function drawCover(){
   $("#coverBox").innerHTML = COVER
     ? `<div style="position:relative;margin:0 0 14px">
-         <img src="${esc(COVER)}" style="width:100%;border-radius:12px;display:block">
+         <img src="${esc(COVER)}" style="width:100%;border-radius:10px;display:block">
          <button class="btn ghost sm" id="coverDel"
                  style="position:absolute;right:8px;top:8px">표지 빼기</button>
        </div>` : "";
   $("#coverDel")?.addEventListener("click", () => { COVER = null; drawCover(); markDirty(); });
+}
+
+/* ═══════════════ 도구 띠 ═══════════════ */
+
+/* 지금 커서가 있는 자리 바로 뒤에 블록을 넣는다.
+   지금 블록이 비어 있으면 그 자리를 대신 채운다. */
+async function ins(type, data = {}){
+  if(!ED) return;
+  let i = 0, replace = false;
+  try{
+    i = ED.blocks.getCurrentBlockIndex();
+    if(i < 0) i = ED.blocks.getBlocksCount() - 1;
+    const cur = ED.blocks.getBlockByIndex(i);
+    replace = !!(cur && cur.isEmpty);
+  }catch{ i = ED.blocks.getBlocksCount() - 1; }
+  const at = replace ? i : i + 1;
+  await ED.blocks.insert(type, data, undefined, at, true, replace);
+  markDirty();
+}
+
+async function useTool(kind){
+  switch(kind){
+    case "cover":     $("#coverFile").click(); return;
+    case "image":     $("#pickImg").click();   return;
+    case "attach":    $("#pickFile").click();  return;
+    case "header":    return ins("header", { text:"", level:2 });
+    case "list":      return ins("list", { style:"unordered", items:[{ content:"", items:[] }] });
+    case "checklist": return ins("checklist", { items:[{ text:"", checked:false }] });
+    case "quote":     return ins("quote", { text:"", caption:"" });
+    case "delimiter": return ins("delimiter", {});
+    case "table":     return ins("table", { withHeadings:true, content:[["",""],["",""]] });
+    case "math":      return ins("math", { tex:"" });
+    case "code":      return ins("code", { code:"" });
+    case "warning":   return ins("warning", { title:"", message:"" });
+    case "embed":     return embedBox();
+    case "link":      return linkBox();
+  }
+}
+
+/* 사진 고르기 */
+$("#pickImg").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  try{
+    setState("사진 올리는 중…", "saving");
+    const { url } = await App.uploadImage(f, "posts");
+    await ins("image", { file:{ url }, caption:"", withBorder:false, withBackground:false, stretched:false });
+    setState("저장 안 됨", "dirty");
+  }catch(err){ toast("사진 올리기 실패: " + err.message, "err"); setState("저장 안 됨", "dirty"); }
+};
+
+/* 파일 붙이기 */
+$("#pickFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  if(f.size > 40 * 1024 * 1024) return toast("40MB 넘는 파일은 올릴 수 없습니다.", "err");
+  try{
+    setState("파일 올리는 중…", "saving");
+    const info = await App.uploadFile(f, "files");
+    await ins("attaches", { file:info, title:info.name });
+    setState("저장 안 됨", "dirty");
+  }catch(err){ toast("파일 올리기 실패: " + err.message, "err"); setState("저장 안 됨", "dirty"); }
+};
+
+/* 동영상 넣기 */
+function embedBox(){
+  const ov = document.createElement("div");
+  ov.className = "ov";
+  ov.innerHTML = `<div class="ovbox" style="max-width:420px">
+    <h3>동영상 넣기</h3>
+    <p class="muted sm">유튜브·비메오 주소를 붙여 넣으세요.</p>
+    <input id="emUrl" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off">
+    <input id="emCap" placeholder="설명 (선택)">
+    <p class="err" id="emErr" hidden></p>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn ghost" id="emNo">그만두기</button>
+      <button class="btn" id="emOk">넣기</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick = e => { if(e.target === ov) ov.remove(); };
+  $("#emNo", ov).onclick = () => ov.remove();
+  $("#emUrl", ov).focus();
+
+  $("#emOk", ov).onclick = async () => {
+    const url = $("#emUrl", ov).value.trim();
+    const src = App.embedSrc(url);
+    if(!src){
+      const err = $("#emErr", ov);
+      err.hidden = false;
+      err.textContent = "유튜브·비메오 주소만 넣을 수 있습니다.";
+      return;
+    }
+    ov.remove();
+    await ins("embed", {
+      service: src.includes("vimeo") ? "vimeo" : "youtube",
+      source: url, embed: src, width:580, height:320,
+      caption: $("#emCap", ov)?.value?.trim() || "",
+    });
+  };
+  $("#emUrl", ov).addEventListener("keydown", e => { if(e.key === "Enter") $("#emOk", ov).click(); });
+}
+
+/* 링크 넣기 */
+function linkBox(){
+  const ov = document.createElement("div");
+  ov.className = "ov";
+  ov.innerHTML = `<div class="ovbox" style="max-width:420px">
+    <h3>링크 넣기</h3>
+    <input id="lkUrl" placeholder="https://…" autocomplete="off">
+    <input id="lkTxt" placeholder="보일 글자 (비우면 주소 그대로)">
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn ghost" id="lkNo">그만두기</button>
+      <button class="btn" id="lkOk">넣기</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick = e => { if(e.target === ov) ov.remove(); };
+  $("#lkNo", ov).onclick = () => ov.remove();
+  $("#lkUrl", ov).focus();
+
+  $("#lkOk", ov).onclick = async () => {
+    const url = $("#lkUrl", ov).value.trim();
+    if(!url) return;
+    const safe = App.safeUrl(url);
+    if(safe === "#") return toast("http(s) 주소만 넣을 수 있습니다.", "err");
+    const txt = $("#lkTxt", ov).value.trim() || url;
+    ov.remove();
+    await ins("paragraph", { text:`<a href="${esc(safe)}">${esc(txt)}</a>` });
+  };
+  $("#lkUrl", ov).addEventListener("keydown", e => { if(e.key === "Enter") $("#lkOk", ov).click(); });
 }
 
 /* ── 카테고리 ──────────────────────────────────────── */
@@ -216,7 +447,6 @@ async function loadCats(){
 
 /* ── 글 불러오기 ───────────────────────────────────── */
 async function loadPost(){
-  // 저장하다 만 게 브라우저에 남아 있으면 먼저 물어본다
   let local = null;
   try{ local = JSON.parse(localStorage.getItem(LOCAL) || "null"); }catch{}
 
@@ -224,6 +454,7 @@ async function loadPost(){
     const { data, error } = await sb.from("blog_posts").select("*").eq("id", POST_ID).single();
     if(error || !data){ toast("글을 못 읽었습니다: " + (error?.message||""), "err"); return null; }
     POST = data;
+    syncPubLabel();
     $("#title").value = data.title === "제목 없음" ? "" : data.title;
     $("#title").dispatchEvent(new Event("input"));
     $("#cat").value = data.category_id || "";
@@ -231,7 +462,7 @@ async function loadPost(){
     COVER = data.cover_url || null; drawCover();
 
     if(local && local.at > new Date(data.updated_at).getTime() + 2000 &&
-       confirm("이 기기에 더 최근에 쓰다 만 내용이 있습니다. 그걸 불러올까요?")){
+       await ask("더 최근에 쓰다 만 내용이 있습니다", "이 기기에 남아 있는 내용을 불러올까요?", "불러오기")){
       applyLocal(local);
       return local.body;
     }
@@ -239,7 +470,7 @@ async function loadPost(){
     return data.body_json || htmlToBlocks(data.body_html);
   }
 
-  if(local && confirm("쓰다 만 글이 있습니다. 이어서 쓸까요?")){
+  if(local && await ask("쓰다 만 글이 있습니다", "이어서 쓸까요?", "이어 쓰기")){
     applyLocal(local);
     return local.body;
   }
@@ -257,34 +488,94 @@ function applyLocal(local){
   DIRTY = true;
 }
 
-/* 예전에 HTML 로만 저장된 글도 열 수 있게 아주 단순히 옮겨 준다 */
 function htmlToBlocks(html){
   if(!html) return null;
   const box = document.createElement("div");
   box.innerHTML = html;
   const blocks = [];
-  for(const n of box.children){
-    const tag = n.tagName.toLowerCase();
-    if(/^h[2-4]$/.test(tag)) blocks.push({ type:"header", data:{ text:n.innerHTML, level:+tag[1] } });
-    else if(tag === "ul" || tag === "ol")
-      blocks.push({ type:"list", data:{ style: tag==="ol"?"ordered":"unordered",
+
+  const eat = n => {
+    const tag = n.tagName?.toLowerCase();
+    if(!tag) return;
+
+    if(/^h[1-6]$/.test(tag))
+      return blocks.push({ type:"header", data:{ text:n.innerHTML, level: Math.min(Math.max(+tag[1],2),4) } });
+
+    if(tag === "ul" && n.classList.contains("checklist"))
+      return blocks.push({ type:"checklist", data:{ items:[...n.children].map(li => ({
+        text: li.textContent.trim(), checked: li.classList.contains("done") })) } });
+
+    if(tag === "ul" || tag === "ol")
+      return blocks.push({ type:"list", data:{ style: tag==="ol"?"ordered":"unordered",
         items:[...n.children].map(li => ({ content: li.innerHTML, items:[] })) } });
-    else if(tag === "blockquote") blocks.push({ type:"quote", data:{ text:n.innerHTML, caption:"" } });
-    else if(tag === "pre") blocks.push({ type:"code", data:{ code:n.textContent } });
-    else if(tag === "hr") blocks.push({ type:"delimiter", data:{} });
-    else if(tag === "figure"){
-      const img = n.querySelector("img");
-      if(img) blocks.push({ type:"image", data:{ file:{ url:img.src }, caption:n.querySelector("figcaption")?.textContent || "" } });
+
+    if(tag === "blockquote")
+      return blocks.push({ type:"quote", data:{ text:n.innerHTML, caption:"" } });
+
+    if(tag === "pre")
+      return blocks.push({ type:"code", data:{ code:n.textContent } });
+
+    if(tag === "hr") return blocks.push({ type:"delimiter", data:{} });
+
+    if(n.classList?.contains("math") || n.dataset?.tex)
+      return blocks.push({ type:"math", data:{ tex: n.dataset.tex || n.textContent } });
+
+    if(tag === "table" || n.querySelector?.(":scope > table")){
+      const tbl = tag === "table" ? n : n.querySelector(":scope > table");
+      const rows = [...tbl.querySelectorAll("tr")].map(tr =>
+        [...tr.children].map(td => td.innerHTML.trim()));
+      if(rows.length)
+        return blocks.push({ type:"table", data:{
+          withHeadings: !!tbl.querySelector("thead"), content: rows } });
+      return;
     }
-    else blocks.push({ type:"paragraph", data:{ text:n.innerHTML } });
-  }
+
+    if(tag === "figure" || tag === "div"){
+      const img = n.querySelector("img");
+      if(img) return blocks.push({ type:"image", data:{ file:{ url:img.src },
+        caption: n.querySelector("figcaption")?.textContent || "" } });
+      const ifr = n.querySelector("iframe");
+      if(ifr) return blocks.push({ type:"embed", data:{ service:"youtube",
+        source: ifr.src, embed: ifr.src, width:580, height:320, caption:"" } });
+      if(n.classList?.contains("callout"))
+        return blocks.push({ type:"warning", data:{
+          title: n.querySelector("b")?.textContent || "",
+          message: n.querySelector("div")?.innerHTML || "" } });
+      // 그 밖의 감싸는 상자는 안쪽을 훑는다
+      if(n.children.length) return [...n.children].forEach(eat);
+    }
+
+    if(tag === "a" && n.classList.contains("attach"))
+      return blocks.push({ type:"attaches", data:{ file:{ url:n.href,
+        name: n.querySelector(".nm")?.textContent || "첨부" }, title: n.querySelector(".nm")?.textContent || "" } });
+
+    if((n.textContent || "").trim() || n.querySelector?.("img"))
+      blocks.push({ type:"paragraph", data:{ text:n.innerHTML } });
+  };
+
+  [...box.children].forEach(eat);
   return { blocks };
 }
+
+/* AI 창이 «본문에 넣기» 를 누를 때 부르는 창구 */
+window.__blogInsertHtml = async (html) => {
+  if(!ED) return false;
+  const data = htmlToBlocks(html);
+  if(!data?.blocks?.length) return false;
+  let at = ED.blocks.getBlocksCount();
+  for(const b of data.blocks){
+    await ED.blocks.insert(b.type, b.data, undefined, at++, false);
+  }
+  markDirty();
+  window.scrollTo({ top: document.body.scrollHeight, behavior:"smooth" });
+  return true;
+};
 
 /* ── 에디터 ────────────────────────────────────────── */
 async function makeEditor(data){
   if(typeof EditorJS === "undefined"){
-    $("#ed").innerHTML = `<div class="empty">에디터를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.</div>`;
+    $("#ed").innerHTML = `<div class="empty"><b>에디터를 불러오지 못했습니다</b>
+      인터넷 연결을 확인하고 새로고침해 주세요.</div>`;
     return;
   }
 
@@ -298,26 +589,52 @@ async function makeEditor(data){
     async uploadByUrl(url){ return { success:1, file:{ url } }; },
   };
 
+  const fileUploader = {
+    async uploadByFile(file){
+      try{
+        const info = await App.uploadFile(file, "files");
+        return { success:1, file:info };
+      }catch(e){ toast("파일 올리기 실패: " + e.message, "err"); return { success:0 }; }
+    },
+  };
+
+  const tools = {
+    header:     { class: Header, inlineToolbar:true, config:{ levels:[2,3,4], defaultLevel:2, placeholder:"소제목" } },
+    list:       { class: NestedList, inlineToolbar:true, config:{ defaultStyle:"unordered" } },
+    checklist:  { class: Checklist, inlineToolbar:true },
+    quote:      { class: Quote, inlineToolbar:true, config:{ quotePlaceholder:"인용", captionPlaceholder:"출처" } },
+    code:       { class: CodeTool, config:{ placeholder:"코드" } },
+    delimiter:  Delimiter,
+    table:      { class: Table, inlineToolbar:true, config:{ rows:2, cols:3, withHeadings:true } },
+    image:      { class: ImageTool, config:{ uploader, captionPlaceholder:"설명(선택)" } },
+    warning:    { class: Warning, inlineToolbar:true, config:{ titlePlaceholder:"짚고 갈 것", messagePlaceholder:"내용" } },
+    math:       { class: MathTool },
+    marker:     { class: Marker, shortcut:"CMD+SHIFT+M" },
+    inlineCode: { class: InlineCode },
+    underline:  { class: Underline },
+  };
+
+  // CDN 이 막히거나 늦게 뜨는 경우가 있어, 있을 때만 붙입니다.
+  if(typeof AttachesTool !== "undefined")
+    tools.attaches = { class: AttachesTool, config:{ uploader: fileUploader, buttonText:"파일 고르기" } };
+  if(typeof Embed !== "undefined")
+    tools.embed = { class: Embed, inlineToolbar:true, config:{ services:{ youtube:true, vimeo:true } } };
+
+  let tunes;
+  if(typeof AlignmentBlockTune !== "undefined"){
+    tools.alignment = { class: AlignmentBlockTune, config:{ default:"left",
+      blocks:{ header:"left", list:"left", quote:"left" } } };
+    tunes = ["alignment"];
+  }
+
   ED = new EditorJS({
     holder: "ed",
     autofocus: !POST_ID,
-    placeholder: "여기에 쓰세요. 왼쪽 ＋ 를 누르면 제목·목록·표·그림을 넣을 수 있습니다.",
+    placeholder: "여기에 쓰세요. 위쪽 도구 띠나 왼쪽 ＋ 로 사진·표·수식을 넣을 수 있습니다.",
     data: data || { blocks: [] },
     onChange: markDirty,
-    tools: {
-      header:     { class: Header, inlineToolbar:true, config:{ levels:[2,3,4], defaultLevel:2, placeholder:"소제목" } },
-      list:       { class: NestedList, inlineToolbar:true, config:{ defaultStyle:"unordered" } },
-      checklist:  { class: Checklist, inlineToolbar:true },
-      quote:      { class: Quote, inlineToolbar:true, config:{ quotePlaceholder:"인용", captionPlaceholder:"출처" } },
-      code:       { class: CodeTool, config:{ placeholder:"코드" } },
-      delimiter:  Delimiter,
-      table:      { class: Table, inlineToolbar:true, config:{ rows:2, cols:3 } },
-      image:      { class: ImageTool, config:{ uploader, captionPlaceholder:"설명(선택)" } },
-      warning:    { class: Warning, inlineToolbar:true, config:{ titlePlaceholder:"짚고 갈 것", messagePlaceholder:"내용" } },
-      marker:     { class: Marker, shortcut:"CMD+SHIFT+M" },
-      inlineCode: { class: InlineCode },
-      underline:  { class: Underline },
-    },
+    tools,
+    ...(tunes ? { tunes } : {}),
     i18n: {
       messages: {
         ui: {
@@ -327,7 +644,8 @@ async function makeEditor(data){
           popover:{ Filter:"찾기", "Nothing found":"없습니다", "Convert to":"바꾸기" },
         },
         toolNames:{ Text:"본문", Heading:"제목", List:"목록", Checklist:"할 일", Quote:"인용",
-          Code:"코드", Delimiter:"구분선", Table:"표", Image:"그림", Warning:"짚고 갈 것",
+          Code:"코드", Delimiter:"구분선", Table:"표", Image:"사진", Warning:"짚고 갈 것",
+          Attachment:"파일", Embed:"동영상", 수식:"수식",
           Bold:"굵게", Italic:"기울임", Link:"링크", Marker:"형광펜", InlineCode:"코드 글자", Underline:"밑줄" },
         blockTunes:{ delete:{ Delete:"지우기", "Click to delete":"한 번 더 눌러 지우기" },
           moveUp:{ "Move up":"위로" }, moveDown:{ "Move down":"아래로" } },
@@ -337,8 +655,6 @@ async function makeEditor(data){
 
   await ED.isReady;
   setState(DIRTY ? "저장 안 됨" : "준비됨", DIRTY ? "dirty" : "");
-
-  // 화면에 그림을 끌어다 놓거나 붙여넣으면 그대로 올라간다(Editor.js 기본 기능)
 }
 
 /* ── 저장 ──────────────────────────────────────────── */
@@ -368,33 +684,34 @@ async function save(status){
     row.status = status;
     if(status === "published" && !POST?.published_at) row.published_at = new Date().toISOString();
 
-    if(POST_ID){
-      const { error } = await sb.from("blog_posts").update(row).eq("id", POST_ID);
+    const id = POST_ID || POST?.id;
+    if(id){
+      const { error } = await sb.from("blog_posts").update(row).eq("id", id);
       if(error) throw new Error(error.message);
-      POST = { ...POST, ...row };
+      POST = { ...POST, ...row, id };
     }else{
       row.slug = App.slugify(row.title);
       row.author = App.me?.id || null;
       const { data, error } = await sb.from("blog_posts").insert(row).select("id,status,published_at").single();
       if(error) throw new Error(error.message);
-      POST = data;
+      POST = { ...row, ...data };
       history.replaceState(null, "", "./write.html?id=" + data.id);
+      syncPubLabel();
     }
 
     DIRTY = false;
     try{ localStorage.removeItem(LOCAL); }catch{}
-    setState(status === "published" ? "공개됨" : "초안 저장됨");
-    toast(status === "published" ? "공개했습니다" : "초안으로 저장했습니다");
+    setState(status === "published" ? "올렸습니다" : "초안 저장됨");
+    toast(status === "published" ? (id ? "고쳤습니다" : "올렸습니다") : "초안으로 저장했습니다");
 
     if(status === "published")
-      setTimeout(() => location.href = "./post.html?id=" + (POST_ID || POST.id), 700);
+      setTimeout(() => location.href = "./post.html?id=" + (POST_ID || POST.id), 650);
   }catch(e){
     setState("저장 실패", "dirty");
     toast(e.message, "err");
   }finally{ SAVING = false; }
 }
 
-/* 브라우저에 30초마다 한 벌 — 서버 저장을 잊고 창을 닫아도 살아남게 */
 function autoSaveLoop(){
   setInterval(async () => {
     if(!ED || !DIRTY) return;
@@ -412,13 +729,13 @@ function autoSaveLoop(){
 function moreBox(){
   const ov = document.createElement("div");
   ov.className = "ov";
-  ov.innerHTML = `<div class="ovbox">
+  ov.innerHTML = `<div class="ovbox" style="max-width:400px">
     <h3>이 글</h3>
-    <div class="row" style="flex-direction:column;align-items:stretch;gap:8px">
-      <button class="btn ghost" id="mPin">${POST?.pinned ? "📌 고정 풀기" : "📌 맨 위에 고정"}</button>
-      <button class="btn ghost" id="mArch">📦 보관함으로</button>
-      <button class="btn ghost" id="mHist">🕘 수정 이력</button>
-      <button class="btn danger" id="mDel">🗑 이 글 지우기</button>
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:7px">
+      <button class="btn ghost" id="mPin">${POST?.pinned ? "고정 풀기" : "맨 위에 고정"}</button>
+      <button class="btn ghost" id="mArch">보관함으로 옮기기</button>
+      <button class="btn ghost" id="mHist">수정 이력 보기</button>
+      <button class="btn danger" id="mDel">이 글 지우기</button>
       <button class="btn ghost" id="mClose">닫기</button>
     </div>
   </div>`;
@@ -426,41 +743,47 @@ function moreBox(){
   ov.onclick = e => { if(e.target === ov) ov.remove(); };
   $("#mClose", ov).onclick = () => ov.remove();
 
-  const need = () => { if(!POST_ID){ toast("먼저 한 번 저장해 주세요.", "err"); return false; } return true; };
+  const id = () => POST_ID || POST?.id;
+  const need = () => { if(!id()){ toast("먼저 한 번 저장해 주세요.", "err"); return false; } return true; };
 
   $("#mPin", ov).onclick = async () => {
     if(!need()) return;
     const v = !POST.pinned;
-    const { error } = await sb.from("blog_posts").update({ pinned:v }).eq("id", POST_ID);
+    const { error } = await sb.from("blog_posts").update({ pinned:v }).eq("id", id());
     if(error) return toast(error.message, "err");
     POST.pinned = v; ov.remove(); toast(v ? "맨 위에 고정했습니다" : "고정을 풀었습니다");
   };
   $("#mArch", ov).onclick = async () => {
     if(!need()) return;
-    const { error } = await sb.from("blog_posts").update({ status:"archived" }).eq("id", POST_ID);
-    if(error) return toast(error.message, "err");
-    ov.remove(); toast("보관함으로 옮겼습니다"); setTimeout(()=>location.href="./index.html", 600);
-  };
-  $("#mHist", ov).onclick = () => { ov.remove(); location.href = "./post.html?id=" + POST_ID; };
-  $("#mDel", ov).onclick = async () => {
-    if(!need()) return;
-    if(!confirm("정말 지웁니다. 되돌릴 수 없습니다.")) return;
-    const { error } = await sb.from("blog_posts").delete().eq("id", POST_ID);
+    const { error } = await sb.from("blog_posts").update({ status:"archived" }).eq("id", id());
     if(error) return toast(error.message, "err");
     DIRTY = false;
-    try{ localStorage.removeItem(LOCAL); }catch{}
-    location.href = "./index.html";
+    ov.remove(); toast("보관함으로 옮겼습니다"); setTimeout(()=>location.href="./index.html", 600);
+  };
+  $("#mHist", ov).onclick = () => { if(!need()) return; ov.remove(); location.href = "./post.html?id=" + id(); };
+  $("#mDel", ov).onclick = async () => {
+    if(!need()) return;
+    ov.remove();
+    if(!await ask("이 글을 지웁니다", "되돌릴 수 없습니다.", "지우기", true)) return;
+    try{
+      await App.deletePosts([id()]);
+      DIRTY = false;
+      try{ localStorage.removeItem(LOCAL); }catch{}
+      location.href = "./index.html";
+    }catch(e){ toast(e.message, "err"); }
   };
 }
 
 /* ── AI 도움 ───────────────────────────────────────── */
 const AI_JOBS = {
   polish:  ["문장 다듬기", "아래 글의 뜻은 그대로 두고 문장만 다듬어 줘. 군더더기를 덜어내고 읽기 쉽게. 결과만 마크다운으로 줘."],
+  spell:   ["맞춤법", "아래 글의 맞춤법·띄어쓰기·조사를 고쳐 줘. 고친 곳은 표로 «원문 / 고침 / 이유» 3열로 정리하고, 그 뒤에 고친 전체 글을 줘."],
   outline: ["뼈대 잡기", "아래 내용을 바탕으로 이 글의 목차(소제목)를 짜 줘. 각 소제목마다 무엇을 쓸지 한 줄씩 붙여서."],
   expand:  ["이어서 쓰기", "아래 글을 자연스럽게 이어서 두세 문단 더 써 줘. 말투와 밀도를 맞춰서."],
+  table:   ["표로 정리", "아래 글에서 비교·항목·수치로 정리할 수 있는 부분을 마크다운 표로 만들어 줘. 표만 주면 돼."],
   title:   ["제목 후보", "아래 글에 어울리는 제목을 5개 지어 줘. 낚시성 없이, 내용을 정확히 담아서."],
   excerpt: ["한 줄 소개", "아래 글을 목록에 보여 줄 한 줄 소개(80자 이내)로 만들어 줘. 3개 후보를 줘."],
-  check:   ["점검", "아래 글에서 사실이 틀렸을 만한 곳, 앞뒤가 안 맞는 곳, 오타를 짚어 줘. 고칠 문장을 함께 제시해 줘."],
+  check:   ["사실 점검", "아래 글에서 사실이 틀렸을 만한 곳, 앞뒤가 안 맞는 곳을 짚어 줘. 고칠 문장을 함께 제시해 줘."],
 };
 
 async function aiHelp(kind){

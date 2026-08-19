@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   app.js — sniper 의 뼈대
-   세 화면(목록·글보기·글쓰기)이 함께 쓰는 것들만 모아 둔 파일입니다.
+   app.js — sniper 의 뼈대 (v3)
+   세 화면(목록·글보기·글쓰기)이 함께 쓰는 것들
      · Supabase 연결과 로그인
-     · 테마 · 배경 설정 (읽기/저장/적용)
-     · 블록 → HTML 그리기
-     · 자잘한 도우미
+     · 테마 · 배경 설정
+     · 블록 → HTML  (수식 · 파일 · 동영상 · 정렬 포함)
+     · 글 지우기 · 카테고리 다루기
+     · KaTeX 불러오기
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
 "use strict";
@@ -19,7 +20,7 @@ const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
     })
   : null;
 
-let ME = null;                                   // 지금 로그인한 사람
+let ME = null;
 
 async function refreshMe() {
   if (!sb) return null;
@@ -34,7 +35,7 @@ async function refreshMe() {
 function canEdit() {
   if (!ME) return false;
   const list = CFG.ADMIN_EMAILS || [];
-  if (!list.length) return true;                 // 목록을 안 정했으면 로그인만으로 통과
+  if (!list.length) return true;
   return list.map(s => s.toLowerCase()).includes((ME.email || "").toLowerCase());
 }
 
@@ -56,7 +57,6 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-/* 링크 주소가 진짜 http(s) 인지 본다 — javascript: 같은 걸 막는다 */
 function safeUrl(u) {
   try {
     const x = new URL(u, location.href);
@@ -71,11 +71,17 @@ function fmtDate(v) {
   if (gap < 1 && d.getDate() === now.getDate()) return "오늘 " + d.toTimeString().slice(0, 5);
   if (gap < 2) return "어제";
   if (d.getFullYear() === now.getFullYear())
-    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+    return `${d.getMonth() + 1}.${d.getDate()}`;
+  return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}`;
 }
 
-/* 제목 → 주소에 쓸 이름. 한글은 그대로 두고 공백만 정리한다. */
+function fmtSize(n) {
+  n = +n || 0;
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(0) + " KB";
+  return (n / 1048576).toFixed(1) + " MB";
+}
+
 function slugify(s) {
   return String(s || "").trim().toLowerCase()
     .replace(/[\s/\\?#&=+%]+/g, "-")
@@ -100,19 +106,41 @@ function toast(msg, kind = "ok") {
 
 const qs = (k) => new URLSearchParams(location.search).get(k);
 
+/* 확인 창 — confirm 보다 눈에 띄고, 위험한 것은 빨갛게 */
+function ask(title, body, okLabel = "확인", danger = false) {
+  return new Promise(resolve => {
+    const ov = document.createElement("div");
+    ov.className = "ov";
+    ov.innerHTML = `<div class="ovbox" style="max-width:400px">
+      <h3>${esc(title)}</h3>
+      ${body ? `<p class="muted">${body}</p>` : ""}
+      <div class="row" style="justify-content:flex-end;margin-top:16px">
+        <button class="btn ghost" data-no>그만두기</button>
+        <button class="btn${danger ? " danger" : ""}" data-yes>${esc(okLabel)}</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const end = v => { ov.remove(); resolve(v); };
+    ov.onclick = e => { if (e.target === ov) end(false); };
+    $("[data-no]", ov).onclick = () => end(false);
+    $("[data-yes]", ov).onclick = () => end(true);
+    $("[data-yes]", ov).focus();
+  });
+}
+
 /* ═══════════════ 화면 설정(테마·배경) ═══════════════ */
 
 const DEFAULT_SETTINGS = {
   title: CFG.SITE_TITLE || "sniper",
   tagline: "쓰고 모으고 물어보는 곳",
-  theme: "auto",          // auto | light | dark
+  theme: "auto",
   accent: "#1D4ED8",
-  bg_kind: "plain",       // plain | gradient | image | pattern
+  bg_kind: "plain",
   bg_value: "",
   bg_blur: 0,
   bg_dim: 0,
-  font: "pretendard",     // pretendard | serif | mono
-  width: "narrow",        // narrow | wide
+  font: "pretendard",
+  width: "narrow",
+  view: "rows",           // rows | cards
 };
 
 const GRADIENTS = {
@@ -176,7 +204,6 @@ function applySettings() {
   root.dataset.width = s.width || "narrow";
   root.style.setProperty("--accent", s.accent || "#1D4ED8");
 
-  // 배경은 본문 뒤에 깔린 한 겹(.bgLayer)에만 그린다 — 글자가 흐려지지 않게.
   let layer = $("#bgLayer");
   if (!layer) {
     layer = document.createElement("div");
@@ -184,7 +211,7 @@ function applySettings() {
     document.body.prepend(layer);
   }
 
-  let img = "", size = "auto", color = "";
+  let img = "", size = "auto";
   if (s.bg_kind === "gradient") img = GRADIENTS[s.bg_value] || s.bg_value || "";
   else if (s.bg_kind === "image" && s.bg_value) img = `url("${safeUrl(s.bg_value)}")`;
   else if (s.bg_kind === "pattern") {
@@ -198,10 +225,9 @@ function applySettings() {
   layer.style.backgroundAttachment = s.bg_kind === "image" ? "fixed" : "scroll";
   layer.style.filter = s.bg_blur ? `blur(${s.bg_blur}px)` : "";
   layer.style.opacity = String(1 - (s.bg_dim || 0) / 100);
-  if (color) layer.style.backgroundColor = color;
 
-  const t = $("#siteTitle");   if (t) t.textContent = s.title || "sniper";
-  const g = $("#siteTagline"); if (g) g.textContent = s.tagline || "";
+  $$("#siteTitle").forEach(t => t.textContent = s.title || "sniper");
+  $$("#siteTagline").forEach(g => g.textContent = s.tagline || "");
   document.title = (document.body.dataset.page === "post" && document.title !== "sniper")
     ? document.title : (s.title || "sniper");
 }
@@ -209,21 +235,82 @@ function applySettings() {
 window.matchMedia?.("(prefers-color-scheme: dark)")
   .addEventListener?.("change", () => { if (SETTINGS.theme === "auto") applySettings(); });
 
-/* ═══════════════ 블록 → HTML ═══════════════
-   에디터는 글을 «블록 목록» 으로 저장합니다. 읽기 화면에서는 그걸 다시 그려야 합니다.
-   여기서 만든 HTML 은 저장할 때 body_html 로도 함께 넣어 두므로,
-   나중에 에디터를 바꿔도 예전 글이 그대로 보입니다. */
+/* ═══════════════ KaTeX (수식) ═══════════════ */
+
+let katexLoading = null;
+function loadKatex() {
+  if (window.katex) return Promise.resolve(window.katex);
+  if (katexLoading) return katexLoading;
+  katexLoading = new Promise((res, rej) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js";
+    js.onload = () => res(window.katex);
+    js.onerror = () => rej(new Error("수식 도구를 못 불렀습니다"));
+    document.head.appendChild(js);
+  });
+  return katexLoading;
+}
+
+/* 화면 안의 .math[data-tex] 를 실제 수식으로 바꿔 그린다 */
+async function renderMath(root = document) {
+  const nodes = $$("[data-tex]:not([data-tex-done])", root);
+  if (!nodes.length) return;
+  let K;
+  try { K = await loadKatex(); } catch { return; }
+  for (const n of nodes) {
+    try {
+      K.render(n.dataset.tex, n, {
+        displayMode: n.dataset.display === "1",
+        throwOnError: false,
+        errorColor: "#B91C1C",
+      });
+      n.dataset.texDone = "1";
+    } catch {
+      n.textContent = n.dataset.tex;
+      n.dataset.texDone = "1";
+    }
+  }
+}
+
+/* ═══════════════ 블록 → HTML ═══════════════ */
 
 function inlineHtml(s) {
-  // 에디터가 넣어 주는 꾸밈표(b/i/u/mark/code/a)만 남기고 나머지는 글자로 만든다
-  const allow = /<\/?(b|strong|i|em|u|s|mark|code|br)>/gi;
   let out = esc(s || "");
   out = out.replace(/&lt;(\/?(?:b|strong|i|em|u|s|mark|code|br))&gt;/gi, "<$1>");
   out = out.replace(/&lt;a\s+href=&quot;([^&"]+)&quot;[^&]*&gt;/gi,
     (_, u) => `<a href="${safeUrl(u.replace(/&amp;/g, "&"))}" target="_blank" rel="noopener">`);
   out = out.replace(/&lt;\/a&gt;/gi, "</a>");
-  void allow;
+  // 본문 안 $…$ 수식
+  out = out.replace(/\$([^$\n]{1,300})\$/g,
+    (_, tex) => `<span class="math-i" data-tex="${esc(tex)}">${esc(tex)}</span>`);
   return out;
+}
+
+function alignOf(b) {
+  const a = b?.tunes?.alignment?.alignment || b?.tunes?.anyTuneName?.alignment;
+  return (a && a !== "left") ? ` data-align="${esc(a)}"` : "";
+}
+
+/* 동영상 주소 → 심어 넣을 주소 */
+function embedSrc(url) {
+  try {
+    const u = new URL(url);
+    const h = u.hostname.replace(/^www\./, "");
+    if (h === "youtu.be") return "https://www.youtube.com/embed/" + u.pathname.slice(1);
+    if (h.endsWith("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return "https://www.youtube.com/embed/" + v;
+      if (u.pathname.startsWith("/shorts/")) return "https://www.youtube.com/embed/" + u.pathname.split("/")[2];
+      if (u.pathname.startsWith("/embed/")) return u.href;
+    }
+    if (h.endsWith("vimeo.com")) return "https://player.vimeo.com/video/" + u.pathname.split("/").filter(Boolean).pop();
+    if (h.endsWith("naver.com") && u.pathname.includes("/embed/")) return u.href;
+    return "";
+  } catch { return ""; }
 }
 
 function blocksToHtml(data) {
@@ -232,14 +319,15 @@ function blocksToHtml(data) {
 
   for (const b of blocks) {
     const d = b.data || {};
+    const al = alignOf(b);
     switch (b.type) {
       case "header": {
         const lv = Math.min(Math.max(+d.level || 2, 2), 4);
-        out.push(`<h${lv} id="h-${b.id || Math.random().toString(36).slice(2, 7)}">${inlineHtml(d.text)}</h${lv}>`);
+        out.push(`<h${lv}${al} id="h-${b.id || Math.random().toString(36).slice(2, 7)}">${inlineHtml(d.text)}</h${lv}>`);
         break;
       }
       case "paragraph":
-        if ((d.text || "").trim()) out.push(`<p>${inlineHtml(d.text)}</p>`);
+        if ((d.text || "").trim()) out.push(`<p${al}>${inlineHtml(d.text)}</p>`);
         break;
       case "list": {
         const tag = d.style === "ordered" ? "ol" : "ul";
@@ -249,7 +337,7 @@ function blocksToHtml(data) {
             ? `<${tag}>${li(it.items)}</${tag}>` : "";
           return `<li>${inlineHtml(txt)}${kids}</li>`;
         }).join("");
-        out.push(`<${tag}>${li(d.items)}</${tag}>`);
+        out.push(`<${tag}${al}>${li(d.items)}</${tag}>`);
         break;
       }
       case "checklist":
@@ -258,7 +346,7 @@ function blocksToHtml(data) {
         ).join("") + `</ul>`);
         break;
       case "quote":
-        out.push(`<blockquote>${inlineHtml(d.text)}${d.caption ? `<cite>${inlineHtml(d.caption)}</cite>` : ""}</blockquote>`);
+        out.push(`<blockquote${al}>${inlineHtml(d.text)}${d.caption ? `<cite>${inlineHtml(d.caption)}</cite>` : ""}</blockquote>`);
         break;
       case "code":
         out.push(`<pre><code>${esc(d.code)}</code></pre>`);
@@ -266,6 +354,12 @@ function blocksToHtml(data) {
       case "delimiter":
         out.push(`<hr>`);
         break;
+      case "math": {
+        const tex = d.tex || d.text || "";
+        if (!tex.trim()) break;
+        out.push(`<div class="math" data-tex="${esc(tex)}" data-display="1">${esc(tex)}</div>`);
+        break;
+      }
       case "image": {
         const u = d.file?.url || d.url;
         if (!u) break;
@@ -273,6 +367,25 @@ function blocksToHtml(data) {
           <img src="${esc(safeUrl(u))}" alt="${esc(d.caption || "")}" loading="lazy" decoding="async">
           ${d.caption ? `<figcaption>${inlineHtml(d.caption)}</figcaption>` : ""}
         </figure>`);
+        break;
+      }
+      case "attaches": {
+        const f = d.file || {};
+        if (!f.url) break;
+        const ext = (f.extension || (f.name || "").split(".").pop() || "file").slice(0, 4);
+        out.push(`<a class="attach" href="${esc(safeUrl(f.url))}" download target="_blank" rel="noopener">
+          <span class="ext">${esc(ext)}</span>
+          <span class="nm">${esc(d.title || f.name || "첨부 파일")}</span>
+          <span class="sz">${f.size ? esc(fmtSize(f.size)) : ""}</span></a>`);
+        break;
+      }
+      case "embed": {
+        const src = d.embed || embedSrc(d.source || "");
+        if (!src) { if (d.source) out.push(`<p><a href="${esc(safeUrl(d.source))}" target="_blank" rel="noopener">${esc(d.source)}</a></p>`); break; }
+        out.push(`<figure class="fig"><div class="embed"><iframe src="${esc(safeUrl(src))}"
+          allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+          allowfullscreen loading="lazy"></iframe></div>
+          ${d.caption ? `<figcaption>${inlineHtml(d.caption)}</figcaption>` : ""}</figure>`);
         break;
       }
       case "table": {
@@ -299,14 +412,13 @@ function blocksToHtml(data) {
   return out.join("\n");
 }
 
-/* 검색·미리보기에 쓸 맨글자 */
 function blocksToText(data) {
   const tmp = document.createElement("div");
   tmp.innerHTML = blocksToHtml(data);
   return tmp.textContent.replace(/\s+/g, " ").trim();
 }
 
-/* ═══════════════ 그림 올리기 ═══════════════ */
+/* ═══════════════ 파일 올리기 ═══════════════ */
 
 async function shrink(file, max = 1800, quality = .85) {
   if (!/^image\//.test(file.type) || /gif|svg/.test(file.type)) return file;
@@ -334,6 +446,40 @@ async function uploadImage(file, folder = "posts") {
   return { url: sb.storage.from("blog").getPublicUrl(path).data.publicUrl, path };
 }
 
+/* 그림이 아닌 파일(PDF·한글·엑셀 등)은 줄이지 않고 그대로 올린다 */
+async function uploadFile(file, folder = "files") {
+  if (!sb) throw new Error("Supabase 연결이 없습니다.");
+  const safe = (file.name || "file").replace(/[^\w.\-가-힣]/g, "_").slice(-60);
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${safe}`;
+  const { error } = await sb.storage.from("blog").upload(path, file, {
+    contentType: file.type || "application/octet-stream", upsert: false, cacheControl: "31536000",
+  });
+  if (error) throw new Error(error.message);
+  return {
+    url: sb.storage.from("blog").getPublicUrl(path).data.publicUrl,
+    name: file.name, size: file.size,
+    extension: (file.name.split(".").pop() || "").toLowerCase(),
+  };
+}
+
+/* ═══════════════ 글 다루기 ═══════════════ */
+
+async function deletePosts(ids) {
+  if (!sb) throw new Error("Supabase 연결이 없습니다.");
+  const list = [].concat(ids);
+  const { error } = await sb.from("blog_posts").delete().in("id", list);
+  if (error) throw new Error(error.message);
+  return list.length;
+}
+
+async function setPostStatus(ids, status) {
+  const list = [].concat(ids);
+  const patch = { status };
+  if (status === "published") patch.published_at = new Date().toISOString();
+  const { error } = await sb.from("blog_posts").update(patch).in("id", list);
+  if (error) throw new Error(error.message);
+}
+
 /* ═══════════════ 로그인 상자 ═══════════════ */
 
 function loginBox() {
@@ -342,18 +488,17 @@ function loginBox() {
   ov.id = "loginOv";
   ov.className = "ov";
   ov.innerHTML = `
-    <div class="ovbox">
+    <div class="ovbox" style="max-width:400px">
       <h3>${ME ? "로그인됨" : "로그인"}</h3>
       ${ME ? `
         <p class="muted">${esc(ME.email || "")}${canEdit() ? "" : " · 글쓰기 권한이 없는 계정입니다"}</p>
-        <div class="row"><button class="btn" id="lgOut">로그아웃</button>
-        <button class="btn ghost" id="lgClose">닫기</button></div>
+        <div class="row" style="justify-content:flex-end"><button class="btn ghost" id="lgClose">닫기</button>
+        <button class="btn" id="lgOut">로그아웃</button></div>
       ` : `
         <input id="lgEm" type="email" placeholder="이메일" autocomplete="username">
         <input id="lgPw" type="password" placeholder="비밀번호" autocomplete="current-password">
-        <div class="row"><button class="btn" id="lgIn">들어가기</button>
-        <button class="btn ghost" id="lgClose">닫기</button></div>
-        <p class="muted sm">Supabase → Authentication → Users 에 만든 계정으로 들어옵니다.</p>
+        <div class="row" style="justify-content:flex-end"><button class="btn ghost" id="lgClose">닫기</button>
+        <button class="btn" id="lgIn">들어가기</button></div>
       `}
       <p class="err" id="lgErr" hidden></p>
     </div>`;
@@ -375,10 +520,7 @@ function loginBox() {
   $("#lgPw", ov)?.addEventListener("keydown", e => { if (e.key === "Enter") $("#lgIn", ov).click(); });
 }
 
-/* ═══════════════ 바깥으로 내보내기 ═══════════════ */
-
-/* ═══════════════ 오프라인 대비 ═══════════════
-   글쓰기 화면은 캐시가 끼어들면 헷갈리므로 목록·글보기에서만 켠다. */
+/* ═══════════════ 오프라인 대비 ═══════════════ */
 if ("serviceWorker" in navigator && document.body?.dataset.page !== "write" &&
     location.protocol.startsWith("http"))
   window.addEventListener("load", () =>
@@ -391,8 +533,10 @@ window.App = {
   GRADIENTS, PATTERNS, DEFAULT_SETTINGS,
   refreshMe, canEdit, signIn, signOut, loginBox,
   loadSettings, saveSettings, applySettings,
-  blocksToHtml, blocksToText, inlineHtml,
-  uploadImage, shrink,
-  $, $$, esc, safeUrl, fmtDate, slugify, toast, qs,
+  blocksToHtml, blocksToText, inlineHtml, embedSrc,
+  uploadImage, uploadFile, shrink,
+  deletePosts, setPostStatus,
+  loadKatex, renderMath,
+  $, $$, esc, safeUrl, fmtDate, fmtSize, slugify, toast, qs, ask,
 };
 })();

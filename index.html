@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F6F7F9">
+<meta name="theme-color" content="#F4F5F7">
 <title>sniper</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon.svg">
@@ -13,129 +13,225 @@
 </head>
 <body data-page="list">
 
+<!-- 좁은 화면에서만 보이는 위쪽 띠 -->
 <header class="top">
   <div class="topin">
+    <button class="ico" id="btnMenu" title="메뉴 열기">☰</button>
     <a class="brand" href="./index.html">
       <span id="siteTitle">sniper</span>
       <span id="siteTagline"></span>
     </a>
-    <button class="ico" id="btnSearch" title="찾기">🔍</button>
-    <button class="ico" id="btnTheme"  title="밝게/어둡게">◐</button>
-    <button class="ico" id="btnSetup"  title="화면 설정">⚙</button>
-    <button class="ico" id="btnUser"   title="로그인">👤</button>
+    <button class="ico" id="btnThemeM" title="밝게/어둡게">◐</button>
   </div>
 </header>
+<div class="sideScrim" id="scrim"></div>
 
-<main class="wrap">
-  <input class="search" id="q" type="search" placeholder="제목·본문에서 찾기" hidden>
-  <div class="cats" id="cats"></div>
-  <div class="list" id="list">
-    <div class="skel"></div><div class="skel"></div><div class="skel"></div>
-  </div>
-</main>
+<div class="shell">
 
-<button class="fabWrite" id="btnWrite" title="새 글 쓰기">✎</button>
+  <aside class="side" id="side">
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
+
+    <button class="btn sideWrite" id="btnWriteSide">✎ 새 글 쓰기</button>
+
+    <div class="sideSearch">
+      <input id="q" type="search" placeholder="제목·본문 찾기">
+    </div>
+
+    <div class="sideHead">글 모음</div>
+    <div class="navList" id="navFixed"></div>
+
+    <div class="sideHead">
+      카테고리
+      <button id="btnCatMgr" title="카테고리 관리">⚙</button>
+    </div>
+    <div class="navList" id="navCats"></div>
+
+    <div class="sideFoot">
+      <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
+      <button class="ico" id="btnSetup" title="화면 설정">⚙</button>
+      <button class="btn ghost sm" id="btnUser" style="flex:1">로그인</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="mainIn">
+      <div class="listBar">
+        <h1 id="viewTitle">전체</h1>
+        <span class="cnt" id="cnt"></span>
+        <span class="sp"></span>
+        <div class="seg" id="viewSeg">
+          <button data-v="rows">목록</button>
+          <button data-v="cards">카드</button>
+        </div>
+      </div>
+      <div id="list">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<button class="fabWrite" id="btnWrite" title="새 글 쓰기">✎ 글쓰기</button>
+
+<div class="bulk" id="bulk">
+  <span id="bulkCnt">0개 고름</span>
+  <button id="bulkPub">공개로</button>
+  <button id="bulkArch">보관함</button>
+  <button class="del" id="bulkDel">지우기</button>
+  <button id="bulkNone">해제</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./config.js"></script>
 <script src="./app.js"></script>
 <script src="./ai-chat.js" defer></script>
+<script src="./ai-plus.js" defer></script>
 <script src="./music.js" defer></script>
 <script>
-const { sb, $, $$, esc, fmtDate, toast } = App;
+const { sb, $, $$, esc, fmtDate, toast, ask } = App;
 
-let CATS = [], POSTS = [], SEL = "all", KEY = "";
+let CATS = [], POSTS = [], SEL = "all", KEY = "", VIEW = "rows";
+let DEEP = new Set(), PICKED = new Set();
+
+/* 왼쪽 «글 모음» 칸 — 관리자만 보이는 것도 있다 */
+const FIXED = [
+  { k:"all",       nm:"전체 글",  admin:false },
+  { k:"pinned",    nm:"고정한 글", admin:false },
+  { k:"draft",     nm:"초안",      admin:true  },
+  { k:"archived",  nm:"보관함",    admin:true  },
+];
 
 /* ── 시작 ───────────────────────────────────────────── */
 (async function start(){
   await App.loadSettings();
   await App.refreshMe();
-  wireTop();
+  VIEW = App.settings.view === "cards" ? "cards" : "rows";
+  wire();
 
   if(!sb){
-    $("#list").innerHTML = `<div class="empty">config.js 의 Supabase 값이 비어 있습니다.</div>`;
+    $("#list").innerHTML = `<div class="empty"><b>Supabase 설정이 비어 있습니다</b>
+      config.js 의 SUPABASE_URL 과 키를 채워 주세요.</div>`;
     return;
   }
   await loadCats();
   await loadPosts();
 })();
 
-/* ── 위쪽 단추들 ────────────────────────────────────── */
-function wireTop(){
-  $("#btnUser").onclick  = () => App.loginBox();
-  $("#btnWrite").onclick = () => location.href = "./write.html";
-  $("#btnSetup").onclick = () => setupBox();
+/* ── 단추 연결 ─────────────────────────────────────── */
+function wire(){
+  const side = $("#side"), scrim = $("#scrim");
+  const openSide  = () => document.body.classList.add("sideOpen");
+  const closeSide = () => document.body.classList.remove("sideOpen");
+  $("#btnMenu").onclick = openSide;
+  scrim.onclick = closeSide;
+  side.addEventListener("click", e => { if(e.target.closest(".navItem")) closeSide(); });
 
-  $("#btnTheme").onclick = () => {
+  const flipTheme = () => {
     const now = App.settings.theme;
     const next = now === "dark" ? "light" : (now === "light" ? "auto" : "dark");
     App.saveSettings({ theme: next });
-    toast(next === "auto" ? "기기 설정 따라감" : (next === "dark" ? "어둡게" : "밝게"));
+    toast(next === "auto" ? "기기 설정을 따라갑니다" : (next === "dark" ? "어둡게" : "밝게"));
   };
+  $("#btnTheme").onclick = flipTheme;
+  $("#btnThemeM").onclick = flipTheme;
 
-  $("#btnSearch").onclick = () => {
-    const box = $("#q");
-    box.hidden = !box.hidden;
-    if(!box.hidden) box.focus();
-    else { KEY = ""; box.value = ""; draw(); }
-  };
+  $("#btnSetup").onclick = setupBox;
+  $("#btnCatMgr").onclick = catBox;
+  $("#btnUser").onclick = () => App.loginBox();
+  $("#btnWrite").onclick = $("#btnWriteSide").onclick = () => location.href = "./write.html";
+
+  $$("#viewSeg button").forEach(b => b.onclick = () => {
+    VIEW = b.dataset.v;
+    App.saveSettings({ view: VIEW });
+    drawSeg(); draw();
+  });
+  drawSeg();
+
   let hTimer = null;
   $("#q").addEventListener("input", e => {
     KEY = e.target.value.trim();
     DEEP = new Set();
-    draw();                                   // 이미 받아 둔 글에서 바로 걸러 보여 주고
+    draw();
     clearTimeout(hTimer);
-    hTimer = setTimeout(deepSearch, 350);     // 잠시 뒤 «본문까지» 서버에 물어본다
+    hTimer = setTimeout(deepSearch, 350);
   });
+
+  $("#bulkNone").onclick = () => { PICKED.clear(); draw(); };
+  $("#bulkDel").onclick  = bulkDelete;
+  $("#bulkPub").onclick  = () => bulkStatus("published", "공개로 돌렸습니다");
+  $("#bulkArch").onclick = () => bulkStatus("archived", "보관함으로 옮겼습니다");
+
+  if(App.me) $("#btnUser").textContent = App.canEdit() ? "내 계정" : "권한 없음";
+}
+
+function drawSeg(){
+  $$("#viewSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
 }
 
 /* ── 카테고리 ───────────────────────────────────────── */
 async function loadCats(){
   const { data, error } = await sb.from("blog_categories").select("*").order("sort_order").order("name");
   if(error){
-    $("#list").innerHTML = `<div class="empty">표가 아직 없습니다 — <b>02-blog.sql</b> 을 SQL Editor 에서 한 번 돌려 주세요.<br><span class="muted sm">${esc(error.message)}</span></div>`;
+    $("#list").innerHTML = `<div class="empty"><b>표가 아직 없습니다</b>
+      02-blog.sql 을 Supabase SQL Editor 에서 한 번 돌려 주세요.<br>
+      <span class="muted sm">${esc(error.message)}</span></div>`;
     return;
   }
   CATS = data || [];
-  drawCats();
+  drawNav();
 }
 
-function drawCats(){
-  const all = `<button class="cat${SEL==="all"?" on":""}" data-c="all">전체</button>`;
-  const rest = CATS.map(c =>
-    `<button class="cat${SEL===String(c.id)?" on":""}" data-c="${c.id}">${c.emoji?c.emoji+" ":""}${esc(c.name)}</button>`).join("");
-  const admin = App.canEdit()
-    ? `<button class="cat" data-c="__new" title="카테고리 관리">＋</button>` : "";
-  $("#cats").innerHTML = all + rest + admin;
+function countOf(kind){
+  if(kind === "all")      return POSTS.filter(p => p.status === "published").length;
+  if(kind === "pinned")   return POSTS.filter(p => p.pinned).length;
+  if(kind === "draft")    return POSTS.filter(p => p.status === "draft").length;
+  if(kind === "archived") return POSTS.filter(p => p.status === "archived").length;
+  return POSTS.filter(p => String(p.category_id) === String(kind) && p.status !== "archived").length;
+}
 
-  $$("#cats .cat").forEach(b => b.onclick = () => {
-    if(b.dataset.c === "__new") return catBox();
-    SEL = b.dataset.c; drawCats(); draw();
+function drawNav(){
+  const admin = App.canEdit();
+  $("#navFixed").innerHTML = FIXED.filter(f => !f.admin || admin).map(f =>
+    `<button class="navItem${SEL===f.k?" on":""}" data-c="${f.k}">
+       <span class="nm">${f.nm}</span><span class="ct">${countOf(f.k)}</span></button>`).join("");
+
+  $("#navCats").innerHTML = CATS.length
+    ? CATS.map(c => `<button class="navItem${SEL===String(c.id)?" on":""}" data-c="${c.id}">
+        <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
+        <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>
+        <span class="ct">${countOf(c.id)}</span></button>`).join("")
+    : `<p class="muted sm" style="padding:4px 9px">아직 없습니다.${admin?" 위 ⚙ 로 만드세요.":""}</p>`;
+
+  $$(".navItem").forEach(b => b.onclick = () => {
+    SEL = b.dataset.c; PICKED.clear(); drawNav(); draw();
   });
 }
 
 /* ── 글 ─────────────────────────────────────────────── */
 async function loadPosts(){
-  // 로그인해서 글쓰기 권한이 있으면 초안까지 보인다
   let q = sb.from("blog_posts")
     .select("id,slug,title,excerpt,cover_url,category_id,tags,status,pinned,view_count,published_at,updated_at")
     .order("pinned", { ascending:false })
     .order("published_at", { ascending:false, nullsFirst:false })
     .order("updated_at", { ascending:false })
-    .limit(200);
+    .limit(300);
   if(!App.canEdit()) q = q.eq("status","published");
 
   const { data, error } = await q;
   if(error){
-    $("#list").innerHTML = `<div class="empty">글을 못 읽었습니다.<br><span class="muted sm">${esc(error.message)}</span></div>`;
+    $("#list").innerHTML = `<div class="empty"><b>글을 못 읽었습니다</b>
+      <span class="muted sm">${esc(error.message)}</span></div>`;
     return;
   }
   POSTS = data || [];
+  drawNav();
   draw();
 }
 
-/* 목록에 올라온 200개 밖의 글, 그리고 본문 속 낱말까지 서버에서 찾는다.
-   찾은 것은 POSTS 에 합쳐 두므로 다음부터는 바로 걸러집니다. */
 let searching = false;
 async function deepSearch(){
   const k = KEY;
@@ -152,72 +248,181 @@ async function deepSearch(){
 
     const { data, error } = await q;
     if(error || !data) return;
-
     const have = new Set(POSTS.map(p => p.id));
-    const add = data.filter(p => !have.has(p.id));
-    if(add.length){
-      POSTS = POSTS.concat(add);
-      DEEP = new Set([...(DEEP||[]), ...data.map(p => p.id)]);
-      if(KEY === k) draw();
-    }else{
-      DEEP = new Set([...(DEEP||[]), ...data.map(p => p.id)]);
-      if(KEY === k) draw();
-    }
+    POSTS = POSTS.concat(data.filter(p => !have.has(p.id)));
+    DEEP = new Set([...(DEEP||[]), ...data.map(p => p.id)]);
+    if(KEY === k){ drawNav(); draw(); }
   }catch{}
   finally{ searching = false; }
 }
 
-let DEEP = new Set();     // 본문에서 낱말이 발견된 글 번호
-
-function draw(){
+function visible(){
   let rows = POSTS;
-  if(SEL !== "all") rows = rows.filter(p => String(p.category_id) === SEL);
+  if(SEL === "all")            rows = rows.filter(p => p.status === "published");
+  else if(SEL === "pinned")    rows = rows.filter(p => p.pinned);
+  else if(SEL === "draft")     rows = rows.filter(p => p.status === "draft");
+  else if(SEL === "archived")  rows = rows.filter(p => p.status === "archived");
+  else rows = rows.filter(p => String(p.category_id) === SEL && p.status !== "archived");
+
   if(KEY){
     const k = KEY.toLowerCase();
     rows = rows.filter(p =>
       (p.title||"").toLowerCase().includes(k) ||
       (p.excerpt||"").toLowerCase().includes(k) ||
       (p.tags||[]).some(t => t.toLowerCase().includes(k)) ||
-      DEEP.has(p.id));                              // 본문에서 찾은 글
+      DEEP.has(p.id));
   }
+  return rows;
+}
+
+function titleOf(){
+  const f = FIXED.find(x => x.k === SEL);
+  if(f) return f.nm;
+  const c = CATS.find(x => String(x.id) === SEL);
+  return c ? (c.emoji?c.emoji+" ":"") + c.name : "전체 글";
+}
+
+function draw(){
+  const rows = visible();
+  $("#viewTitle").textContent = titleOf();
+  $("#cnt").textContent = KEY ? `${rows.length}건 찾음` : `${rows.length}`;
 
   if(!rows.length){
-    $("#list").innerHTML = `<div class="empty">${KEY ? "찾는 글이 없습니다. <span class='muted sm'>(제목·본문·태그를 모두 뒤졌습니다)</span>" : "아직 글이 없습니다."}${App.canEdit()?"<br><br><a href='./write.html'>첫 글 쓰기 →</a>":""}</div>`;
+    $("#list").innerHTML = `<div class="empty">
+      <b>${KEY ? "찾는 글이 없습니다" : "아직 글이 없습니다"}</b>
+      ${KEY ? "제목·본문·태그를 모두 뒤졌습니다. 다른 낱말로 찾아보세요."
+            : (App.canEdit() ? "왼쪽 «새 글 쓰기» 로 첫 글을 남겨 보세요." : "곧 채워집니다.")}
+    </div>`;
+    drawBulk();
     return;
   }
 
   const catOf = id => CATS.find(c => c.id === id);
+  const badges = p => `
+    ${p.pinned ? `<span class="pin-b">고정</span>` : ""}
+    ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}`;
 
-  $("#list").innerHTML = rows.map(p => {
-    const c = catOf(p.category_id);
-    return `<a class="item${p.pinned?" pin":""}" href="./post.html?id=${p.id}">
-      ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
-      <div class="meta">
-        ${c ? `<span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>${c.emoji?c.emoji+" ":""}${esc(c.name)}` : ""}
-        <span>${fmtDate(p.published_at || p.updated_at)}</span>
-        ${p.pinned ? "<span>📌</span>" : ""}
-        ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}
-      </div>
-      <h2>${esc(p.title)}</h2>
-      ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ""}
-      ${(p.tags||[]).length ? `<div class="tags">${p.tags.map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
-    </a>`;
-  }).join("");
+  if(VIEW === "cards"){
+    $("#list").className = "cards";
+    $("#list").innerHTML = rows.map(p => {
+      const c = catOf(p.category_id);
+      return `<div class="card-i">
+        <a href="./post.html?id=${p.id}" style="text-decoration:none;color:inherit;display:block">
+          ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
+          <div class="in">
+            <div class="sub">
+              ${c ? `<span class="d" style="background:${esc(c.color||"#9CA3AF")}"></span>${esc(c.name)}` : ""}
+              <span class="when">${fmtDate(p.published_at || p.updated_at)}</span>
+              ${badges(p)}
+            </div>
+            <h2>${esc(p.title)}</h2>
+            ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ""}
+          </div>
+        </a>
+        <div class="acts">
+          <button title="수정" data-edit="${p.id}">✎</button>
+          <button class="del" title="지우기" data-del="${p.id}">🗑</button>
+        </div>
+      </div>`;
+    }).join("");
+  }else{
+    $("#list").className = "rows";
+    $("#list").innerHTML = rows.map(p => {
+      const c = catOf(p.category_id);
+      return `<div class="row-i">
+        <input class="sel" type="checkbox" data-pick="${p.id}" ${PICKED.has(p.id)?"checked":""} title="고르기">
+        ${p.cover_url ? `<img class="thumb" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
+        <a class="txt" href="./post.html?id=${p.id}" style="text-decoration:none;color:inherit">
+          <div class="ttl">${esc(p.title)}</div>
+          <div class="sub">
+            ${c ? `<span class="d" style="background:${esc(c.color||"#9CA3AF")}"></span>${esc(c.name)}` : ""}
+            <span class="when">${fmtDate(p.published_at || p.updated_at)}</span>
+            ${badges(p)}
+            ${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}
+          </div>
+        </a>
+        <div class="acts">
+          <button title="수정" data-edit="${p.id}">✎</button>
+          <button class="del" title="지우기" data-del="${p.id}">🗑</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  $$("[data-edit]").forEach(b => b.onclick = e => {
+    e.preventDefault(); location.href = "./write.html?id=" + b.dataset.edit;
+  });
+  $$("[data-del]").forEach(b => b.onclick = e => { e.preventDefault(); delOne(b.dataset.del); });
+  $$("[data-pick]").forEach(b => b.onchange = () => {
+    b.checked ? PICKED.add(b.dataset.pick) : PICKED.delete(b.dataset.pick);
+    drawBulk();
+  });
+  drawBulk();
+}
+
+/* ── 지우기 ────────────────────────────────────────── */
+function drawBulk(){
+  const n = PICKED.size;
+  $("#bulk").classList.toggle("on", n > 0);
+  $("#bulkCnt").textContent = `${n}개 고름`;
+}
+
+async function delOne(id){
+  const p = POSTS.find(x => String(x.id) === String(id));
+  const ok = await ask("이 글을 지웁니다", `«${esc(p?.title || "제목 없음")}» — 되돌릴 수 없습니다.`, "지우기", true);
+  if(!ok) return;
+  try{
+    await App.deletePosts([id]);
+    POSTS = POSTS.filter(x => String(x.id) !== String(id));
+    PICKED.delete(id);
+    drawNav(); draw();
+    toast("지웠습니다");
+  }catch(e){ toast(e.message, "err"); }
+}
+
+async function bulkDelete(){
+  const n = PICKED.size;
+  const ok = await ask(`${n}개 글을 지웁니다`, "되돌릴 수 없습니다.", "지우기", true);
+  if(!ok) return;
+  try{
+    const ids = [...PICKED];
+    await App.deletePosts(ids);
+    POSTS = POSTS.filter(p => !PICKED.has(p.id));
+    PICKED.clear();
+    drawNav(); draw();
+    toast(`${n}개를 지웠습니다`);
+  }catch(e){ toast(e.message, "err"); }
+}
+
+async function bulkStatus(status, msg){
+  try{
+    const ids = [...PICKED];
+    await App.setPostStatus(ids, status);
+    POSTS.forEach(p => { if(PICKED.has(p.id)) p.status = status; });
+    PICKED.clear();
+    drawNav(); draw();
+    toast(msg);
+  }catch(e){ toast(e.message, "err"); }
 }
 
 /* ── 카테고리 관리 ──────────────────────────────────── */
 function catBox(){
+  if(!App.canEdit()) return toast("로그인해야 카테고리를 손댈 수 있습니다.", "err");
+
   const ov = document.createElement("div");
   ov.className = "ov";
   ov.innerHTML = `<div class="ovbox">
     <h3>카테고리</h3>
-    <div id="catList"></div>
+    <p class="muted sm">이름·색을 바로 고칠 수 있습니다. ↑↓ 로 순서를 바꾸면 왼쪽 목록에 그대로 반영됩니다.</p>
+    <div id="catList" style="margin:10px 0 4px"></div>
     <label>새 카테고리</label>
-    <input id="ncName" placeholder="이름 (예: 설비 점검)">
-    <div class="row">
-      <input id="ncEmoji" placeholder="🛠" style="width:74px;flex:none">
-      <input id="ncColor" type="color" value="#1D4ED8" style="width:60px;flex:none;padding:3px">
-      <button class="btn" id="ncAdd">추가</button>
+    <div class="catRow">
+      <input type="text" id="ncEmoji" placeholder="🛠" style="width:52px;flex:none;text-align:center">
+      <input type="text" id="ncName" placeholder="이름 (예: 설비 점검)">
+      <input type="color" id="ncColor" value="#1D4ED8">
+      <button class="btn sm" id="ncAdd">추가</button>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
       <button class="btn ghost" id="ncClose">닫기</button>
     </div>
   </div>`;
@@ -226,25 +431,60 @@ function catBox(){
   $("#ncClose", ov).onclick = () => ov.remove();
 
   const paint = () => {
-    $("#catList", ov).innerHTML = CATS.map(c => `
-      <div class="row" style="align-items:center;margin:0 0 7px">
-        <span class="dot" style="width:11px;height:11px;border-radius:50%;background:${esc(c.color||"#999")}"></span>
-        <span style="flex:1">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>
-        <button class="btn ghost sm" data-del="${c.id}">삭제</button>
-      </div>`).join("") || `<p class="muted">아직 없습니다.</p>`;
+    $("#catList", ov).innerHTML = CATS.length ? CATS.map((c,i) => `
+      <div class="catRow" data-id="${c.id}">
+        <input type="text" value="${esc(c.emoji||"")}" data-f="emoji" style="width:46px;flex:none;text-align:center" placeholder="—">
+        <input type="text" value="${esc(c.name)}" data-f="name">
+        <input type="color" value="${esc(c.color||"#9CA3AF")}" data-f="color">
+        <button class="mini" data-up="${i}" ${i===0?"disabled":""} title="위로">↑</button>
+        <button class="mini" data-down="${i}" ${i===CATS.length-1?"disabled":""} title="아래로">↓</button>
+        <button class="mini del" data-del="${c.id}" title="지우기">🗑</button>
+      </div>`).join("") : `<p class="muted">아직 없습니다.</p>`;
 
-    $$("[data-del]", ov).forEach(b => b.onclick = async () => {
-      if(!confirm("이 카테고리를 지웁니다. (글은 지워지지 않고 분류만 빠집니다)")) return;
-      const { error } = await sb.from("blog_categories").delete().eq("id", b.dataset.del);
+    // 이름·이모지·색 고치기 — 입력창에서 손 떼면 바로 저장
+    $$("#catList [data-f]", ov).forEach(inp => inp.onchange = async () => {
+      const id = inp.closest(".catRow").dataset.id;
+      const patch = { [inp.dataset.f]: inp.value.trim() || null };
+      if(inp.dataset.f === "name"){
+        if(!patch.name) return paint();
+        patch.slug = App.slugify(patch.name);
+      }
+      const { error } = await sb.from("blog_categories").update(patch).eq("id", id);
       if(error) return toast(error.message, "err");
       await loadCats(); paint(); draw();
+    });
+
+    const move = async (from, to) => {
+      if(to < 0 || to >= CATS.length) return;
+      const arr = [...CATS];
+      const [x] = arr.splice(from, 1);
+      arr.splice(to, 0, x);
+      CATS = arr;
+      paint(); drawNav();
+      for(let i = 0; i < arr.length; i++)
+        await sb.from("blog_categories").update({ sort_order: i + 1 }).eq("id", arr[i].id);
+    };
+    $$("[data-up]", ov).forEach(b => b.onclick = () => move(+b.dataset.up, +b.dataset.up - 1));
+    $$("[data-down]", ov).forEach(b => b.onclick = () => move(+b.dataset.down, +b.dataset.down + 1));
+
+    $$("#catList [data-del]", ov).forEach(b => b.onclick = async () => {
+      const c = CATS.find(x => String(x.id) === b.dataset.del);
+      const n = POSTS.filter(p => String(p.category_id) === b.dataset.del).length;
+      const ok = await ask(`«${esc(c?.name||"")}» 을 지웁니다`,
+        n ? `이 카테고리에 든 글 ${n}개는 지워지지 않고 «분류 없음» 이 됩니다.`
+          : "글은 없습니다.", "지우기", true);
+      if(!ok) return;
+      const { error } = await sb.from("blog_categories").delete().eq("id", b.dataset.del);
+      if(error) return toast(error.message, "err");
+      if(SEL === b.dataset.del) SEL = "all";
+      await loadCats(); await loadPosts(); paint();
     });
   };
   paint();
 
   $("#ncAdd", ov).onclick = async () => {
     const name = $("#ncName", ov).value.trim();
-    if(!name) return;
+    if(!name) return $("#ncName", ov).focus();
     const { error } = await sb.from("blog_categories").insert({
       slug: App.slugify(name), name,
       emoji: $("#ncEmoji", ov).value.trim() || null,
@@ -255,6 +495,7 @@ function catBox(){
     $("#ncName", ov).value = ""; $("#ncEmoji", ov).value = "";
     await loadCats(); paint();
   };
+  $("#ncName", ov).addEventListener("keydown", e => { if(e.key === "Enter") $("#ncAdd", ov).click(); });
 }
 
 /* ── 화면 설정 ──────────────────────────────────────── */
@@ -286,14 +527,14 @@ function setupBox(){
       ${[["plain","없음"],["gradient","그러데이션"],["pattern","무늬"],["image","사진"]]
         .map(([k,t])=>`<button class="chip${s.bg_kind===k?" on":""}" data-v="${k}">${t}</button>`).join("")}
     </div>
-    <div id="stBgVal" style="margin-top:9px"></div>
+    <div id="stBgVal" style="margin-top:8px"></div>
 
     <label>배경 흐리기 <span id="lbBlur" class="muted sm">${s.bg_blur||0}px</span></label>
     <input class="range" id="stBlur" type="range" min="0" max="24" value="${s.bg_blur||0}">
     <label>배경 연하게 <span id="lbDim" class="muted sm">${s.bg_dim||0}%</span></label>
     <input class="range" id="stDim" type="range" min="0" max="90" value="${s.bg_dim||0}">
 
-    <label>글꼴 · 폭</label>
+    <label>글꼴 · 본문 폭</label>
     <div class="chips" id="stFont">
       ${[["pretendard","고딕"],["serif","명조"],["mono","고정폭"]]
         .map(([k,t])=>`<button class="chip${s.font===k?" on":""}" data-v="${k}">${t}</button>`).join("")}
@@ -302,10 +543,10 @@ function setupBox(){
         .map(([k,t])=>`<button class="chip${s.width===k?" on":""}" data-w="${k}">${t}</button>`).join("")}
     </div>
 
-    <div class="row" style="margin-top:18px">
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
       <button class="btn" id="stClose">다 됐어요</button>
-      ${App.canEdit()?"":`<span class="muted sm" style="align-self:center">로그인하면 이 설정이 다른 기기에도 따라옵니다</span>`}
     </div>
+    ${App.canEdit()?"":`<p class="muted sm">로그인하면 이 설정이 다른 기기에도 따라옵니다.</p>`}
   </div>`;
   document.body.appendChild(ov);
   ov.onclick = e => { if(e.target === ov) ov.remove(); };
@@ -350,7 +591,7 @@ function setupBox(){
           const { url } = await App.uploadImage(f, "bg");
           $("#bgUrl", ov).value = url;
           App.saveSettings({ bg_value: url });
-          toast("배경 바꿨습니다");
+          toast("배경을 바꿨습니다");
         }catch(err){ toast(err.message, "err"); }
       };
       return;
