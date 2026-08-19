@@ -13,7 +13,7 @@ window.APP_CONFIG = {
 
   /* AI 중계 Worker 주소 — 블로그 화면(sniper)이 아니라
      «sniper-ai» Worker 의 주소입니다. 둘을 헷갈리면 AI 가 통째로 안 됩니다. */
-  AI_WORKER_URL: "https://sniper.amirbatikunari.workers.dev",
+  AI_WORKER_URL: "https://sniper-ai.amirbatikunari.workers.dev",
   AI_APP_KEY:    "1234",
   AI_APP_NAME:   "blog",
 
