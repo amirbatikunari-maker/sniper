@@ -34,6 +34,8 @@
       <span id="siteTagline"></span>
     </a>
 
+    <div class="profile" id="profile"></div>
+
     <button class="btn sideWrite" id="btnWriteSide">✎ 새 글 쓰기</button>
 
     <div class="sideSearch">
@@ -45,13 +47,19 @@
 
     <div class="sideHead">
       카테고리
-      <button id="btnCatMgr" title="카테고리 관리">⚙</button>
+      <button id="btnCatMgr" title="게시판 만들기·이름 바꾸기·순서·삭제">관리</button>
     </div>
     <div class="navList" id="navCats"></div>
+
+    <div class="sideHead" style="padding-top:16px">더 보기</div>
+    <div class="navList">
+      <a class="navItem" href="./about.html"><span class="nm">소개</span></a>
+    </div>
 
     <div class="sideFoot">
       <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
       <button class="ico" id="btnSetup" title="화면 설정">⚙</button>
+      <button class="ico" id="btnDock" title="AI 를 오른쪽에 붙박이로">▤</button>
       <button class="btn ghost sm" id="btnUser" style="flex:1">로그인</button>
     </div>
   </aside>
@@ -76,6 +84,7 @@
       <div id="list">
         <div class="skel"></div><div class="skel"></div><div class="skel"></div>
       </div>
+      <footer class="madeby" id="madeby"></footer>
     </div>
   </main>
 
@@ -117,6 +126,9 @@ const FIXED = [
   await App.refreshMe();
   VIEW = App.settings.view === "cards" ? "cards" : "rows";
   SORT = App.settings.sort || "new";
+  App.drawProfile();
+  App.drawMadeBy();
+  App.initDock();
   wire();
 
   if(!sb){
@@ -214,7 +226,14 @@ function countOf(kind){
   if(kind === "pinned")   return POSTS.filter(p => p.pinned).length;
   if(kind === "draft")    return POSTS.filter(p => p.status === "draft").length;
   if(kind === "archived") return POSTS.filter(p => p.status === "archived").length;
-  return POSTS.filter(p => String(p.category_id) === String(kind) && p.status !== "archived").length;
+  const branch = new Set(App.catBranch(CATS, kind));
+  return POSTS.filter(p => branch.has(String(p.category_id)) && p.status !== "archived").length;
+}
+
+let FOLDED = new Set(JSON.parse(localStorage.getItem("blog:folded") || "[]"));
+
+function saveFolded(){
+  try{ localStorage.setItem("blog:folded", JSON.stringify([...FOLDED])); }catch{}
 }
 
 function drawNav(){
@@ -223,14 +242,36 @@ function drawNav(){
     `<button class="navItem${SEL===f.k?" on":""}" data-c="${f.k}">
        <span class="nm">${f.nm}</span><span class="ct">${countOf(f.k)}</span></button>`).join("");
 
-  $("#navCats").innerHTML = CATS.length
-    ? CATS.map(c => `<button class="navItem${SEL===String(c.id)?" on":""}" data-c="${c.id}">
-        <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
-        <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>
-        <span class="ct">${countOf(c.id)}</span></button>`).join("")
-    : `<p class="muted sm" style="padding:4px 9px">아직 없습니다.${admin?" 위 ⚙ 로 만드세요.":""}</p>`;
+  const tree = App.catTree(CATS);
+  const hasKid = id => CATS.some(c => String(c.parent_id) === String(id));
 
-  $$(".navItem").forEach(b => b.onclick = () => {
+  // 접힌 부모 밑에 있는 것은 감춘다
+  const hidden = new Set();
+  for(const c of tree){
+    const pid = c.parent_id == null ? null : String(c.parent_id);
+    if(pid && (FOLDED.has(pid) || hidden.has(pid))) hidden.add(String(c.id));
+  }
+
+  $("#navCats").innerHTML = tree.length
+    ? tree.map(c => {
+        const id = String(c.id), kid = hasKid(c.id), fold = FOLDED.has(id);
+        return `<button class="navItem${SEL===id?" on":""}${hidden.has(id)?" navHidden":""}"
+                  data-c="${id}" data-depth="${c.depth}">
+          ${kid ? `<span class="navTw" data-tw="${id}" title="${fold?"펼치기":"접기"}">${fold?"▸":"▾"}</span>`
+                : `<span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>`}
+          <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>
+          <span class="ct">${countOf(c.id)}</span></button>`;
+      }).join("")
+    : `<p class="muted sm" style="padding:4px 9px">아직 없습니다.${admin?" 위 «관리» 로 만드세요.":""}</p>`;
+
+  $$("#navCats .navTw").forEach(t => t.onclick = e => {
+    e.stopPropagation();
+    const id = t.dataset.tw;
+    FOLDED.has(id) ? FOLDED.delete(id) : FOLDED.add(id);
+    saveFolded(); drawNav();
+  });
+
+  $$(".navItem[data-c]").forEach(b => b.onclick = () => {
     SEL = b.dataset.c; PICKED.clear(); drawNav(); draw();
   });
 }
@@ -286,7 +327,11 @@ function visible(){
   else if(SEL === "pinned")    rows = rows.filter(p => p.pinned);
   else if(SEL === "draft")     rows = rows.filter(p => p.status === "draft");
   else if(SEL === "archived")  rows = rows.filter(p => p.status === "archived");
-  else rows = rows.filter(p => String(p.category_id) === SEL && p.status !== "archived");
+  else {
+    // 하위 게시판이 있으면 그 안의 글까지 함께 보여 줍니다
+    const branch = new Set(App.catBranch(CATS, SEL));
+    rows = rows.filter(p => branch.has(String(p.category_id)) && p.status !== "archived");
+  }
 
   if(KEY){
     const k = KEY.toLowerCase();
@@ -453,21 +498,25 @@ async function bulkStatus(status, msg){
 
 /* ── 카테고리 관리 ──────────────────────────────────── */
 function catBox(){
-  if(!App.canEdit()) return toast("로그인해야 카테고리를 손댈 수 있습니다.", "err");
+  if(!App.canEdit()) return toast("로그인해야 게시판을 손댈 수 있습니다.", "err");
 
   const ov = document.createElement("div");
   ov.className = "ov";
-  ov.innerHTML = `<div class="ovbox">
-    <h3>카테고리</h3>
-    <p class="muted sm">이름·색을 바로 고칠 수 있습니다. ↑↓ 로 순서를 바꾸면 왼쪽 목록에 그대로 반영됩니다.</p>
+  ov.innerHTML = `<div class="ovbox" style="max-width:560px">
+    <h3>게시판 관리</h3>
+    <p class="muted sm">이름·색을 바로 고칠 수 있습니다. «상위» 를 정하면 하위 게시판이 됩니다.
+       ↑↓ 는 같은 층 안에서 순서를 바꿉니다.</p>
     <div id="catList" style="margin:10px 0 4px"></div>
-    <label>새 카테고리</label>
+
+    <label>새 게시판 만들기</label>
     <div class="catRow">
-      <input type="text" id="ncEmoji" placeholder="🛠" style="width:52px;flex:none;text-align:center">
+      <input type="text" id="ncEmoji" placeholder="🛠" style="width:46px;flex:none;text-align:center">
       <input type="text" id="ncName" placeholder="이름 (예: 설비 점검)">
+      <select id="ncParent" style="width:130px;flex:none;margin:0;padding:6px 8px;font-size:13px"></select>
       <input type="color" id="ncColor" value="#1D4ED8">
       <button class="btn sm" id="ncAdd">추가</button>
     </div>
+
     <div class="row" style="justify-content:flex-end;margin-top:16px">
       <button class="btn ghost" id="ncClose">닫기</button>
     </div>
@@ -476,53 +525,91 @@ function catBox(){
   ov.onclick = e => { if(e.target === ov) ov.remove(); };
   $("#ncClose", ov).onclick = () => ov.remove();
 
+  /* 상위로 고를 수 있는 목록 — 자기 자신과 «자기 밑에 있는 것» 은 뺍니다 */
+  const parentOpts = (self) => {
+    const banned = self ? new Set(App.catBranch(CATS, self)) : new Set();
+    const tree = App.catTree(CATS);
+    return `<option value="">— 최상위 —</option>` + tree
+      .filter(c => !banned.has(String(c.id)) && c.depth < 2)
+      .map(c => `<option value="${c.id}">${"　".repeat(c.depth)}${esc(c.name)}</option>`).join("");
+  };
+
   const paint = () => {
-    $("#catList", ov).innerHTML = CATS.length ? CATS.map((c,i) => `
-      <div class="catRow" data-id="${c.id}">
-        <input type="text" value="${esc(c.emoji||"")}" data-f="emoji" style="width:46px;flex:none;text-align:center" placeholder="—">
+    const tree = App.catTree(CATS);
+    $("#catList", ov).innerHTML = tree.length ? tree.map((c,i) => `
+      <div class="catRow" data-id="${c.id}" style="padding-left:${c.depth*16}px">
+        ${c.depth ? `<span style="color:var(--ink-3);font-size:11px">└</span>` : ""}
+        <input type="text" value="${esc(c.emoji||"")}" data-f="emoji"
+               style="width:42px;flex:none;text-align:center" placeholder="—">
         <input type="text" value="${esc(c.name)}" data-f="name">
+        <select data-f="parent_id" style="width:120px;flex:none;margin:0;padding:5px 7px;font-size:12.5px"
+                title="상위 게시판">${parentOpts(c.id)}</select>
         <input type="color" value="${esc(c.color||"#9CA3AF")}" data-f="color">
-        <button class="mini" data-up="${i}" ${i===0?"disabled":""} title="위로">↑</button>
-        <button class="mini" data-down="${i}" ${i===CATS.length-1?"disabled":""} title="아래로">↓</button>
+        <button class="mini" data-up="${i}" title="위로">↑</button>
+        <button class="mini" data-down="${i}" title="아래로">↓</button>
         <button class="mini del" data-del="${c.id}" title="지우기">🗑</button>
       </div>`).join("") : `<p class="muted">아직 없습니다.</p>`;
 
-    // 이름·이모지·색 고치기 — 입력창에서 손 떼면 바로 저장
+    // 상위 선택값 채우기
+    $$("#catList .catRow", ov).forEach(row => {
+      const c = CATS.find(x => String(x.id) === row.dataset.id);
+      const sel = $('[data-f="parent_id"]', row);
+      if(sel) sel.value = c?.parent_id ? String(c.parent_id) : "";
+    });
+
+    $("#ncParent", ov).innerHTML = parentOpts(null);
+
+    /* 고치면 바로 저장 */
     $$("#catList [data-f]", ov).forEach(inp => inp.onchange = async () => {
       const id = inp.closest(".catRow").dataset.id;
-      const patch = { [inp.dataset.f]: inp.value.trim() || null };
-      if(inp.dataset.f === "name"){
-        if(!patch.name) return paint();
-        patch.slug = App.slugify(patch.name);
+      const f = inp.dataset.f;
+      let val = inp.value;
+
+      if(f === "parent_id"){
+        const patch = { parent_id: val ? +val : null };
+        const { error } = await sb.from("blog_categories").update(patch).eq("id", id);
+        if(error) return toast(error.message.includes("column") 
+          ? "03-upgrade.sql 을 먼저 돌려 주세요 (parent_id 칸이 없습니다)." : error.message, "err");
+      } else {
+        const patch = { [f]: (val||"").trim() || null };
+        if(f === "name"){
+          if(!patch.name) return paint();
+          patch.slug = App.slugify(patch.name);
+        }
+        const { error } = await sb.from("blog_categories").update(patch).eq("id", id);
+        if(error) return toast(error.message, "err");
       }
-      const { error } = await sb.from("blog_categories").update(patch).eq("id", id);
-      if(error) return toast(error.message, "err");
       await loadCats(); paint(); draw();
     });
 
+    /* 같은 층 안에서 순서 바꾸기 */
     const move = async (from, to) => {
-      if(to < 0 || to >= CATS.length) return;
-      const arr = [...CATS];
-      const [x] = arr.splice(from, 1);
-      arr.splice(to, 0, x);
-      CATS = arr;
-      paint(); drawNav();
-      for(let i = 0; i < arr.length; i++)
-        await sb.from("blog_categories").update({ sort_order: i + 1 }).eq("id", arr[i].id);
+      const arr = App.catTree(CATS);
+      if(to < 0 || to >= arr.length) return;
+      const a = arr[from], b = arr[to];
+      if(String(a.parent_id||"") !== String(b.parent_id||"")) return toast("같은 층 안에서만 옮길 수 있습니다.");
+      const sa = a.sort_order ?? from, sbo = b.sort_order ?? to;
+      await sb.from("blog_categories").update({ sort_order: sbo }).eq("id", a.id);
+      await sb.from("blog_categories").update({ sort_order: sa }).eq("id", b.id);
+      await loadCats(); paint(); draw();
     };
     $$("[data-up]", ov).forEach(b => b.onclick = () => move(+b.dataset.up, +b.dataset.up - 1));
     $$("[data-down]", ov).forEach(b => b.onclick = () => move(+b.dataset.down, +b.dataset.down + 1));
 
     $$("#catList [data-del]", ov).forEach(b => b.onclick = async () => {
-      const c = CATS.find(x => String(x.id) === b.dataset.del);
-      const n = POSTS.filter(p => String(p.category_id) === b.dataset.del).length;
+      const id = b.dataset.del;
+      const c = CATS.find(x => String(x.id) === id);
+      const branch = App.catBranch(CATS, id);
+      const kids = branch.length - 1;
+      const n = POSTS.filter(p => branch.includes(String(p.category_id))).length;
       const ok = await ask(`«${esc(c?.name||"")}» 을 지웁니다`,
-        n ? `이 카테고리에 든 글 ${n}개는 지워지지 않고 «분류 없음» 이 됩니다.`
-          : "글은 없습니다.", "지우기", true);
+        [kids ? `하위 게시판 ${kids}개도 함께 지워집니다.` : "",
+         n ? `안에 든 글 ${n}개는 지워지지 않고 «분류 없음» 이 됩니다.` : "글은 없습니다."]
+          .filter(Boolean).join("<br>"), "지우기", true);
       if(!ok) return;
-      const { error } = await sb.from("blog_categories").delete().eq("id", b.dataset.del);
+      const { error } = await sb.from("blog_categories").delete().eq("id", id);
       if(error) return toast(error.message, "err");
-      if(SEL === b.dataset.del) SEL = "all";
+      if(branch.includes(SEL)) SEL = "all";
       await loadCats(); await loadPosts(); paint();
     });
   };
@@ -531,13 +618,18 @@ function catBox(){
   $("#ncAdd", ov).onclick = async () => {
     const name = $("#ncName", ov).value.trim();
     if(!name) return $("#ncName", ov).focus();
-    const { error } = await sb.from("blog_categories").insert({
+    const parent = $("#ncParent", ov).value;
+    const row = {
       slug: App.slugify(name), name,
       emoji: $("#ncEmoji", ov).value.trim() || null,
       color: $("#ncColor", ov).value,
-      sort_order: CATS.length + 1,
-    });
-    if(error) return toast(error.message, "err");
+      sort_order: CATS.filter(c => String(c.parent_id||"") === String(parent||"")).length + 1,
+    };
+    if(parent) row.parent_id = +parent;
+
+    const { error } = await sb.from("blog_categories").insert(row);
+    if(error) return toast(error.message.includes("parent_id")
+      ? "03-upgrade.sql 을 먼저 돌려 주세요 (parent_id 칸이 없습니다)." : error.message, "err");
     $("#ncName", ov).value = ""; $("#ncEmoji", ov).value = "";
     await loadCats(); paint();
   };
@@ -603,6 +695,14 @@ function setupBox(){
         .map(([k,t])=>`<button class="chip${s.width===k?" on":""}" data-w="${k}">${t}</button>`).join("")}
     </div>
 
+    <label>맨 아래 만든이 줄</label>
+    <div class="chips" id="stFooter">
+      <button class="chip${s.footer_on===false?"":" on"}" data-fo="1">보이기</button>
+      <button class="chip${s.footer_on===false?" on":""}" data-fo="0">숨기기</button>
+    </div>
+    <input id="stFooterTxt" style="margin-top:7px" placeholder="덧붙일 한마디 (선택)"
+           value="${esc(s.footer_text||"")}">
+
     <div class="row" style="justify-content:flex-end;margin-top:16px">
       <button class="btn" id="stClose">다 됐어요</button>
     </div>
@@ -626,6 +726,7 @@ function setupBox(){
   // 강조색 — 프리셋을 누르거나 색판에서 직접 고르거나
   const setAccent = hex => {
     App.saveSettings({ accent: hex });
+    App.drawMadeBy();
     $("#accHex", ov).textContent = hex.toUpperCase();
     $("#stAccPick", ov).value = hex;
     $$("#stAccent .sw", ov).forEach(x =>
@@ -638,7 +739,18 @@ function setupBox(){
     b.classList.add("on"); App.saveSettings({ width: b.dataset.w });
   });
 
-  $("#stTitle", ov).oninput = e => App.saveSettings({ title: e.target.value });
+  $$("#stFooter [data-fo]", ov).forEach(b => b.onclick = () => {
+    $$("#stFooter [data-fo]", ov).forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    App.saveSettings({ footer_on: b.dataset.fo === "1" });
+    App.drawMadeBy();
+  });
+  $("#stFooterTxt", ov).oninput = e => {
+    App.saveSettings({ footer_text: e.target.value });
+    App.drawMadeBy();
+  };
+
+  $("#stTitle", ov).oninput = e => { App.saveSettings({ title: e.target.value }); App.drawMadeBy(); };
   $("#stTag", ov).oninput   = e => App.saveSettings({ tagline: e.target.value });
   $("#stBlur", ov).oninput  = e => { $("#lbBlur", ov).textContent = e.target.value+"px"; App.saveSettings({ bg_blur:+e.target.value }); };
   $("#stDim", ov).oninput   = e => { $("#lbDim", ov).textContent = e.target.value+"%";  App.saveSettings({ bg_dim:+e.target.value }); };

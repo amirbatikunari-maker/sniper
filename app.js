@@ -142,6 +142,19 @@ const DEFAULT_SETTINGS = {
   width: "narrow",
   view: "rows",           // rows | cards
   sort: "new",            // new | old | views | title
+
+  // 왼쪽 위 프로필
+  avatar_url: "",
+  owner_name: "",
+  owner_bio: "",
+  owner_links: [],        // [{label, url}]
+
+  // 맨 아래 만든이 줄
+  footer_on: true,
+  footer_text: "",
+
+  // AI 창을 오른쪽에 붙박이로 둘지
+  ai_dock: false,
 };
 
 const GRADIENTS = {
@@ -196,11 +209,7 @@ function prefersDark() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches;
 }
 
-/* ═══════════════ 강조색 — 대비 자동 맞추기 ═══════════════
-   어떤 색을 골라도 글자가 읽히도록, 색의 «밝기» 를 재서
-     · 강조색 위에 얹을 글자색(--on-accent)
-     · 연한 강조 배경(--accent-soft) 과 그 위 글자색(--accent-ink)
-   을 계산해 둡니다. */
+/* ═══════════════ 강조색 — 대비를 재서 글자색을 정합니다 ═══════════════ */
 
 function toRgb(hex) {
   let h = String(hex || "").trim().replace("#", "");
@@ -226,14 +235,14 @@ function blend(a, b, amt) {
   return toHex(A.map((v, i) => v + (B[i] - v) * amt));
 }
 
-/* 두 색의 명암비 (1 = 똑같음, 21 = 검정 대 흰색). 4.5 넘으면 본문으로 읽을 만합니다. */
+/* 두 색의 명암비 (1 = 똑같음, 21 = 검정 대 흰색). 4.5 넘으면 읽을 만합니다. */
 function contrast(a, b) {
   const x = luma(a), y = luma(b);
   return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
 }
 
-/* fg 를 bg 위에서 읽힐 때까지 조금씩 어둡게(또는 밝게) 끌어당깁니다.
-   임계값을 미리 정해 두는 대신 실제로 재면서 맞추므로, 어떤 색을 골라도 통합니다. */
+/* fg 를 bg 위에서 읽힐 때까지 조금씩 끌어당깁니다.
+   임계값을 미리 정해 두는 대신 실제로 재면서 맞추므로 어떤 색이든 통합니다. */
 function readable(fg, bg, dark, need = 4.6) {
   const pull = dark ? "#FFFFFF" : "#000000";
   let c = fg;
@@ -245,16 +254,12 @@ function applyAccent(hex, dark) {
   const root = document.documentElement;
   root.style.setProperty("--accent", hex);
 
-  // 강조색 «위» 글자 — 흰색과 먹색 중 더 잘 보이는 쪽
   const ink0 = "#0B1220";
   root.style.setProperty("--on-accent",
     contrast("#FFFFFF", hex) >= contrast(ink0, hex) ? "#FFFFFF" : ink0);
 
-  // 연한 강조 배경
   const soft = dark ? blend(hex, "#141A22", .87) : blend(hex, "#FFFFFF", .90);
   root.style.setProperty("--accent-soft", soft);
-
-  // 그 연한 배경 위 글자색 — 읽힐 때까지 조정
   root.style.setProperty("--accent-ink", readable(hex, soft, dark));
 
   const m = document.querySelector('meta[name="theme-color"]');
@@ -294,12 +299,51 @@ function applySettings() {
 
   $$("#siteTitle").forEach(t => t.textContent = s.title || "sniper");
   $$("#siteTagline").forEach(g => g.textContent = s.tagline || "");
+  try { drawProfile(); drawMadeBy(); } catch {}
   document.title = (document.body.dataset.page === "post" && document.title !== "sniper")
     ? document.title : (s.title || "sniper");
 }
 
 window.matchMedia?.("(prefers-color-scheme: dark)")
   .addEventListener?.("change", () => { if (SETTINGS.theme === "auto") applySettings(); });
+
+/* ═══════════════ 카테고리 나무 ═══════════════
+   parent_id 로 이어진 목록을 «부모 → 자식» 순서로 펴 줍니다.
+   depth 가 붙어 나오므로 화면에서는 들여쓰기만 하면 됩니다. */
+function catTree(list) {
+  const rows = [...(list || [])];
+  const kids = new Map();
+  for (const c of rows) {
+    const k = c.parent_id == null ? "root" : String(c.parent_id);
+    if (!kids.has(k)) kids.set(k, []);
+    kids.get(k).push(c);
+  }
+  const ord = a => (a || []).sort((x, y) =>
+    (x.sort_order ?? 0) - (y.sort_order ?? 0) || (x.name || "").localeCompare(y.name || "", "ko"));
+
+  const out = [];
+  const walk = (key, depth) => {
+    for (const c of ord(kids.get(key) || [])) {
+      if (depth > 3) continue;
+      out.push({ ...c, depth });
+      walk(String(c.id), depth + 1);
+    }
+  };
+  walk("root", 0);
+
+  // 부모가 사라진 고아는 맨 뒤에 붙여 잃어버리지 않게 합니다
+  const seen = new Set(out.map(c => String(c.id)));
+  for (const c of rows) if (!seen.has(String(c.id))) out.push({ ...c, depth: 0 });
+  return out;
+}
+
+/* 어떤 카테고리와 그 아래 모든 자식의 id */
+function catBranch(list, id) {
+  const out = [String(id)];
+  for (const k of (list || []).filter(c => String(c.parent_id) === String(id)))
+    out.push(...catBranch(list, k.id));
+  return out;
+}
 
 /* ═══════════════ KaTeX (수식) ═══════════════ */
 
@@ -546,6 +590,164 @@ async function setPostStatus(ids, status) {
   if (error) throw new Error(error.message);
 }
 
+/* ═══════════════ 왼쪽 위 프로필 · 맨 아래 만든이 · AI 붙박이 ═══════════════ */
+
+function initials(name) {
+  const n = String(name || "").trim();
+  if (!n) return "·";
+  const parts = n.split(/\s+/);
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
+}
+
+function drawProfile(box) {
+  box = box || $("#profile");
+  if (!box) return;
+  const s = SETTINGS;
+  const name = s.owner_name || s.title || "";
+  const av = s.avatar_url
+    ? `<img class="pfAv" src="${esc(safeUrl(s.avatar_url))}" alt="">`
+    : `<span class="pfAv">${esc(initials(name))}</span>`;
+
+  box.innerHTML = `
+    <div class="pfTop">
+      ${av}
+      <div class="pfWho">
+        <div class="pfName">${esc(name || "이름 없음")}</div>
+        ${s.tagline ? `<div class="pfRole">${esc(s.tagline)}</div>` : ""}
+      </div>
+    </div>
+    ${s.owner_bio ? `<p class="pfBio">${esc(s.owner_bio)}</p>` : ""}
+    ${(s.owner_links || []).length ? `<div class="pfLinks">${
+      s.owner_links.filter(l => l && l.url).slice(0, 5).map(l =>
+        `<a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label || l.url)}</a>`
+      ).join("")}</div>` : ""}
+    <button class="pfEdit" id="pfEdit">프로필 고치기</button>`;
+
+  const btn = $("#pfEdit", box);
+  if (btn) btn.onclick = profileBox;
+}
+
+/* 프로필 고치는 창 */
+function profileBox() {
+  if (!canEdit()) return toast("로그인해야 고칠 수 있습니다.", "err");
+  const s = SETTINGS;
+  const ov = document.createElement("div");
+  ov.className = "ov";
+  ov.innerHTML = `<div class="ovbox">
+    <h3>프로필</h3>
+
+    <label>사진</label>
+    <div class="row" style="align-items:center;margin-bottom:4px">
+      <span class="pfAv" id="pvAv" style="width:52px;height:52px">${esc(initials(s.owner_name || s.title))}</span>
+      <button class="btn ghost sm" id="pfPick">기기에서 고르기</button>
+      <button class="btn ghost sm" id="pfClear">빼기</button>
+      <input type="file" id="pfFile" accept="image/*" hidden>
+    </div>
+    <input id="pfUrl" placeholder="또는 사진 주소(https://…)" value="${esc(s.avatar_url || "")}">
+
+    <label>이름</label>
+    <input id="pfName" placeholder="예: 조준원" value="${esc(s.owner_name || "")}">
+
+    <label>한 줄 소개 (이름 아래 작게)</label>
+    <input id="pfRole" placeholder="예: 데이터센터 기계설비" value="${esc(s.tagline || "")}">
+
+    <label>소개 글 (사이드바에 세 줄까지)</label>
+    <textarea id="pfBio" rows="3" placeholder="무엇을 기록하는 곳인지 짧게">${esc(s.owner_bio || "")}</textarea>
+
+    <label>링크 (한 줄에 하나 · «이름 | 주소»)</label>
+    <textarea id="pfLinks" rows="3" placeholder="GitHub | https://github.com/…">${
+      esc((s.owner_links || []).map(l => `${l.label || ""} | ${l.url || ""}`).join("\n"))}</textarea>
+
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
+      <button class="btn ghost" id="pfNo">닫기</button>
+      <button class="btn" id="pfOk">저장</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  $("#pfNo", ov).onclick = () => ov.remove();
+
+  const preview = () => {
+    const u = $("#pfUrl", ov).value.trim();
+    const av = $("#pvAv", ov);
+    av.outerHTML = u
+      ? `<img class="pfAv" id="pvAv" src="${esc(safeUrl(u))}" style="width:52px;height:52px" alt="">`
+      : `<span class="pfAv" id="pvAv" style="width:52px;height:52px">${esc(initials($("#pfName", ov).value || ""))}</span>`;
+  };
+  $("#pfUrl", ov).oninput = preview;
+  $("#pfPick", ov).onclick = () => $("#pfFile", ov).click();
+  $("#pfClear", ov).onclick = () => { $("#pfUrl", ov).value = ""; preview(); };
+  $("#pfFile", ov).onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      toast("올리는 중…");
+      const { url } = await uploadImage(f, "profile");
+      $("#pfUrl", ov).value = url; preview();
+    } catch (err) { toast(err.message, "err"); }
+  };
+
+  $("#pfOk", ov).onclick = async () => {
+    const links = $("#pfLinks", ov).value.split("\n").map(line => {
+      const [a, b] = line.split("|");
+      const url = (b ?? a ?? "").trim();
+      if (!url) return null;
+      const label = (b ? a : "").trim() || url.replace(/^https?:\/\//, "").split("/")[0];
+      return { label, url };
+    }).filter(Boolean).slice(0, 6);
+
+    await saveSettings({
+      avatar_url: $("#pfUrl", ov).value.trim(),
+      owner_name: $("#pfName", ov).value.trim(),
+      tagline:    $("#pfRole", ov).value.trim(),
+      owner_bio:  $("#pfBio", ov).value.trim(),
+      owner_links: links,
+    });
+    ov.remove();
+    toast("프로필을 바꿨습니다");
+  };
+}
+
+/* 맨 아래 만든이 줄 */
+function drawMadeBy(box) {
+  box = box || $("#madeby");
+  if (!box) return;
+  const s = SETTINGS;
+  if (s.footer_on === false) { box.innerHTML = ""; return; }
+
+  const site = s.title || "sniper";
+  const who = (s.owner_name || "").trim();
+  const mark = (site.trim()[0] || "S").toUpperCase();
+
+  box.innerHTML = `
+    <span class="mbMark"><span class="mbDot">${esc(mark)}</span>${esc(site)}</span>
+    <span>${who ? esc(who) + " 가 " : ""}직접 만들어 쓰는 기록장</span>
+    ${s.footer_text ? `<span>· ${esc(s.footer_text)}</span>` : ""}
+    <span class="mbSp"></span>
+    <a href="./about.html">소개</a>
+    <span>© ${new Date().getFullYear()}</span>`;
+}
+
+/* AI 창을 오른쪽에 붙박이로 */
+function applyDock() {
+  const on = !!SETTINGS.ai_dock && window.innerWidth >= 1180;
+  document.body.classList.toggle("aiDock", on);
+  const b = $("#btnDock");
+  if (b) b.classList.toggle("on", !!SETTINGS.ai_dock);
+  if (on && window.AIChat?.open) { try { window.AIChat.open(); } catch {} }
+}
+
+function initDock() {
+  const b = $("#btnDock");
+  if (b) b.onclick = async () => {
+    await saveSettings({ ai_dock: !SETTINGS.ai_dock });
+    applyDock();
+    toast(SETTINGS.ai_dock ? "AI 를 오른쪽에 붙였습니다" : "AI 를 떼어 냈습니다");
+  };
+  window.addEventListener("resize", applyDock);
+  let n = 0;
+  const t = setInterval(() => { if (window.AIChat || n++ > 40) { clearInterval(t); applyDock(); } }, 200);
+}
+
 /* ═══════════════ 로그인 상자 ═══════════════ */
 
 function loginBox() {
@@ -598,8 +800,10 @@ window.App = {
   get settings() { return SETTINGS; },
   GRADIENTS, PATTERNS, DEFAULT_SETTINGS,
   refreshMe, canEdit, signIn, signOut, loginBox,
+  drawProfile, profileBox, drawMadeBy, applyDock, initDock, initials,
   loadSettings, saveSettings, applySettings, applyAccent, luma, blend, contrast,
   blocksToHtml, blocksToText, inlineHtml, embedSrc,
+  catTree, catBranch,
   uploadImage, uploadFile, shrink,
   deletePosts, setPostStatus,
   loadKatex, renderMath,

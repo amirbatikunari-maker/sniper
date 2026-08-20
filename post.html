@@ -31,11 +31,14 @@
       <span id="siteTitle">sniper</span>
       <span id="siteTagline"></span>
     </a>
+    <div class="profile" id="profile"></div>
+
     <button class="btn sideWrite" id="btnWriteSide">✎ 새 글 쓰기</button>
 
     <div class="sideHead">글 모음</div>
     <div class="navList">
       <a class="navItem" href="./index.html"><span class="nm">← 목록으로</span></a>
+      <a class="navItem" href="./about.html"><span class="nm">소개</span></a>
     </div>
 
     <div class="sideHead">카테고리</div>
@@ -45,6 +48,7 @@
       <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
       <button class="ico" id="btnShare" title="주소 복사">🔗</button>
       <button class="ico" id="btnHist" title="수정 이력" hidden>🕘</button>
+      <button class="ico" id="btnDock" title="AI 를 오른쪽에 붙박이로">▤</button>
       <button class="btn ghost sm" id="btnUser" style="flex:1">로그인</button>
     </div>
   </aside>
@@ -54,6 +58,7 @@
       <div class="skel" style="height:30px;margin-top:22px"></div>
       <div class="skel" style="height:200px"></div>
     </div>
+    <footer class="madeby" id="madeby"></footer>
   </main>
 
 </div>
@@ -71,6 +76,9 @@ let POST = null, CATS = [];
 (async function start(){
   await App.loadSettings();
   await App.refreshMe();
+  App.drawProfile();
+  App.drawMadeBy();
+  App.initDock();
   wire();
 
   const id = qs("id");
@@ -109,12 +117,12 @@ function wire(){
 async function load(id){
   const [{ data:p, error }, { data:cats }] = await Promise.all([
     sb.from("blog_posts").select("*").eq("id", id).single(),
-    sb.from("blog_categories").select("id,name,emoji,color").order("sort_order"),
+    sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order"),
   ]);
 
   CATS = cats || [];
-  $("#navCats").innerHTML = CATS.map(c =>
-    `<a class="navItem" href="./index.html">
+  $("#navCats").innerHTML = App.catTree(CATS).map(c =>
+    `<a class="navItem" href="./index.html" data-depth="${c.depth}">
        <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
        <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span></a>`).join("");
 

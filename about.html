@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F4F5F7">
+<title>소개 · sniper</title>
+<link rel="icon" href="./icon.svg">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="./style.css">
+<style>
+.aboutHead{display:flex;align-items:center;gap:16px;padding-bottom:18px;
+  border-bottom:1px solid var(--rule);margin-bottom:22px}
+.aboutHead .av{
+  width:76px;height:76px;border-radius:18px;flex:none;object-fit:cover;
+  background:var(--accent-soft);border:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font:800 26px/1 var(--font);color:var(--accent-ink)}
+.aboutHead h1{margin:0;font:800 25px/1.3 var(--font);letter-spacing:-.025em}
+.aboutHead .role{font:600 13px/1.5 var(--font);color:var(--ink-2);margin-top:4px}
+.aboutHead .links{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.aboutHead .links a{font:600 11.5px/1.7 var(--font);text-decoration:none;color:var(--ink-2);
+  border:1px solid var(--rule);border-radius:6px;padding:1px 9px;background:var(--paper)}
+.aboutHead .links a:hover{border-color:var(--accent);color:var(--accent-ink)}
+#aboutEd{min-height:36dvh}
+.edWrap{border:1px dashed var(--rule);border-radius:12px;padding:6px 10px;background:var(--paper)}
+</style>
+</head>
+<body data-page="about">
+
+<header class="top">
+  <div class="topin">
+    <button class="ico" id="btnMenu" title="메뉴 열기">☰</button>
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
+    <button class="ico" id="btnThemeM" title="밝게/어둡게">◐</button>
+  </div>
+</header>
+<div class="sideScrim" id="scrim"></div>
+
+<div class="shell">
+
+  <aside class="side" id="side">
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
+
+    <div class="profile" id="profile"></div>
+
+    <div class="sideHead">글 모음</div>
+    <div class="navList">
+      <a class="navItem" href="./index.html"><span class="nm">← 전체 글</span></a>
+      <a class="navItem on" href="./about.html"><span class="nm">소개</span></a>
+    </div>
+
+    <div class="sideHead">카테고리</div>
+    <div class="navList" id="navCats"></div>
+
+    <div class="sideFoot">
+      <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
+      <button class="ico" id="btnDock" title="AI 를 오른쪽에 붙박이로">▤</button>
+      <button class="btn ghost sm" id="btnUser" style="flex:1">로그인</button>
+    </div>
+  </aside>
+
+  <main class="main post" id="main">
+    <div class="mainIn" id="mainIn">
+      <div class="skel" style="height:80px;margin-top:22px"></div>
+      <div class="skel" style="height:200px"></div>
+    </div>
+    <footer class="madeby" id="madeby"></footer>
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.7/dist/editorjs.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.7/dist/header.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.7.2/dist/quote.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.4.1/dist/table.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.3/dist/image.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/marker@1.4.0/dist/marker.umd.js"></script>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+<script src="./ai-chat.js" defer></script>
+<script src="./ai-plus.js" defer></script>
+<script src="./music.js" defer></script>
+<script>
+const { sb, $, $$, esc, toast, ask } = App;
+let ABOUT = { title: "소개", body_html: "", body_json: null }, ED = null;
+
+(async function start(){
+  await App.loadSettings();
+  await App.refreshMe();
+  App.drawProfile();
+  App.drawMadeBy();
+  App.initDock();
+  wire();
+
+  if(!sb){ $("#mainIn").innerHTML = `<div class="empty"><b>Supabase 설정이 비어 있습니다</b></div>`; return; }
+  await loadCats();
+  await load();
+})();
+
+function wire(){
+  $("#btnMenu").onclick = () => document.body.classList.add("sideOpen");
+  $("#scrim").onclick = () => document.body.classList.remove("sideOpen");
+  const flip = () => App.saveSettings({ theme: App.settings.theme === "dark" ? "light" : "dark" });
+  $("#btnTheme").onclick = flip; $("#btnThemeM").onclick = flip;
+  $("#btnUser").onclick = () => App.loginBox();
+  if(App.me) $("#btnUser").textContent = App.canEdit() ? "내 계정" : "권한 없음";
+}
+
+async function loadCats(){
+  const { data } = await sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order");
+  const tree = App.catTree(data || []);
+  $("#navCats").innerHTML = tree.map(c =>
+    `<a class="navItem" href="./index.html" data-depth="${c.depth}">
+       <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
+       <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span></a>`).join("");
+}
+
+async function load(){
+  try{
+    const { data } = await sb.from("blog_settings").select("value").eq("key","about").single();
+    if(data?.value) ABOUT = { ...ABOUT, ...data.value };
+  }catch{}
+  render();
+}
+
+function head(){
+  const s = App.settings;
+  const name = s.owner_name || s.title || "";
+  const av = s.avatar_url
+    ? `<img class="av" src="${esc(App.safeUrl(s.avatar_url))}" alt="">`
+    : `<span class="av">${esc(App.initials(name))}</span>`;
+  return `<div class="aboutHead">
+    ${av}
+    <div style="min-width:0">
+      <h1>${esc(name || "소개")}</h1>
+      ${s.tagline ? `<div class="role">${esc(s.tagline)}</div>` : ""}
+      ${(s.owner_links||[]).length ? `<div class="links">${
+        s.owner_links.filter(l=>l&&l.url).map(l =>
+          `<a href="${esc(App.safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label||l.url)}</a>`
+        ).join("")}</div>` : ""}
+    </div>
+  </div>`;
+}
+
+function render(){
+  const admin = App.canEdit();
+  document.title = (ABOUT.title || "소개") + " · " + (App.settings.title || "sniper");
+
+  $("#mainIn").innerHTML = head() + `
+    <article class="body" id="body">${
+      ABOUT.body_html || `<p class="muted">${admin
+        ? "아직 비어 있습니다. 아래 «고치기» 로 무엇을 하는 사람인지 적어 두세요."
+        : "아직 소개가 없습니다."}</p>`}</article>
+    <div class="postFoot">
+      <button class="btn ghost" onclick="location.href='./index.html'">← 전체 글</button>
+      <span class="mbSp" style="margin-left:auto"></span>
+      ${admin ? `<button class="btn ghost" id="btnPf">프로필 고치기</button>
+                 <button class="btn" id="btnEd">소개 글 고치기</button>` : ""}
+    </div>`;
+
+  App.renderMath($("#body"));
+  if(admin){
+    $("#btnPf").onclick = App.profileBox;
+    $("#btnEd").onclick = edit;
+  }
+}
+
+/* ── 고치기 ─────────────────────────────────────────── */
+async function edit(){
+  const admin = App.canEdit();
+  if(!admin) return;
+
+  $("#mainIn").innerHTML = head() + `
+    <div class="edWrap"><div id="aboutEd"></div></div>
+    <div class="postFoot">
+      <button class="btn ghost" id="edNo">그만두기</button>
+      <span style="margin-left:auto"></span>
+      <button class="btn" id="edOk">저장</button>
+    </div>`;
+
+  if(typeof EditorJS === "undefined"){
+    return toast("에디터를 못 불렀습니다. 새로고침해 주세요.", "err");
+  }
+
+  const uploader = {
+    async uploadByFile(file){
+      try{ const { url } = await App.uploadImage(file, "about"); return { success:1, file:{ url } }; }
+      catch(e){ toast(e.message, "err"); return { success:0 }; }
+    },
+    async uploadByUrl(url){ return { success:1, file:{ url } }; },
+  };
+
+  ED = new EditorJS({
+    holder: "aboutEd",
+    autofocus: true,
+    placeholder: "어떤 일을 하는지, 여기에 무엇을 쌓는지 적어 두세요.",
+    data: ABOUT.body_json || (ABOUT.body_html ? null : { blocks: [] }),
+    tools: {
+      header:    { class: Header, inlineToolbar:true, config:{ levels:[2,3], defaultLevel:2 } },
+      list:      { class: NestedList, inlineToolbar:true },
+      quote:     { class: Quote, inlineToolbar:true },
+      delimiter: Delimiter,
+      table:     { class: Table, inlineToolbar:true },
+      image:     { class: ImageTool, config:{ uploader } },
+      marker:    { class: Marker },
+    },
+    i18n: { messages: { toolNames:{ Text:"본문", Heading:"제목", List:"목록", Quote:"인용",
+      Delimiter:"구분선", Table:"표", Image:"사진", Marker:"형광펜", Link:"링크", Bold:"굵게", Italic:"기울임" } } },
+  });
+  await ED.isReady;
+
+  $("#edNo").onclick = () => render();
+  $("#edOk").onclick = async () => {
+    try{
+      const out = await ED.save();
+      ABOUT.body_json = out;
+      ABOUT.body_html = App.blocksToHtml(out);
+      ABOUT.updated_at = new Date().toISOString();
+      const { error } = await sb.from("blog_settings")
+        .upsert({ key:"about", value: ABOUT, updated_at: ABOUT.updated_at });
+      if(error) throw new Error(error.message);
+      ED = null;
+      render();
+      toast("소개를 저장했습니다");
+    }catch(e){ toast(e.message, "err"); }
+  };
+}
+</script>
+</body>
+</html>

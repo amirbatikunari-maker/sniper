@@ -6,7 +6,7 @@
 #
 #  ⚠ AI 중계 Worker(sniper-ai)는 «다른» Worker 입니다.
 #    그 설정은 이 파일이 아니라 sniper-ai 쪽에서 따로 관리합니다.
-#    (예전에 여기 들어 있던 AI 설정은 wrangler-ai.toml.txt 로 옮겨 뒀습니다)
+#    (AI 워커는 sniper-ai-worker.zip 에 따로 들어 있습니다)
 # ═══════════════════════════════════════════════════════════════
 
 name = "sniper"

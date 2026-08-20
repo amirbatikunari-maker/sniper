@@ -437,3 +437,94 @@ body .mus-fab .ring{inset:-3px;border-width:1.5px}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* ════════════════════════════════════════════════════════
+   7. 왼쪽 위 프로필
+   ════════════════════════════════════════════════════════ */
+.profile{padding:2px 6px 12px;border-bottom:1px solid var(--rule);margin-bottom:4px}
+.profile .pfTop{display:flex;align-items:center;gap:10px}
+.profile .pfAv{
+  width:44px;height:44px;border-radius:12px;flex:none;object-fit:cover;
+  background:var(--accent-soft);border:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font:800 15px/1 var(--font);color:var(--accent-ink)}
+.profile .pfWho{min-width:0;flex:1}
+.profile .pfName{font:800 14.5px/1.3 var(--font);letter-spacing:-.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile .pfRole{font:500 11px/1.4 var(--font);color:var(--ink-2);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile .pfBio{font:400 11.5px/1.58 var(--font);color:var(--ink-2);margin:8px 0 0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.profile .pfLinks{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.profile .pfLinks a{
+  font:600 10.5px/1.6 var(--font);text-decoration:none;color:var(--ink-2);
+  border:1px solid var(--rule);border-radius:5px;padding:1px 7px;background:var(--paper)}
+.profile .pfLinks a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.profile .pfEdit{
+  margin-top:9px;width:100%;padding:5px;border-radius:7px;border:1px dashed var(--rule);
+  background:none;color:var(--ink-3);font:600 11px/1.3 var(--font);cursor:pointer;display:none}
+html[data-admin="1"] .profile .pfEdit{display:block}
+.profile .pfEdit:hover{border-color:var(--accent);color:var(--accent-ink);border-style:solid}
+
+/* 하위 게시판 — 들여쓰기 + 접기 */
+.navItem[data-depth="1"]{padding-left:22px;font-size:12.8px}
+.navItem[data-depth="2"]{padding-left:35px;font-size:12.4px}
+.navItem[data-depth="3"]{padding-left:48px;font-size:12.2px}
+.navItem[data-depth]:not([data-depth="0"]) .nm::before{
+  content:"└ ";color:var(--ink-3);font-weight:400}
+.navTw{
+  flex:none;width:16px;height:16px;margin-left:-4px;border:0;background:none;cursor:pointer;
+  color:var(--ink-3);font:700 9px/16px var(--font);text-align:center;border-radius:4px;padding:0}
+.navTw:hover{background:var(--rule-2);color:var(--ink)}
+.navItem.folded ~ .navItem{}
+.navHidden{display:none !important}
+
+/* ════════════════════════════════════════════════════════
+   8. 맨 아래 만든이 줄
+   ════════════════════════════════════════════════════════ */
+.madeby{
+  max-width:var(--maxw);margin:34px auto 0;padding:16px 2px 8px;
+  border-top:1px solid var(--rule);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font:500 11.5px/1.6 var(--font);color:var(--ink-3)}
+.madeby .mbMark{
+  display:inline-flex;align-items:center;gap:6px;
+  font:700 11px/1 var(--font);letter-spacing:.04em;color:var(--ink-2)}
+.madeby .mbMark .mbDot{
+  width:14px;height:14px;border-radius:4px;background:var(--accent);flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--on-accent);font:800 8px/1 var(--font-m)}
+.madeby a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--rule)}
+.madeby a:hover{color:var(--accent-ink);border-color:currentColor}
+.madeby .mbSp{margin-left:auto}
+
+/* ════════════════════════════════════════════════════════
+   9. AI 창을 오른쪽에 붙박이로
+   ════════════════════════════════════════════════════════ */
+:root{ --aiw:376px }
+
+@media(min-width:1180px){
+  body.aiDock .shell{max-width:none;margin-right:var(--aiw)}
+  body.aiDock .aic-wrap{
+    position:fixed;inset:0 0 0 auto;width:var(--aiw);z-index:70;
+    display:block !important}
+  body.aiDock .aic-veil{display:none !important}
+  body.aiDock .aic-panel{
+    position:absolute;inset:0;width:100%;border-left:1px solid var(--rule);
+    box-shadow:none;border-radius:0;height:auto}
+  body.aiDock .aic-fab{display:none !important}
+  body.aiDock .mus-fab{right:calc(var(--aiw) + 14px)}
+  body.aiDock #toast{margin-left:calc(var(--aiw) / -2)}
+  body.aiDock .bulk{margin-left:calc(var(--aiw) / -2)}
+  body.aiDock .fabWrite{display:none}
+}
+@media(max-width:1179px){
+  body.aiDock .shell{margin-right:0}
+  #btnDock{display:none}
+}
+
+/* 붙박이 켜고 끄는 단추 */
+#btnDock.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+.aboutHead h1{color:var(--ink)}
+.profile .pfName,.profile .pfRole{color:inherit}

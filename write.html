@@ -269,6 +269,7 @@ function wire(){
   $("#btnDraft").onclick = () => save("draft");
   $("#btnPub").onclick   = () => save("published");
   $("#btnMore").onclick  = moreBox;
+  App.initDock();
 
   const t = $("#title");
   t.addEventListener("input", () => {
