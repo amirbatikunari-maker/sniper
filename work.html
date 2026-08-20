@@ -1,13 +1,98 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sniper · WORK Agent</title><link rel="stylesheet" href="./work.css"></head><body>
-<div id="loginPage" class="login-page" hidden><div class="login-card"><div class="brand">sniper <span>WORK</span></div><h1>로그인 후 Work 사용</h1><p>블로그의 Supabase 계정으로 로그인하세요.</p><input id="loginEmail" type="email" placeholder="이메일"><input id="loginPassword" type="password" placeholder="비밀번호"><button class="btn primary" id="btnLogin">로그인</button><button class="btn" id="btnLoginBack">블로그</button><div id="loginError" class="error" hidden></div></div></div>
-<div id="app" hidden><header class="top"><div class="brand">sniper <span>WORK AGENT</span></div><div class="topRight"><span id="localState" class="localState">○ 로컬 Agent 미연결</span><span id="userPill"></span><button class="btn" id="btnBlog">블로그</button><button class="btn danger" id="btnLogout">로그아웃</button></div></header>
-<main class="layout"><aside class="left panel"><div class="paneHead"><b>PROJECT</b></div><div class="pathRow"><input id="rootPath" placeholder="C:\\프로젝트\\경로"><button class="btn primary" id="btnConnect">연결</button></div><button class="btn full" id="btnPickFolder">브라우저 폴더 선택</button><div id="folderState" class="folderState">프로젝트가 연결되지 않았습니다.</div><div id="projectInfo" class="projectInfo">프로젝트 정보 대기</div><div id="fileTree" class="fileTree"></div><div class="paneFoot"><button class="btn full" id="btnRefreshFiles">새로고침</button><button class="btn full" id="btnSelectAll">전체 선택</button><button class="btn full" id="btnClearSelect">선택 해제</button></div></aside>
-<section class="center"><div class="agentHead panel"><div><div class="eyebrow">CODING AGENT</div><h1>새 작업</h1><div id="statusText" class="status">대기 중</div></div><div class="controls"><label>모델<select id="model"><option value="gpt-5.6-terra" selected>GPT-5.6 Terra</option><option value="gpt-5.6-sol">GPT-5.6 Sol</option><option value="gpt-5.6-luna">GPT-5.6 Luna</option></select></label><label>추론 단계<select id="effort"><option value="none">None</option><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">XHigh</option><option value="max">Max</option></select></label><label class="proToggle">스마트 컨텍스트 <input id="autoContext" type="checkbox" checked></label><label class="proToggle">실전 강화<select id="proMode"><option value="false" selected>Standard</option><option value="true">Pro</option></select></label><label class="proToggle">단계 자동 튜닝 <input id="autoTune" type="checkbox" checked></label><label>비용/품질<select id="strategy"><option value="eco">ECO</option><option value="balanced" selected>BALANCED</option><option value="quality">QUALITY</option><option value="max">MAX</option></select></label></div></div>
-<div class="autoDevelop panel"><div><div class="autoEyebrow">원클릭 자동 개발</div><b>프로젝트를 연결하고 할 일을 적은 뒤, 여기만 누르세요.</b><div class="autoHint">분석 → 설계 → 수정 → 빌드/테스트 → 실패하면 자동 재수정 → 성공하면 Git 체크포인트까지 자동으로 처리합니다. 위험한 스크립트 파일은 중간에 한 번 확인합니다.</div></div><button class="btn primary autoStart" id="btnAutoDevelop">🚀 자동 개발 시작</button></div>
-<div class="panel taskBox"><input id="taskName" class="titleInput" placeholder="작업 이름"><textarea id="prompt" placeholder="예: 로그인 후 Work 탭에서 오류가 나는 부분을 찾아 수정하고 빌드까지 확인해줘."></textarea><textarea id="context" class="context" placeholder="추가 지시 / 금지사항 / 오류 로그"></textarea><textarea id="projectRules" class="context" placeholder="프로젝트 규칙 / 기술 스택 / 절대 금지사항 (한 번 저장하면 다음 작업에도 유지)"></textarea><div class="memoryActions"><button class="btn tiny" id="btnSaveMemory">프로젝트 규칙 저장</button><span id="memoryState">프로젝트 메모리 대기</span></div><div class="selectedInfo"><span id="selectedCount">선택 파일 0개</span><span id="contextMeter" class="contextMeter">컨텍스트 0 KB</span></div></div>
-<div class="pipeline"><button class="stage active" data-stage="analyze">1 분석</button><span>→</span><button class="stage" data-stage="plan">2 설계</button><span>→</span><button class="stage" data-stage="patch">3 수정</button><span>→</span><button class="stage" data-stage="verify">4 실검증</button></div>
-<div class="panel commandBox"><label>검증 프로필<select id="verifyProfile"><option value="fast">FAST · lint</option><option value="standard" selected>STANDARD · lint + test + build</option><option value="full">FULL · typecheck + lint + test + build + diff</option></select></label><label>검증 명령 <input id="testCmd" value="npm run lint"></label><button class="btn" id="btnSmartContext">관련 코드 찾기</button><button class="btn" id="btnProjectIndex">프로젝트 구조 분석</button><button class="btn" id="btnVerifyLive">실제 실행 + 재검증</button></div>
-<details class="advanced"><summary>고급 작업 / 수동 제어</summary><div class="advancedBody"><div class="panel diffHelp"><b>안전 적용</b><span>파일별 변경을 diff로 확인하고 필요한 파일만 적용하세요. 자동 적용은 기본적으로 꺼져 있습니다.</span></div><div class="actions panel"><label class="autoApply"><input type="checkbox" id="autoApply"> 검증 후 자동 적용·재수정</label><label class="autoApply"><input type="checkbox" id="allowMixed"> 기존 변경과 섞어 적용</label><label class="retryCtl">자동 재수정 <input id="retryCount" type="number" min="0" max="5" value="2"></label><button class="btn primary big" id="btnRun">현재 단계 실행</button><button class="btn big" id="btnRunAll">자동 전체 작업</button><button class="btn big" id="btnApply" disabled>파일 적용</button><button class="btn big" id="btnVerify">실검증</button><button class="btn danger big" id="btnRevert">롤백</button><button class="btn big" id="btnBranch">작업 브랜치</button><button class="btn big" id="btnGitCheckpoint">Git 체크포인트</button></div>
-</div></details><div class="output panel"><div class="outputHead"><b>WORK LOG</b><span id="usage"></span></div><pre id="output"></pre></div><div class="panel verifyBox" id="verifyBox"><b>검증 결과</b><div>아직 검증하지 않았습니다.</div></div><div class="panel healthBox"><div class="paneHead"><b>PROJECT INTELLIGENCE</b><span id="projectIndexState">대기</span></div><pre id="projectIndex">프로젝트 구조 분석을 실행하면 파일·심볼·import 관계가 표시됩니다.</pre></div><div class="panel healthBox"><div class="paneHead"><b>SYSTEM HEALTH</b><button class="btn tiny" id="btnHealth">새로고침</button></div><pre id="health">확인 대기</pre></div><div class="panel gitBox"><div><b>GIT STATUS</b><pre id="gitStatus">-</pre></div><div><b>GIT DIFF</b><pre id="gitDiff">-</pre></div></div><div class="panel historyBox"><div class="paneHead"><b>CHANGE HISTORY</b></div><div id="history" class="history"><div class="empty">변경 이력 없음</div></div></div><div class="panel historyBox"><div class="paneHead"><b>AUDIT LOG</b><button class="btn tiny" id="btnAuditRefresh">새로고침</button></div><div id="audit" class="history"><div class="empty">감사 로그 없음</div></div></div></section>
-<aside class="right panel"><div class="paneHead"><b>CHANGES</b><div><span id="changeCount">0</span><button class="btn tiny" id="btnAllChanges">전체</button><button class="btn tiny" id="btnNoChanges">해제</button></div></div><div id="changes" class="changes"><div class="empty">에이전트를 실행하면 변경안이 여기에 표시됩니다.</div></div><div class="diffPreview panel"><div class="paneHead"><b>PATCH DIFF</b><button class="btn tiny" id="btnPreviewDiff">변경 diff 보기</button></div><div id="patchDiff" class="patchDiff"><div class="empty">아직 diff가 없습니다.</div></div></div></aside></main></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="./config.js"></script><script src="./work.js"></script></body></html>
+<div id="loginPage" class="login-page" hidden>
+  <div class="login-card">
+    <div class="brand">sniper <span>WORK</span></div>
+    <h1>Work에 로그인</h1><p>블로그에서 사용하는 Supabase 계정으로 로그인합니다.</p>
+    <input id="loginEmail" type="email" placeholder="이메일"><input id="loginPassword" type="password" placeholder="비밀번호">
+    <button class="btn primary" id="btnLogin">로그인</button><button class="btn" id="btnLoginBack">블로그로</button>
+    <div id="loginError" class="error" hidden></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+<header class="top simpleTop">
+  <div><div class="brand">sniper <span>WORK AGENT</span></div><div class="topSub">복잡한 설정 없이, 하고 싶은 일을 적고 자동 개발하세요.</div></div>
+  <div class="topRight"><span id="localState" class="localState">○ 로컬 Agent 미연결</span><span id="userPill"></span><button class="btn" id="btnBlog">블로그</button><button class="btn danger" id="btnLogout">로그아웃</button></div>
+</header>
+
+<main class="simpleLayout">
+  <section class="hero panel">
+    <div class="heroHead">
+      <div><div class="eyebrow">ONE-CLICK DEVELOPMENT</div><h1>무엇을 해드릴까요?</h1><p>프로젝트를 연결하고 평범한 말로 원하는 것을 적으세요. 나머지는 Work Agent가 처리합니다.</p></div>
+      <div class="heroBadge">자동 모드 · BALANCED</div>
+    </div>
+
+    <div class="projectBar">
+      <div class="projectMain">
+        <div class="stepLabel"><b>1</b> 프로젝트 연결</div>
+        <div class="pathRow"><input id="rootPath" placeholder="예: C:\\Users\\abcmt\\Documents\\my-project"><button class="btn primary" id="btnConnect">연결</button></div>
+        <button class="btn full" id="btnPickFolder">📁 브라우저에서 폴더 찾기</button>
+        <div id="folderState" class="folderState">프로젝트가 아직 연결되지 않았습니다.</div>
+        <div id="projectInfo" class="projectInfo">프로젝트 정보를 읽으면 자동으로 검증 방법을 선택합니다.</div>
+      </div>
+      <div class="projectQuick"><span class="muted">최근 사용 설정은 자동 복원됩니다.</span><button class="btn tiny" id="btnHealth">상태 확인</button></div>
+    </div>
+
+    <div class="requestBox">
+      <div class="stepLabel"><b>2</b> 하고 싶은 일을 적기</div>
+      <input id="taskName" class="titleInput" placeholder="작업 제목 (선택)">
+      <textarea id="prompt" class="mainPrompt" placeholder="예: 로그인 후 Work 화면에서 에러가 나면 원인을 찾아 고치고, 빌드와 테스트까지 확인해줘. 기존 기능은 최대한 유지해줘."></textarea>
+      <textarea id="context" class="smallPrompt" placeholder="추가 지시나 오류 로그가 있으면 여기에 붙여넣으세요. 없어도 됩니다."></textarea>
+      <div class="rulesRow"><textarea id="projectRules" class="rulesInput" placeholder="프로젝트 규칙 / 기술 스택 / 절대 금지사항 (선택)"></textarea><div class="rulesSide"><button class="btn tiny" id="btnSaveMemory">규칙 저장</button><span id="memoryState">프로젝트 메모리 대기</span></div></div>
+    </div>
+
+    <div class="autoCard">
+      <div><div class="autoTitle">🚀 자동 개발</div><div class="autoDesc">분석 → 설계 → 수정 → 실제 검증 → 실패하면 자동 재수정까지 한 번에 처리합니다.</div><div class="autoSafe">안전 장치: 변경 전 해시 확인 · 위험 스크립트 2차 승인 · Git 작업 브랜치 · 롤백</div></div>
+      <button class="btn primary autoStart" id="btnAutoDevelop">자동 개발 시작</button>
+    </div>
+
+    <div class="quickRow">
+      <button class="btn secondary bigQuick" id="btnQuickAnalyze">🔎 먼저 분석만</button>
+      <button class="btn secondary bigQuick" id="btnShowAdvanced">⚙️ 고급 설정</button>
+    </div>
+  </section>
+
+  <section class="statusPanel panel">
+    <div class="statusTop"><div><div class="eyebrow">PROGRESS</div><b id="statusText">대기 중</b></div><div id="usage" class="usage"></div></div>
+    <div class="progressLine"><div class="progressDot" data-s="analyze">1</div><span>분석</span><div class="line"></div><div class="progressDot" data-s="plan">2</div><span>설계</span><div class="line"></div><div class="progressDot" data-s="patch">3</div><span>수정</span><div class="line"></div><div class="progressDot" data-s="verify">4</div><span>검증</span></div>
+    <div id="output" class="friendlyLog">아직 작업을 시작하지 않았습니다.</div>
+  </section>
+
+  <section class="resultPanel panel">
+    <div class="paneHead"><b>결과</b><div class="resultTools"><span id="changeCount">0</span><button class="btn tiny" id="btnAllChanges">전체 적용 후보</button><button class="btn tiny" id="btnNoChanges">해제</button></div></div>
+    <div id="changes" class="changes"><div class="empty">자동 개발을 시작하면 변경 내용이 여기에 표시됩니다.</div></div>
+    <details class="resultDetails"><summary>변경 diff 보기</summary><button class="btn tiny" id="btnPreviewDiff">diff 새로 계산</button><div id="patchDiff" class="patchDiff"><div class="empty">아직 diff가 없습니다.</div></div></details>
+    <details class="resultDetails"><summary>검증 결과</summary><div class="panelLite" id="verifyBox"><b>검증 결과</b><div>아직 검증하지 않았습니다.</div></div></details>
+  </section>
+
+  <details class="advanced panel" id="advancedPanel">
+    <summary>고급 설정 · 수동 제어</summary>
+    <div class="advancedGrid">
+      <div class="advancedBlock">
+        <h3>AI 설정</h3>
+        <div class="advancedControls">
+          <label>모델<select id="model"><option value="gpt-5.6-terra" selected>GPT-5.6 Terra</option><option value="gpt-5.6-sol">GPT-5.6 Sol</option><option value="gpt-5.6-luna">GPT-5.6 Luna</option></select></label>
+          <label>추론<select id="effort"><option value="none">None</option><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">XHigh</option><option value="max">Max</option></select></label>
+          <label>비용/품질<select id="strategy"><option value="eco">ECO</option><option value="balanced" selected>BALANCED</option><option value="quality">QUALITY</option><option value="max">MAX</option></select></label>
+          <label class="checkLine">스마트 컨텍스트 <input id="autoContext" type="checkbox" checked></label>
+          <label class="checkLine">단계 자동 튜닝 <input id="autoTune" type="checkbox" checked></label>
+          <label>실전 강화<select id="proMode"><option value="false" selected>Standard</option><option value="true">Pro</option></select></label>
+        </div>
+      </div>
+      <div class="advancedBlock">
+        <h3>검증 / 파일</h3>
+        <div class="advancedControls">
+          <label>검증 프로필<select id="verifyProfile"><option value="fast">FAST</option><option value="standard" selected>STANDARD</option><option value="full">FULL</option></select></label>
+          <label>검증 명령<input id="testCmd" value="npm run lint"></label>
+          <button class="btn" id="btnSmartContext">관련 코드 찾기</button><button class="btn" id="btnProjectIndex">프로젝트 구조 분석</button><button class="btn" id="btnVerifyLive">실제 실행 + 재검증</button>
+        </div>
+        <div class="advancedActions"><label><input type="checkbox" id="autoApply"> 검증 후 자동 적용·재수정</label><label><input type="checkbox" id="allowMixed"> 기존 변경과 섞어 적용</label><label>재시도 <input id="retryCount" type="number" min="0" max="5" value="2"></label><button class="btn primary" id="btnRun">현재 단계</button><button class="btn" id="btnRunAll">자동 전체 작업</button><button class="btn" id="btnApply" disabled>파일 적용</button><button class="btn" id="btnVerify">실검증</button><button class="btn danger" id="btnRevert">롤백</button><button class="btn" id="btnBranch">작업 브랜치</button><button class="btn" id="btnGitCheckpoint">Git 체크포인트</button></div>
+      </div>
+      <div class="advancedBlock wide"><h3>선택 파일</h3><div class="fileTools"><span id="selectedCount">선택 파일 0개</span><span id="contextMeter" class="contextMeter">컨텍스트 0 KB</span><button class="btn tiny" id="btnRefreshFiles">새로고침</button><button class="btn tiny" id="btnSelectAll">전체 선택</button><button class="btn tiny" id="btnClearSelect">선택 해제</button></div><div id="fileTree" class="fileTree"></div></div>
+      <div class="advancedBlock wide"><h3>시스템 / 기록</h3><div class="recordGrid"><div><div class="miniHead">PROJECT INTELLIGENCE <span id="projectIndexState">대기</span></div><pre id="projectIndex">프로젝트 구조 분석 전입니다.</pre></div><div><div class="miniHead">SYSTEM HEALTH</div><pre id="health">확인 대기</pre></div><div><div class="miniHead">GIT STATUS</div><pre id="gitStatus">-</pre></div><div><div class="miniHead">GIT DIFF</div><pre id="gitDiff">-</pre></div><div><div class="miniHead">CHANGE HISTORY</div><div id="history" class="history"><div class="empty">변경 이력 없음</div></div></div><div><div class="miniHead">AUDIT LOG <button class="btn tiny" id="btnAuditRefresh">새로고침</button></div><div id="audit" class="history"><div class="empty">감사 로그 없음</div></div></div></div></div>
+    </div>
+  </details>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="./config.js"></script><script src="./work.js"></script>
+</body></html>
