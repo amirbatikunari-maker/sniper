@@ -2,11 +2,14 @@
 <html lang="ko" data-theme="light">
 <head>
 <meta charset="utf-8">
+<meta name="description" content="sniper 기술 블로그 · 공부와 개발 기록">
+<meta name="theme-color" content="#F4F5F7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F4F5F7">
 <title>sniper</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="./style.css">
@@ -16,7 +19,7 @@
 <!-- 좁은 화면에서만 보이는 위쪽 띠 -->
 <header class="top">
   <div class="topin">
-    <button class="ico" id="btnMenu" title="메뉴 열기">☰</button>
+    <button class="ico" id="btnMenu" title="메뉴 열기" aria-label="메뉴 열기">☰</button>
     <a class="brand" href="./index.html">
       <span id="siteTitle">sniper</span>
       <span id="siteTagline"></span>
@@ -39,7 +42,7 @@
     <button class="btn sideWrite" id="btnWriteSide">✎ 새 글 쓰기</button>
 
     <div class="sideSearch">
-      <input id="q" type="search" placeholder="제목·본문 찾기">
+      <input id="q" type="search" placeholder="제목·본문 찾기" aria-label="제목·본문 검색" autocomplete="off"><div id="recentSearches" class="recentSearches" hidden></div>
     </div>
 
     <div class="sideHead">글 모음</div>
@@ -53,6 +56,7 @@
 
     <div class="sideHead" style="padding-top:16px">더 보기</div>
     <div class="navList">
+      <a class="navItem" href="./work.html" id="navWork"><span class="nm">WORK</span><span class="badge">로그인</span></a>
       <a class="navItem" href="./about.html"><span class="nm">소개</span></a>
     </div>
 
@@ -64,7 +68,7 @@
     </div>
   </aside>
 
-  <main class="main">
+  <main id="main" class="main">
     <div class="mainIn">
       <div class="listBar">
         <h1 id="viewTitle">전체</h1>
@@ -90,7 +94,7 @@
 
 </div>
 
-<button class="fabWrite" id="btnWrite" title="새 글 쓰기">✎ 글쓰기</button>
+<button class="fabWrite" id="btnWrite" title="새 글 쓰기">✎ 글쓰기</button><div class="cmdPal" id="cmdPal" hidden role="dialog" aria-modal="true" aria-label="빠른 명령"><div class="cmdBox"><input id="cmdInput" placeholder="검색 · 글쓰기 · WORK …" autocomplete="off"><div id="cmdList"></div><div class="cmdHint">Enter 실행 · Esc 닫기</div></div></div>
 
 <div class="bulk" id="bulk">
   <span id="bulkCnt">0개 고름</span>
@@ -184,8 +188,17 @@ function wire(){
       document.body.classList.add("sideOpen");
       $("#q").focus(); $("#q").select();
     }
-    if(e.key === "Escape"){ document.body.classList.remove("sideOpen"); }
+    if(e.key === "Escape"){ document.body.classList.remove("sideOpen"); closeCmd(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmd(); }
   });
+
+
+  const recentKey = "sniper.recentSearches";
+  function recent(){ try{return JSON.parse(localStorage.getItem(recentKey)||"[]");}catch{return [];} }
+  function paintRecent(){ const r=recent(); const box=$("#recentSearches"); if(!box)return; box.innerHTML=r.map(x=>`<button type="button" data-rsearch="${esc(x)}">${esc(x)}</button>`).join(""); box.hidden=!r.length; $$("[data-rsearch]",box).forEach(b=>b.onclick=()=>{ $("#q").value=b.dataset.rsearch; KEY=b.dataset.rsearch; DEEP=new Set(); box.hidden=true; draw(); deepSearch(); }); }
+  function rememberSearch(k){ if(!k)return; const a=[k,...recent().filter(x=>x!==k)].slice(0,8); try{localStorage.setItem(recentKey,JSON.stringify(a));}catch{} }
+  $("#q").addEventListener("focus",paintRecent);
+  $("#q").addEventListener("keydown",e=>{ if(e.key==='Enter' && KEY) rememberSearch(KEY); if(e.key==='Escape') $("#recentSearches").hidden=true; });
 
   let hTimer = null;
   $("#q").addEventListener("input", e => {
@@ -202,7 +215,20 @@ function wire(){
   $("#bulkArch").onclick = () => bulkStatus("archived", "보관함으로 옮겼습니다");
 
   if(App.me) $("#btnUser").textContent = App.canEdit() ? "내 계정" : "권한 없음";
+  const work = $("#navWork");
+  if(work){
+    if(App.me){ work.querySelector(".badge")?.remove(); }
+    else work.classList.add("mutedNav");
+    work.onclick = e => {
+      if(!App.me){ e.preventDefault(); App.loginBox(); }
+    };
+  }
 }
+
+function openCmd(){ const p=$("#cmdPal"); if(!p)return; p.hidden=false; const i=$("#cmdInput"); i.value=""; paintCmd(""); i.focus(); }
+function closeCmd(){ const p=$("#cmdPal"); if(p)p.hidden=true; }
+function paintCmd(q){ const rows=[{k:"search",t:"글 검색",s:"검색창으로 이동"},{k:"write",t:"새 글 쓰기",s:"작성 화면"},{k:"work",t:"WORK",s:"코딩 에이전트"},{k:"theme",t:"테마 전환",s:"밝게 / 어둡게"}].filter(x=>(x.t+x.s).toLowerCase().includes(String(q).toLowerCase())); const b=$("#cmdList"); if(!b)return; b.innerHTML=rows.map((x,i)=>`<button class="cmdItem" data-cmd="${x.k}" ${i===0?'data-active="1"':''}><b>${x.t}</b><span>${x.s}</span></button>`).join(""); $$("[data-cmd]",b).forEach(x=>x.onclick=()=>runCmd(x.dataset.cmd)); }
+function runCmd(k){ closeCmd(); if(k==='search'){ $("#q").focus(); return; } if(k==='write'){location.href='./write.html';return;} if(k==='work'){ if(App.me)location.href='./work.html'; else App.loginBox(); return;} if(k==='theme'){ const n=App.settings.theme==='dark'?'light':'dark'; App.saveSettings({theme:n}); }}
 
 function drawSeg(){
   $$("#viewSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === VIEW));
@@ -389,7 +415,7 @@ function draw(){
       const c = catOf(p.category_id);
       return `<div class="card-i">
         <a href="./post.html?id=${p.id}" style="text-decoration:none;color:inherit;display:block">
-          ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
+          ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="${esc(p.title)}" loading="lazy">` : ""}
           <div class="in">
             <div class="sub">
               ${c ? `<span class="d" style="background:${esc(c.color||"#9CA3AF")}"></span>${esc(c.name)}` : ""}
@@ -413,7 +439,7 @@ function draw(){
       const c = catOf(p.category_id);
       return `<div class="row-i">
         <input class="sel" type="checkbox" data-pick="${p.id}" ${PICKED.has(p.id)?"checked":""} title="고르기">
-        ${p.cover_url ? `<img class="thumb" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
+        ${p.cover_url ? `<img class="thumb" src="${esc(p.cover_url)}" alt="${esc(p.title)}" loading="lazy">` : ""}
         <a class="txt" href="./post.html?id=${p.id}">
           <span class="ttl">${esc(p.title)}</span>
           ${p.excerpt ? `<span class="exc">${esc(p.excerpt)}</span>` : `<span class="exc"></span>`}

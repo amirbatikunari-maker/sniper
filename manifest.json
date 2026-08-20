@@ -1,11 +1,41 @@
 {
   "name": "sniper",
   "short_name": "sniper",
-  "start_url": "./index.html",
+  "start_url": "./index.html?v=12",
   "display": "standalone",
   "background_color": "#F6F7F9",
   "theme_color": "#F6F7F9",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
-  ]
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "WORK Agent",
+      "short_name": "WORK",
+      "url": "./work.html",
+      "icons": [
+        {
+          "src": "./icon.svg",
+          "sizes": "any"
+        }
+      ]
+    },
+    {
+      "name": "검색",
+      "short_name": "검색",
+      "url": "./index.html?q=",
+      "icons": [
+        {
+          "src": "./icon.svg",
+          "sizes": "any"
+        }
+      ]
+    }
+  ],
+  "id": "sniper-v12"
 }

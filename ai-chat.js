@@ -1,3 +1,6 @@
+function resolveTier(value){ const v=String(value||'').trim(); const map={fast:'빠름',balanced:'균형',medium:'균형',high:'최고급',quality:'최고급',pro:'최고급','빠름':'빠름','균형':'균형','최고급':'최고급'}; return map[v]||v||'균형'; }
+
+/* canonical shared AI source — edit shared/ai-chat.js, then run tools/sync-shared.sh */
 /* ═══════════════════════════════════════════════════════════════════════
 
    ai-chat.js — 뷰어와 블로그가 함께 쓰는 AI 대화 상자

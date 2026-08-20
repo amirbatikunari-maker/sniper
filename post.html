@@ -2,15 +2,18 @@
 <html lang="ko" data-theme="light">
 <head>
 <meta charset="utf-8">
+<meta name="description" content="sniper 기술 블로그 · 공부와 개발 기록">
+<meta name="theme-color" content="#F4F5F7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F4F5F7">
 <title>sniper</title>
 <link rel="icon" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="./style.css">
 </head>
-<body data-page="post">
+<body data-page="post"><div class="readProgress" id="readProgress"></div>
 
 <header class="top">
   <div class="topin">
@@ -170,6 +173,12 @@ async function load(id){
         <button class="btn danger ghost" id="btnDel">지우기</button>` : ""}
     </div>`;
 
+  // 독서 UX: 목차 + 코드 복사 + 읽기 진행률
+  buildToc();
+  decorateCode();
+  window.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
   App.renderMath($("#body"));
 
   if(admin){
@@ -203,6 +212,10 @@ async function load(id){
 
   sb.rpc("blog_bump_view", { p_id: p.id }).catch(()=>{});
 }
+
+function updateProgress(){ const b=$("#body"), bar=$("#readProgress"); if(!b||!bar)return; const top=b.getBoundingClientRect().top+window.scrollY; const h=Math.max(1,b.scrollHeight-window.innerHeight); const v=Math.max(0,Math.min(1,(window.scrollY-top+80)/h)); bar.style.width=(v*100).toFixed(1)+'%'; }
+function buildToc(){ const b=$("#body"), heads=[...b.querySelectorAll('h2,h3')]; const old=$("#tocBox"); old?.remove(); if(heads.length<2)return; heads.forEach((h,i)=>{ if(!h.id||h.id.startsWith('h-')) h.id='sec-'+i+'-'+(h.textContent||'').trim().slice(0,20).replace(/\s+/g,'-'); }); const box=document.createElement('nav'); box.id='tocBox'; box.className='tocBox'; box.innerHTML='<b>목차</b>'+heads.map(h=>`<a href="#${esc(h.id)}" style="padding-left:${h.tagName==='H3'?16:6}px">${esc(h.textContent)}</a>`).join(''); b.parentElement.insertBefore(box,b); }
+function decorateCode(){ $$("#body pre").forEach(pre=>{ if(pre.querySelector('.codeTools'))return; const btn=document.createElement('button'); btn.className='copyCode'; btn.textContent='복사'; btn.onclick=async()=>{ try{await navigator.clipboard.writeText(pre.innerText);btn.textContent='복사됨';setTimeout(()=>btn.textContent='복사',1200);}catch{btn.textContent='복사 실패';} }; const wrap=document.createElement('div'); wrap.className='codeTools'; wrap.appendChild(btn); pre.parentElement.insertBefore(wrap,pre); }); }
 
 async function delPost(){
   const ok = await ask("이 글을 지웁니다", `«${esc(POST.title)}» — 되돌릴 수 없습니다.`, "지우기", true);
@@ -248,7 +261,13 @@ async function histBox(postId){
     const { data:r } = await sb.from("blog_revisions").select("body_html,title").eq("id", b.dataset.see).single();
     if(!r) return;
     $("#body").innerHTML = r.body_html || "";
-    App.renderMath($("#body"));
+    // 독서 UX: 목차 + 코드 복사 + 읽기 진행률
+  buildToc();
+  decorateCode();
+  window.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
+  App.renderMath($("#body"));
     toast("예전 모습을 보고 있습니다 — 새로고침하면 원래대로");
     ov.remove();
   });

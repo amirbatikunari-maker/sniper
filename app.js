@@ -789,10 +789,34 @@ function loginBox() {
 }
 
 /* ═══════════════ 오프라인 대비 ═══════════════ */
-if ("serviceWorker" in navigator && document.body?.dataset.page !== "write" &&
-    location.protocol.startsWith("http"))
-  window.addEventListener("load", () =>
-    navigator.serviceWorker.register("./sw.js").catch(() => {}));
+/* ── 오프라인 / 새 버전 표시 ───────────────────────────── */
+function installNetBadge(){
+  if(document.getElementById("netBadge")) return;
+  const b=document.createElement("div"); b.id="netBadge"; b.className="netBadge"; b.setAttribute("role","status"); b.hidden=navigator.onLine; b.textContent="오프라인 · 저장된 화면을 사용 중"; document.body.appendChild(b);
+  window.addEventListener("online",()=>{b.hidden=true;}); window.addEventListener("offline",()=>{b.hidden=false;});
+}
+installNetBadge();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  window.addEventListener("load", async () => {
+    try{
+      const reg=await navigator.serviceWorker.register("./sw.js");
+      reg.update?.();
+      reg.addEventListener("updatefound",()=>{
+        const w=reg.installing; if(!w)return;
+        w.addEventListener("statechange",()=>{
+          if(w.state==='installed' && navigator.serviceWorker.controller){
+            const b=document.createElement('button'); b.className='swUpdate'; b.textContent='새 버전이 있습니다 · 새로고침'; b.onclick=()=>location.reload(); document.body.appendChild(b);
+          }
+        });
+      });
+    }catch{}
+  });
+
+function lazyLoadMedia(root=document){
+  root.querySelectorAll('img:not([loading])').forEach(img=>img.setAttribute('loading','lazy'));
+  root.querySelectorAll('iframe:not([loading])').forEach(x=>x.setAttribute('loading','lazy'));
+}
+window.addEventListener('load',()=>lazyLoadMedia());
 
 window.App = {
   sb, CFG,
@@ -809,4 +833,35 @@ window.App = {
   loadKatex, renderMath,
   $, $$, esc, safeUrl, fmtDate, fmtSize, slugify, toast, qs, ask,
 };
+})();
+
+
+
+
+/* v9 UX: scroll restore + lightweight search helpers */
+(function(){
+  try {
+    const key=`sniper:scroll:${location.pathname}${location.search}`;
+    if('scrollRestoration' in history) history.scrollRestoration='manual';
+    window.addEventListener('load',()=>{
+      const y=Number(sessionStorage.getItem(key)||0);
+      if(y) requestAnimationFrame(()=>scrollTo(0,y));
+    });
+    let t=0;
+    window.addEventListener('scroll',()=>{
+      clearTimeout(t);
+      t=setTimeout(()=>sessionStorage.setItem(key,String(scrollY)),180);
+    },{passive:true});
+  } catch {}
+  window.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+      e.preventDefault();
+      document.querySelector('#cmdPal')?.removeAttribute('hidden');
+      document.querySelector('#cmdInput')?.focus();
+    }
+    if(e.key==='/' && !/input|textarea|select/i.test(document.activeElement?.tagName||'')){
+      e.preventDefault();
+      document.querySelector('#q')?.focus();
+    }
+  });
 })();
