@@ -508,7 +508,14 @@ function normalizeCatalog(
                 String(
                   m.label ||
                   m.id
-                )
+                ),
+
+              tier:
+                m.tier
+                  ? String(
+                      m.tier
+                    )
+                  : null
             })
           )
 
@@ -535,7 +542,14 @@ function normalizeCatalog(
                 String(
                   m.label ||
                   m.id
-                )
+                ),
+
+              tier:
+                m.tier
+                  ? String(
+                      m.tier
+                    )
+                  : null
             })
           )
 
@@ -795,6 +809,7 @@ function pickFrom(
   const exact =
     list.find(
       m =>
+        m.tier === tier ||
         (
           m.label ||
           ""
@@ -838,6 +853,50 @@ function pickFrom(
   return (
     list[0]?.id ||
     null
+  );
+
+}
+
+
+function modelLabel(
+  provider,
+  model,
+  tier
+) {
+
+  const list =
+    Array.isArray(
+      CATALOG[provider]
+    )
+
+      ? CATALOG[provider]
+
+      : [];
+
+
+  const found =
+    list.find(
+      m =>
+        m.id === model &&
+        (
+          m.tier === tier ||
+          (
+            m.label ||
+            ""
+          ).includes(
+            tier
+          )
+        )
+    ) ||
+    list.find(
+      m =>
+        m.id === model
+    );
+
+
+  return (
+    found?.label ||
+    model
   );
 
 }
@@ -2217,13 +2276,25 @@ function renderHint() {
   }
 
 
+  state.model =
+    p.model;
+
+
+  const current =
+    modelLabel(
+      p.provider,
+      p.model,
+      p.tier
+    );
+
+
   el.hint.textContent =
     state.mode ===
       "auto"
 
-      ? `자동 — ${p.model}`
+      ? `자동 — ${current}`
 
-      : p.model;
+      : current;
 
 }
 
@@ -4184,6 +4255,9 @@ async function send(
 
               model:
                 pick.model,
+
+              tier:
+                pick.tier,
 
               system:
                 buildSystem(),
