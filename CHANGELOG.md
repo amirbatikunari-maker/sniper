@@ -64,3 +64,14 @@
 - Local Agent Origin 거부 응답에 실제 origin/허용 목록을 포함.
 - 공용 ai-chat.js를 viewer/blog 양쪽에 동기화.
 - Worker/agent 계약 테스트 도구 추가.
+
+
+## v17 — 원클릭 자동 개발
+- 비개발자용 `🚀 자동 개발 시작` 원클릭 모드 추가
+- 자동으로 분석 → 설계 → 수정 → 실검증 → 실패 시 재수정
+- 성공 시 Git 작업 브랜치 생성 + checkpoint 자동 저장
+- 위험 스크립트(`.bat/.cmd/.ps1/.sh...`)는 기존 2차 승인 유지
+- 파일 선택이 비어 있으면 안전한 코드 파일을 자동 선택
+- STANDARD 검증을 자동 기본값으로 사용
+- 고급 수동 제어는 접어두고 기본 화면을 단순화
+- Local Agent 기본 허용 Origin에 `https://sniper-web.pages.dev` 추가
