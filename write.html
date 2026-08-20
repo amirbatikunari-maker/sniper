@@ -31,12 +31,15 @@
   display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}
 .toolsIn::-webkit-scrollbar{display:none}
 .tool{
-  flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;
-  min-width:52px;padding:5px 6px;border:0;border-radius:8px;background:none;cursor:pointer;
-  color:var(--ink-2);font:600 10.5px/1.2 var(--font)}
-.tool:hover{background:var(--accent-soft);color:var(--accent)}
-.tool .gl{font-size:16px;line-height:1.15}
-.toolSep{flex:none;width:1px;height:26px;background:var(--rule);margin:0 5px}
+  flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+  min-width:46px;padding:5px 5px 4px;border:0;border-radius:8px;background:none;cursor:pointer;
+  color:var(--ink-2);font:600 10px/1.2 var(--font);letter-spacing:-.01em}
+.tool:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.tool svg{
+  width:19px;height:19px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round}
+.toolSep{flex:none;width:1px;height:24px;background:var(--rule);margin:0 6px}
 
 .wmain{max-width:var(--maxw);margin:0 auto;padding:14px 16px 120px}
 
@@ -75,6 +78,13 @@ html[data-theme="dark"] .cdx-marker{background:#78350f;color:#fef3c7}
 .image-tool__image-picture{border-radius:10px}
 .cdx-attaches--with-file{background:var(--paper);border-color:var(--rule)}
 
+/* 구분선 — Editor.js 기본은 «***» 라 글자처럼 보입니다. 실제 선으로 바꿉니다. */
+#ed .ce-delimiter{padding:0;line-height:0;text-align:left}
+#ed .ce-delimiter:before{
+  content:"";display:block;height:1px;background:var(--rule);
+  margin:16px 0;font-size:0;letter-spacing:0}
+#ed .ce-delimiter:hover:before{background:var(--accent)}
+
 /* 수식 블록 */
 .mathBlock{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--paper)}
 .mathBlock textarea{
@@ -108,23 +118,23 @@ body:has(.ce-popover--opened) .aic-fab{display:none}
 
 <div class="tools">
   <div class="toolsIn" id="tools">
-    <button class="tool" data-t="image"><span class="gl">🖼</span>사진</button>
-    <button class="tool" data-t="embed"><span class="gl">▶</span>동영상</button>
-    <button class="tool" data-t="attach"><span class="gl">📎</span>파일</button>
+    <button class="tool" data-t="image" title="사진"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14v9H3z"/><circle cx="7" cy="9" r="1.3"/><path d="M3 12.5 7.5 9l3 2.5L14 8.5l3 3"/></svg>사진</button>
+    <button class="tool" data-t="embed" title="동영상"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M8.5 7.8 13 10l-4.5 2.2z"/></svg>동영상</button>
+    <button class="tool" data-t="attach" title="파일"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14 6.5 8 12.5a2.6 2.6 0 0 0 3.7 3.7l6-6a4.3 4.3 0 0 0-6-6l-6 6a6 6 0 0 0 8.5 8.5l4.3-4.3"/></svg>파일</button>
     <span class="toolSep"></span>
-    <button class="tool" data-t="header"><span class="gl">H</span>제목</button>
-    <button class="tool" data-t="list"><span class="gl">≔</span>목록</button>
-    <button class="tool" data-t="checklist"><span class="gl">☑</span>할 일</button>
-    <button class="tool" data-t="quote"><span class="gl">❝</span>인용구</button>
-    <button class="tool" data-t="delimiter"><span class="gl">—</span>구분선</button>
+    <button class="tool" data-t="header" title="제목"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4v12M12 4v12M4 10h8"/><path d="M15 8.5h2V16"/></svg>제목</button>
+    <button class="tool" data-t="list" title="목록"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="4" cy="14" r="1"/><path d="M7.5 6H17M7.5 10H17M7.5 14H17"/></svg>목록</button>
+    <button class="tool" data-t="checklist" title="할 일"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3" width="6" height="6" rx="1.5"/><path d="M4.2 6 5.5 7.3 7 5.2"/><rect x="2.5" y="11" width="6" height="6" rx="1.5"/><path d="M11 6h6.5M11 14h6.5"/></svg>할 일</button>
+    <button class="tool" data-t="quote" title="인용"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 6H4.3v4.2h2.4c0 1.8-.8 2.9-2.4 3.6M16.7 6h-3.9v4.2h2.4c0 1.8-.8 2.9-2.4 3.6"/></svg>인용</button>
+    <button class="tool" data-t="delimiter" title="구분선"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10h15"/><circle cx="10" cy="10" r="1.6"/></svg>구분선</button>
     <span class="toolSep"></span>
-    <button class="tool" data-t="link"><span class="gl">🔗</span>링크</button>
-    <button class="tool" data-t="table"><span class="gl">▦</span>표</button>
-    <button class="tool" data-t="math"><span class="gl">√</span>수식</button>
-    <button class="tool" data-t="code"><span class="gl">{ }</span>코드</button>
-    <button class="tool" data-t="warning"><span class="gl">⚠</span>짚고 갈 것</button>
+    <button class="tool" data-t="link" title="링크"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.4-2.4a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0l-2.4 2.4a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>링크</button>
+    <button class="tool" data-t="table" title="표"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="1.5"/><path d="M2.5 8h15M2.5 12h15M8 4v12M13 4v12"/></svg>표</button>
+    <button class="tool" data-t="math" title="수식"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14.5 4.5h-9L10 10l-4.5 5.5h9"/></svg>수식</button>
+    <button class="tool" data-t="code" title="코드"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"/></svg>코드</button>
+    <button class="tool" data-t="warning" title="노트"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5 18 16.5H2z"/><path d="M10 8v3.6M10 13.8v.4"/></svg>노트</button>
     <span class="toolSep"></span>
-    <button class="tool" data-t="cover"><span class="gl">🏞</span>표지</button>
+    <button class="tool" data-t="cover" title="표지"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="M2.5 12.5 6.6 9l3 2.6L13 8.6l4.5 4"/><circle cx="6.8" cy="7.6" r="1"/></svg>표지</button>
   </div>
 </div>
 

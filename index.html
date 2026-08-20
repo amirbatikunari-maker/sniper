@@ -62,6 +62,12 @@
         <h1 id="viewTitle">전체</h1>
         <span class="cnt" id="cnt"></span>
         <span class="sp"></span>
+        <select class="sortSel" id="sortSel" title="정렬">
+          <option value="new">최신순</option>
+          <option value="old">오래된순</option>
+          <option value="views">조회 많은순</option>
+          <option value="title">제목순</option>
+        </select>
         <div class="seg" id="viewSeg">
           <button data-v="rows">목록</button>
           <button data-v="cards">카드</button>
@@ -94,7 +100,7 @@
 <script>
 const { sb, $, $$, esc, fmtDate, toast, ask } = App;
 
-let CATS = [], POSTS = [], SEL = "all", KEY = "", VIEW = "rows";
+let CATS = [], POSTS = [], SEL = "all", KEY = "", VIEW = "rows", SORT = "new";
 let DEEP = new Set(), PICKED = new Set();
 
 /* 왼쪽 «글 모음» 칸 — 관리자만 보이는 것도 있다 */
@@ -110,6 +116,7 @@ const FIXED = [
   await App.loadSettings();
   await App.refreshMe();
   VIEW = App.settings.view === "cards" ? "cards" : "rows";
+  SORT = App.settings.sort || "new";
   wire();
 
   if(!sb){
@@ -150,6 +157,23 @@ function wire(){
     drawSeg(); draw();
   });
   drawSeg();
+
+  $("#sortSel").value = SORT;
+  $("#sortSel").onchange = e => {
+    SORT = e.target.value;
+    App.saveSettings({ sort: SORT });
+    draw();
+  };
+
+  // «/» 를 누르면 바로 찾기 칸으로
+  document.addEventListener("keydown", e => {
+    if(e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)){
+      e.preventDefault();
+      document.body.classList.add("sideOpen");
+      $("#q").focus(); $("#q").select();
+    }
+    if(e.key === "Escape"){ document.body.classList.remove("sideOpen"); }
+  });
 
   let hTimer = null;
   $("#q").addEventListener("input", e => {
@@ -272,7 +296,17 @@ function visible(){
       (p.tags||[]).some(t => t.toLowerCase().includes(k)) ||
       DEEP.has(p.id));
   }
-  return rows;
+
+  // 고정한 글은 어떤 정렬에서도 늘 맨 위
+  const when = p => new Date(p.published_at || p.updated_at || 0).getTime();
+  const by = {
+    new:   (a,b) => when(b) - when(a),
+    old:   (a,b) => when(a) - when(b),
+    views: (a,b) => (b.view_count||0) - (a.view_count||0),
+    title: (a,b) => (a.title||"").localeCompare(b.title||"", "ko"),
+  }[SORT] || ((a,b) => when(b) - when(a));
+
+  return [...rows].sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0) || by(a,b));
 }
 
 function titleOf(){
@@ -301,6 +335,8 @@ function draw(){
   const badges = p => `
     ${p.pinned ? `<span class="pin-b">고정</span>` : ""}
     ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}`;
+  const tagHtml = (p, n) => (p.tags||[]).slice(0, n)
+    .map(t => `<span class="tag" data-tag="${esc(t)}">#${esc(t)}</span>`).join("");
 
   if(VIEW === "cards"){
     $("#list").className = "cards";
@@ -326,21 +362,23 @@ function draw(){
       </div>`;
     }).join("");
   }else{
+    // 제목은 왼쪽, 요약이 가운데를 채우고, 분류·날짜는 오른쪽 끝에 붙는다
     $("#list").className = "rows";
     $("#list").innerHTML = rows.map(p => {
       const c = catOf(p.category_id);
       return `<div class="row-i">
         <input class="sel" type="checkbox" data-pick="${p.id}" ${PICKED.has(p.id)?"checked":""} title="고르기">
         ${p.cover_url ? `<img class="thumb" src="${esc(p.cover_url)}" alt="" loading="lazy">` : ""}
-        <a class="txt" href="./post.html?id=${p.id}" style="text-decoration:none;color:inherit">
-          <div class="ttl">${esc(p.title)}</div>
-          <div class="sub">
-            ${c ? `<span class="d" style="background:${esc(c.color||"#9CA3AF")}"></span>${esc(c.name)}` : ""}
-            <span class="when">${fmtDate(p.published_at || p.updated_at)}</span>
-            ${badges(p)}
-            ${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}
-          </div>
+        <a class="txt" href="./post.html?id=${p.id}">
+          <span class="ttl">${esc(p.title)}</span>
+          ${p.excerpt ? `<span class="exc">${esc(p.excerpt)}</span>` : `<span class="exc"></span>`}
         </a>
+        <div class="rmeta">
+          ${badges(p)}
+          ${tagHtml(p, 1)}
+          ${c ? `<span class="catb"><i class="d" style="background:${esc(c.color||"#9CA3AF")}"></i>${esc(c.name)}</span>` : ""}
+          <span class="when">${fmtDate(p.published_at || p.updated_at)}</span>
+        </div>
         <div class="acts">
           <button title="수정" data-edit="${p.id}">✎</button>
           <button class="del" title="지우기" data-del="${p.id}">🗑</button>
@@ -356,6 +394,14 @@ function draw(){
   $$("[data-pick]").forEach(b => b.onchange = () => {
     b.checked ? PICKED.add(b.dataset.pick) : PICKED.delete(b.dataset.pick);
     drawBulk();
+  });
+  // 태그를 누르면 그 태그로 찾는다
+  $$("[data-tag]").forEach(b => b.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    KEY = b.dataset.tag;
+    $("#q").value = KEY;
+    SEL = "all"; DEEP = new Set();
+    drawNav(); draw();
   });
   drawBulk();
 }
@@ -499,6 +545,14 @@ function catBox(){
 }
 
 /* ── 화면 설정 ──────────────────────────────────────── */
+
+/* 밝은 것부터 어두운 것까지 골고루. 어떤 걸 골라도 글자색은 자동으로 맞습니다. */
+const ACCENTS = [
+  "#1D4ED8","#2563EB","#0EA5E9","#0891B2","#0F766E","#059669",
+  "#65A30D","#CA8A04","#EA580C","#DC2626","#BE123C","#DB2777",
+  "#9333EA","#6D28D9","#4F46E5","#475569","#7C3F1D","#111827",
+];
+
 function setupBox(){
   const s = App.settings;
   const ov = document.createElement("div");
@@ -518,8 +572,14 @@ function setupBox(){
 
     <label>강조색</label>
     <div class="swatches" id="stAccent">
-      ${["#1D4ED8","#0F766E","#B45309","#9333EA","#BE123C","#111827"]
-        .map(c=>`<button class="sw${s.accent===c?" on":""}" data-v="${c}" style="background:${c}"></button>`).join("")}
+      ${ACCENTS.map(c=>`<button class="sw${(s.accent||"").toLowerCase()===c.toLowerCase()?" on":""}"
+          data-v="${c}" style="background:${c}" title="${c}"></button>`).join("")}
+      <span class="swPick" title="직접 고르기">＋<input type="color" id="stAccPick" value="${esc(s.accent||"#1D4ED8")}"></span>
+    </div>
+    <div class="accPeek" id="accPeek">
+      연한 배경 위 글자
+      <span class="chipDemo">색 위 글자</span>
+      <code id="accHex">${esc((s.accent||"#1D4ED8").toUpperCase())}</code>
     </div>
 
     <label>배경</label>
@@ -560,9 +620,19 @@ function setupBox(){
   });
 
   pick("#stTheme",  "v", "theme");
-  pick("#stAccent", "v", "accent");
   pick("#stBgKind", "v", "bg_kind");
   pick("#stFont",   "v", "font");
+
+  // 강조색 — 프리셋을 누르거나 색판에서 직접 고르거나
+  const setAccent = hex => {
+    App.saveSettings({ accent: hex });
+    $("#accHex", ov).textContent = hex.toUpperCase();
+    $("#stAccPick", ov).value = hex;
+    $$("#stAccent .sw", ov).forEach(x =>
+      x.classList.toggle("on", x.dataset.v.toLowerCase() === hex.toLowerCase()));
+  };
+  $$("#stAccent .sw", ov).forEach(b => b.onclick = () => setAccent(b.dataset.v));
+  $("#stAccPick", ov).oninput = e => setAccent(e.target.value);
   $$("#stFont [data-w]", ov).forEach(b => b.onclick = () => {
     $$("#stFont [data-w]", ov).forEach(x => x.classList.remove("on"));
     b.classList.add("on"); App.saveSettings({ width: b.dataset.w });

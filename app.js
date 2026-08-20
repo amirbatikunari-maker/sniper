@@ -141,6 +141,7 @@ const DEFAULT_SETTINGS = {
   font: "pretendard",
   width: "narrow",
   view: "rows",           // rows | cards
+  sort: "new",            // new | old | views | title
 };
 
 const GRADIENTS = {
@@ -195,6 +196,71 @@ function prefersDark() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches;
 }
 
+/* ═══════════════ 강조색 — 대비 자동 맞추기 ═══════════════
+   어떤 색을 골라도 글자가 읽히도록, 색의 «밝기» 를 재서
+     · 강조색 위에 얹을 글자색(--on-accent)
+     · 연한 강조 배경(--accent-soft) 과 그 위 글자색(--accent-ink)
+   을 계산해 둡니다. */
+
+function toRgb(hex) {
+  let h = String(hex || "").trim().replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  if (!/^[0-9a-f]{6}$/i.test(h)) h = "1D4ED8";
+  return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+}
+
+function toHex(rgb) {
+  return "#" + rgb.map(v =>
+    Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+}
+
+/* 사람 눈이 느끼는 밝기 (0 = 검정, 1 = 흰색) */
+function luma(hex) {
+  const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+  const [r, g, b] = toRgb(hex).map(f);
+  return .2126 * r + .7152 * g + .0722 * b;
+}
+
+function blend(a, b, amt) {
+  const A = toRgb(a), B = toRgb(b);
+  return toHex(A.map((v, i) => v + (B[i] - v) * amt));
+}
+
+/* 두 색의 명암비 (1 = 똑같음, 21 = 검정 대 흰색). 4.5 넘으면 본문으로 읽을 만합니다. */
+function contrast(a, b) {
+  const x = luma(a), y = luma(b);
+  return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
+}
+
+/* fg 를 bg 위에서 읽힐 때까지 조금씩 어둡게(또는 밝게) 끌어당깁니다.
+   임계값을 미리 정해 두는 대신 실제로 재면서 맞추므로, 어떤 색을 골라도 통합니다. */
+function readable(fg, bg, dark, need = 4.6) {
+  const pull = dark ? "#FFFFFF" : "#000000";
+  let c = fg;
+  for (let i = 0; i < 18 && contrast(c, bg) < need; i++) c = blend(c, pull, .11);
+  return c;
+}
+
+function applyAccent(hex, dark) {
+  const root = document.documentElement;
+  root.style.setProperty("--accent", hex);
+
+  // 강조색 «위» 글자 — 흰색과 먹색 중 더 잘 보이는 쪽
+  const ink0 = "#0B1220";
+  root.style.setProperty("--on-accent",
+    contrast("#FFFFFF", hex) >= contrast(ink0, hex) ? "#FFFFFF" : ink0);
+
+  // 연한 강조 배경
+  const soft = dark ? blend(hex, "#141A22", .87) : blend(hex, "#FFFFFF", .90);
+  root.style.setProperty("--accent-soft", soft);
+
+  // 그 연한 배경 위 글자색 — 읽힐 때까지 조정
+  root.style.setProperty("--accent-ink", readable(hex, soft, dark));
+
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = dark ? "#0C1016" : "#F4F5F7";
+}
+
 function applySettings() {
   const s = SETTINGS, root = document.documentElement;
 
@@ -202,7 +268,7 @@ function applySettings() {
   root.dataset.theme = dark ? "dark" : "light";
   root.dataset.font  = s.font  || "pretendard";
   root.dataset.width = s.width || "narrow";
-  root.style.setProperty("--accent", s.accent || "#1D4ED8");
+  applyAccent(s.accent || "#1D4ED8", dark);
 
   let layer = $("#bgLayer");
   if (!layer) {
@@ -532,7 +598,7 @@ window.App = {
   get settings() { return SETTINGS; },
   GRADIENTS, PATTERNS, DEFAULT_SETTINGS,
   refreshMe, canEdit, signIn, signOut, loginBox,
-  loadSettings, saveSettings, applySettings,
+  loadSettings, saveSettings, applySettings, applyAccent, luma, blend, contrast,
   blocksToHtml, blocksToText, inlineHtml, embedSrc,
   uploadImage, uploadFile, shrink,
   deletePosts, setPostStatus,
