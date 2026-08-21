@@ -24,3 +24,37 @@ window.APP_CONFIG = {
      ⚠ 이건 화면을 잠그는 용도이고, 실제 차단은 Worker 가 합니다. */
   ADMIN_EMAILS: ["amirbatikunari@gmail.com"],
 };
+
+/* supabase-js 를 못 불러왔을 때 쓰는 대체 객체 (뷰어와 같은 방식).
+   오프라인이나 CDN 차단 상황에서 화면 전체가 멈추지 않도록 «조용히 실패» 합니다. */
+window.makeOfflineSupabase = function (label) {
+  const err = { message: "서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요.", offline: true };
+  const chain = () => new Proxy({}, {
+    get(_t, k) {
+      if (k === "then") return (resolve) => resolve({ data: null, error: err });
+      if (k === "catch" || k === "finally") return () => chain();
+      return () => chain();
+    }
+  });
+  const fail = async () => ({ data: null, error: err });
+  console.warn("[" + (label || "app") + "] supabase-js 를 불러오지 못했습니다. 서버 기능 없이 동작합니다.");
+  return {
+    __offline: true,
+    auth: {
+      getSession:         async () => ({ data: { session: null }, error: null }),
+      getUser:            async () => ({ data: { user: null }, error: null }),
+      signInWithPassword: fail,
+      signUp:             fail,
+      signOut:            async () => ({ error: null }),
+      onAuthStateChange:  () => ({ data: { subscription: { unsubscribe() {} } } })
+    },
+    from: () => chain(),
+    rpc:  () => chain(),
+    storage: {
+      from: () => ({
+        upload: fail, remove: fail, download: fail,
+        createSignedUrl: fail, getPublicUrl: () => ({ data: { publicUrl: "" } })
+      })
+    }
+  };
+};

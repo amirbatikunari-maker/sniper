@@ -1,14 +1,54 @@
-
-## v16 — 현재
-
-- Work Agent: GPT + Gemini Agent pipeline 지원
-- Gemini Agent: 단계별 JSON 출력 + thinking budget, 이전 response는 provider별로 안전하게 처리
-- 위험 스크립트(`.bat/.cmd/.ps1/.sh/.vbs/.psm1`) 쓰기 2차 승인 추가
-- Local Agent: `x-agent-token` 인증 경로와 PNA preflight 유지
-- Origin 거부 시 실제 Origin/허용 목록을 진단 응답에 포함
-- 블로그/뷰어 공용 `shared/ai-chat.js` + 동기화 스크립트 추가
-- AI tier 라벨을 UI의 `빠름/균형/최고급`과 Worker가 동일하게 사용
 # sniper — 변경 기록
+
+## v15 (현재)
+
+**화면 정리**
+- 왼쪽 위 중복 제거. 제목 아래 한 줄(`tagline`)을 프로필 카드에서도 쓰고 있어
+  같은 문구가 두 번 나왔습니다. 프로필용 `owner_role` 을 따로 만들어 갈랐습니다.
+  이제 «설정»과 «프로필 고치기»에서 각각 수정합니다.
+- 설정에 「프로필 카드 보이기/숨기기」, 「제목 아래 한 줄 보이기/숨기기」 추가.
+- 맨 아래 «직접 만들어 쓰는 기록장» 하드코딩 문구 삭제 → 설정에서 입력.
+  비워 두면 아무것도 안 나옵니다.
+- 왼쪽 사이드바 폭을 오른쪽 AI 패널 폭(`--aiw`, 376px)에 묶었습니다.
+  한 곳만 고치면 좌우가 같이 움직입니다. 모바일 서랍은 270px 그대로.
+
+**허용 Origin 확정**
+- 실제 배포 주소가 `https://sniper-web.pages.dev` 로 확인되어 기본값에 반영했습니다.
+
+**Work Agent 에 Gemini 추가**
+- `/agent/run` 이 GPT 와 Gemini 를 모두 씁니다. 모델 ID 가 `gemini-` 로 시작하면
+  Gemini 경로로 갑니다 (`generateContent` + `responseSchema`).
+- OpenAI JSON Schema 의 `additionalProperties`/`strict` 는 Gemini 가 모르므로 걷어내고 보냅니다.
+  스키마를 거부하면 스키마 없이 한 번 더 시도합니다.
+- Gemini 에는 이어붙일 응답 ID 가 없어 각 단계가 무상태로 돕니다 (`id: null`).
+  Work 화면은 이미 `if(j.id)` 로 막고 있어 그대로 동작합니다.
+- 추론 단계는 `thinkingBudget` 으로 옮깁니다 (low 2048 … max 32768).
+- `/ai/models` 의 `agentModels` 에 Gemini 모델이 함께 나옵니다
+  (Worker 에 `GEMINI_API_KEY` 가 있을 때만).
+- **자동 조절이 공급자를 갈아치우지 않습니다.** Gemini 를 골라두면 자동 조절도
+  Gemini 안에서만 모델을 바꿉니다. 예전에는 GPT 로 되돌아갔습니다.
+
+**위험 실행 스크립트: 쓰기와 실행 분리**
+- `.bat .cmd .ps1 .sh .vbs .psm1` 은 이제 «막기»가 아니라 «2차 승인» 방식입니다.
+- AI 가 이런 파일을 만들거나 고치려 하면 서버가 409 `SCRIPT_APPROVAL_REQUIRED` 로 막고
+  승인번호를 돌려줍니다. Work 화면은 내용을 기록창에 찍고 확인을 받은 뒤에만 다시 보냅니다.
+- 승인번호는 **그 경로들에만** 유효하고, **1회용**이며, 2분 뒤 만료됩니다.
+- 자동 적용을 켜 놨어도 이 확인은 건너뛰지 않습니다.
+
+**Origin 문제 진단 개선**
+- 거부된 Origin 을 실제 값과 함께 화면·응답에 남깁니다
+  (`ORIGIN_NOT_ALLOWED` + 허용 목록). 어느 주소를 넣어야 하는지 바로 보입니다.
+- ⚠ 기본 허용 목록은 «추측»입니다. 배포한 블로그 주소가 다르면 반드시 지정하세요:
+  `set SNIPER_WORK_ORIGINS=https://실제-블로그주소,http://127.0.0.1:5500`
+
+**공용 파일 일원화**
+- `shared/ai-chat.js` 가 유일한 원본입니다. `tools/sync-shared.sh` 로 블로그·뷰어에 복사합니다.
+- 양쪽 파일 맨 위에 «직접 고치지 말 것» 안내를 넣었습니다.
+
+**등급(tier) 값 수정 — 실제로 안 먹던 버그**
+- `ai-chat.js` 는 등급을 «균형/최고급/빠름» 한글로 비교하는데 Worker 가
+  `medium/high/low` 를 보내고 있었습니다. 라벨 우연 일치로 균형·빠름만 먹고
+  **최고급을 눌러도 Sol 로 안 바뀌었습니다.** 실제 브라우저로 확인해 잡았습니다.
 
 ## v14 (현재)
 
@@ -58,20 +98,3 @@
 - v8: 적용 전 파일 SHA-256 precondition 검사, 비밀값 파일·내용 차단, 파일별 선택 적용.
 - v12: realpath 바인딩, 프로젝트 규칙 저장, 비용/품질 전략, AI 컨텍스트 비밀값 마스킹.
 - v13: 프로젝트 구조 인덱스(`/project-index`), 세션 복원 범위 확대, stage 별 JSON Schema 강화.
-
-## v16
-- Gemini 자동 단계 조절을 모델 계열 안에서 유지하고 pro/flash 후보를 선택.
-- Local Agent Origin 거부 응답에 실제 origin/허용 목록을 포함.
-- 공용 ai-chat.js를 viewer/blog 양쪽에 동기화.
-- Worker/agent 계약 테스트 도구 추가.
-
-
-## v17 — 원클릭 자동 개발
-- 비개발자용 `🚀 자동 개발 시작` 원클릭 모드 추가
-- 자동으로 분석 → 설계 → 수정 → 실검증 → 실패 시 재수정
-- 성공 시 Git 작업 브랜치 생성 + checkpoint 자동 저장
-- 위험 스크립트(`.bat/.cmd/.ps1/.sh...`)는 기존 2차 승인 유지
-- 파일 선택이 비어 있으면 안전한 코드 파일을 자동 선택
-- STANDARD 검증을 자동 기본값으로 사용
-- 고급 수동 제어는 접어두고 기본 화면을 단순화
-- Local Agent 기본 허용 Origin에 `https://sniper-web.pages.dev` 추가

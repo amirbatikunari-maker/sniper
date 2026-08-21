@@ -54,21 +54,19 @@
 | 요청이 아예 안 감 | 크롬 주소창의 사설망 접근 차단 아이콘 확인 |
 | AI 응답 401 | 워커 `ALLOWED_EMAILS` 에 로그인 계정이 있는지 |
 
+## 실행 스크립트 승인 (v15)
 
-## v16 추가 사항
+`.bat .cmd .ps1 .sh .vbs .psm1` 을 AI 가 만들거나 고치려 하면 적용이 한 번 멈춥니다.
+기록창에 파일 내용이 찍히니 **읽어 보고** 승인하세요.
+이 파일들은 나중에 `npm run …` 이나 `node` 로 실행될 수 있습니다.
 
-- Gemini Work Agent의 thinkingLevel/thinkingBudget 자동 선택.
-- Gemini 일반 채팅 tier → thinking level 매핑.
-- Gemini 모델 선택 시 Worker의 동적 모델 목록으로 검증.
-- x-agent-token/Origin 오류 진단 보강.
+승인은 그 경로들에만 유효하고 1회용이며 2분 뒤 만료됩니다.
+자동 적용을 켜 두어도 이 확인은 건너뛰지 않습니다.
 
-## v15 추가 사항
-- GPT/Gemini Work Agent 선택 지원. Gemini 모델을 선택하면 자동 조절도 Gemini 안에서 유지합니다.
-- `.bat .cmd .ps1 .sh .vbs .psm1` 수정은 2차 승인이 필요합니다. 자동 적용도 이 검사를 건너뛰지 않습니다.
-- 실제 배포 주소는 `SNIPER_WORK_ORIGINS` 환경 변수로 지정하세요. 예: `https://실제-sniper-블로그주소,http://localhost:5500,http://127.0.0.1:5500`
-- `x-agent-token`과 HttpOnly cookie를 함께 사용합니다. 브라우저가 쿠키를 보내지 않는 상황에도 헤더 토큰으로 동작합니다.
+## Gemini 로 작업하기 (v15)
 
-## v17 자동 개발
-- 비개발자용 `🚀 자동 개발 시작` 원클릭 실행 추가
-- 자동 브랜치/검증/재수정/checkpoint
-- 위험 스크립트와 보호 명령은 기존 승인 절차 유지
+Worker 에 `GEMINI_API_KEY` 를 넣어 두면 Work 모델 목록에 Gemini 가 함께 나옵니다.
+Gemini 를 고르면 자동 조절도 Gemini 안에서만 모델을 바꿉니다.
+
+Gemini 는 이전 응답을 이어받는 기능이 없어 단계마다 새로 시작합니다.
+긴 맥락이 중요한 작업은 GPT 가, 비용이 중요한 작업은 Gemini 가 유리합니다.

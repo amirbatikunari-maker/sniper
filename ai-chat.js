@@ -1,6 +1,11 @@
-function resolveTier(value){ const v=String(value||'').trim(); const map={fast:'빠름',balanced:'균형',medium:'균형',high:'최고급',quality:'최고급',pro:'최고급','빠름':'빠름','균형':'균형','최고급':'최고급'}; return map[v]||v||'균형'; }
+/* ═══════════════════════════════════════════════════════════════════════
+   공용 파일 — 원본은 sniper 저장소의 shared/ai-chat.js 입니다.
 
-/* canonical shared AI source — edit shared/ai-chat.js, then run tools/sync-shared.sh */
+   ⚠ 이 파일을 «직접» 고치지 마세요.
+     shared/ai-chat.js 를 고친 뒤 tools/sync-shared.sh 를 돌리면
+     블로그와 뷰어 양쪽에 같은 내용이 복사됩니다.
+     (예전에 양쪽을 따로 고치다가 기능이 한쪽에만 들어간 적이 있습니다)
+   ═══════════════════════════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════════════════════════
 
    ai-chat.js — 뷰어와 블로그가 함께 쓰는 AI 대화 상자

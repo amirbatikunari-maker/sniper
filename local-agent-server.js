@@ -6,16 +6,19 @@ const { execFile } = require('child_process');
 
 const HOST = '127.0.0.1';
 const PORT = 8788;
-const VERSION = 'v16';
+const VERSION = 'v15';
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_FILE = 800 * 1024;
 const MAX_APPLY_FILE = 1.6 * 1024 * 1024;
 const MAX_READ_TOTAL = 7 * 1024 * 1024;
 const MAX_HISTORY = 50;
-const SAFE_EXT = /\.(html?|css|js|mjs|cjs|json|md|txt|xml|svg|toml|yml|yaml|ts|tsx|jsx|vue|svelte|py|ps1|bat|cmd|sh|vbs|psm1|astro)$/i;
-// 실행 스크립트는 읽기/색인까지만 허용하고 AI 쓰기 대상에서는 제외한다.
-// (AI가 .bat/.ps1 을 쓰고 npm/npx/node 로 실행시키는 경로를 끊기 위함)
-const NO_WRITE_EXT = /\.(ps1|bat|cmd|sh|vbs|psm1)$/i;
+const SAFE_EXT = /\.(html?|css|js|mjs|cjs|json|md|txt|xml|svg|toml|yml|yaml|ts|tsx|jsx|vue|svelte|py|ps1|bat|cmd|astro)$/i;
+// 실행 스크립트는 «쓰기»와 «실행»을 분리한다.
+// AI 가 .bat 을 만들고 npm/npx/node 로 실행시키는 경로를 막기 위해,
+// 이 확장자에 대한 쓰기는 사용자가 화면에서 1회 더 승인해야 통과한다.
+const DANGEROUS_WRITE_EXT = /\.(ps1|bat|cmd|sh|vbs|psm1)$/i;
+const SCRIPT_APPROVALS = new Map();          // id -> {createdAt, token, root, paths:Set}
+const SCRIPT_APPROVAL_TTL = 2 * 60 * 1000;
 const SECRET_NAME = /(^|\/)(?:\.env(?:\.[^\/]*)?|credentials?(?:\.[^\/]*)?|secrets?(?:\.[^\/]*)?|service[-_]?account(?:\.[^\/]*)?|.*\.(?:pem|key|p12|pfx))$/i;
 const SECRET_CONTENT = /(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|sb_(?:publishable|secret)_[A-Za-z0-9_-]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|service[_-]?role[_-]?key|secret[_-]?key|password\s*[:=])/i;
 const MAX_TREE_FILES = 2500;
@@ -36,7 +39,6 @@ const ROOT_LOCKS = new Map();
 const OP_LOCKS = new Set();
 const APPROVALS = new Map();
 const APPROVAL_TTL = 2 * 60 * 1000;
-const SCRIPT_APPROVALS = new Map();
 const AUDIT_MAX = 600;
 const MAX_CMD_OUTPUT = 700 * 1024;
 const WORK_STATE_DIR = path.join(process.env.LOCALAPPDATA || process.env.APPDATA || process.env.HOME || __dirname, 'sniper-work-agent', 'sessions');
@@ -77,7 +79,7 @@ async function readAudit(root){
 async function persistHistory(root){ try { await fs.mkdir(HISTORY_DIR,{recursive:true}); const arr=HISTORY.get(root)||[]; await fs.writeFile(historyFile(root),JSON.stringify({version:1,root,items:arr},null,2),'utf8'); } catch(e) { console.warn('history persistence failed:',e.message||e); } }
 
 function allowedOrigins() {
-  return String(process.env.SNIPER_WORK_ORIGINS || 'https://sniper.amirbatikunari.workers.dev,https://sniper.pages.dev,https://gichul-viewer.pages.dev,http://localhost:5500,http://127.0.0.1:5500')
+  return String(process.env.SNIPER_WORK_ORIGINS || 'https://sniper-web.pages.dev,https://gichul-viewer.pages.dev,http://localhost:5500,http://127.0.0.1:5500')
     .split(',').map(s=>s.trim()).filter(Boolean);
 }
 function parseCookies(req){ const raw=String(req.headers.cookie||''); const out={}; for(const part of raw.split(';')){ const i=part.indexOf('='); if(i>0) out[part.slice(0,i).trim()]=decodeURIComponent(part.slice(i+1).trim()); } return out; }
@@ -278,8 +280,10 @@ async function existsText(root, rel) {
     return await fs.readFile(p,'utf8');
   } catch { return null; }
 }
-async function writeFile(root, rel, content) {
+async function writeFile(root, rel, content, allowScript = false) {
   const n = validateRel(rel), p = safePath(root,n);
+  if (DANGEROUS_WRITE_EXT.test(n) && !allowScript)
+    throw new Error(`실행 스크립트 쓰기는 별도 승인이 필요합니다: ${rel}`);
   await fs.mkdir(path.dirname(p),{recursive:true});
   await assertInsideRealRoot(root,p);
   await assertNotSymlink(p);
@@ -356,7 +360,12 @@ function sessionToken(req){ return String(req.headers['x-agent-token']||'').trim
 function sessionOf(req){ const token=sessionToken(req); const s=SESSIONS.get(token); if(!s)return null; const now=Date.now(); if(now-(s.createdAt||now)>SESSION_TTL || now-(s.lastSeenAt||s.createdAt||now)>SESSION_IDLE_TTL){SESSIONS.delete(token);return null;} s.lastSeenAt=now; return {token,...s}; }
 function originAllowed(req) { return allowedOrigins().includes(req.headers.origin || ''); }
 function auth(req,res) {
-  if (!originAllowed(req)) { send(res,403,{error:'허용되지 않은 Work Origin입니다.',code:'ORIGIN_NOT_ALLOWED',origin:req.headers.origin||'',allowedOrigins:allowedOrigins()},req); return null; }
+  if (!originAllowed(req)) {
+    const got = req.headers.origin || '(Origin 없음)';
+    console.warn(`거부된 Work Origin: ${got}\n  허용 목록: ${allowedOrigins().join(', ')}\n  이 주소를 쓰려면 SNIPER_WORK_ORIGINS 에 추가하고 Local Agent 를 다시 켜세요.`);
+    send(res,403,{error:`허용되지 않은 Work Origin 입니다: ${got}`,code:'ORIGIN_NOT_ALLOWED',allowed:allowedOrigins()},req);
+    return null;
+  }
   const s=sessionOf(req);
   if(!s){ send(res,401,{error:'Local Agent 세션이 없습니다. Work를 새로고침하세요.'},req); return null; }
   return s;
@@ -366,19 +375,29 @@ function operationKey(session,root){ return `${session.email||'unknown'}::${path
 function acquireOp(key){ if(OP_LOCKS.has(key)) throw Object.assign(new Error('현재 이 프로젝트에서 다른 Work 작업이 실행 중입니다. 잠시 기다려주세요.'),{code:'OP_BUSY'}); OP_LOCKS.add(key); }
 function releaseOp(key){ OP_LOCKS.delete(key); }
 
-function purgeApprovals(){ const now=Date.now(); for(const [id,a] of APPROVALS){ if(now-a.createdAt>APPROVAL_TTL) APPROVALS.delete(id); } for(const [id,a] of SCRIPT_APPROVALS){ if(now-a.createdAt>APPROVAL_TTL) SCRIPT_APPROVALS.delete(id); } }
+function purgeScriptApprovals(){ const now=Date.now(); for(const [id,a] of SCRIPT_APPROVALS){ if(now-a.createdAt>SCRIPT_APPROVAL_TTL) SCRIPT_APPROVALS.delete(id); } }
+function createScriptApproval(session,root,paths){ purgeScriptApprovals(); const id=crypto.randomBytes(18).toString('hex'); SCRIPT_APPROVALS.set(id,{createdAt:Date.now(),token:session.token,root:path.resolve(root),paths:new Set(paths)}); return id; }
+function consumeScriptApproval(session,root,id,paths){
+  purgeScriptApprovals();
+  const a=SCRIPT_APPROVALS.get(String(id||''));
+  if(!a) return false;
+  if(a.token!==session.token || a.root!==path.resolve(root)) return false;
+  // 승인받은 경로와 정확히 같아야 한다. 하나라도 다르면 거부.
+  if(paths.length!==a.paths.size || !paths.every(x=>a.paths.has(x))) return false;
+  SCRIPT_APPROVALS.delete(String(id));
+  return true;
+}
+function purgeApprovals(){ const now=Date.now(); for(const [id,a] of APPROVALS){ if(now-a.createdAt>APPROVAL_TTL) APPROVALS.delete(id); } }
 function createApproval(session,root,cmd,args){ purgeApprovals(); const id=crypto.randomBytes(18).toString('hex'); APPROVALS.set(id,{createdAt:Date.now(),token:session.token,email:session.email,root:path.resolve(root),cmd,args}); return id; }
 function consumeApproval(session,root,approvalId,cmd,args){ purgeApprovals(); const a=APPROVALS.get(String(approvalId||'')); if(!a||a.token!==session.token||a.root!==path.resolve(root)||a.cmd!==cmd||JSON.stringify(a.args)!==JSON.stringify(args)) return false; APPROVALS.delete(String(approvalId)); return true; }
-function createScriptApproval(session,root,paths){ const id=crypto.randomBytes(18).toString('hex'); SCRIPT_APPROVALS.set(id,{token:session.token,email:session.email,root:path.resolve(root),paths:[...paths].sort(),createdAt:Date.now()}); return id; }
-function consumeScriptApproval(session,root,approvalId,paths){ const id=String(approvalId||''); const a=SCRIPT_APPROVALS.get(id); if(!a) return false; if(Date.now()-a.createdAt>APPROVAL_TTL){SCRIPT_APPROVALS.delete(id);return false;} const same=a.token===session.token && a.email===session.email && a.root===path.resolve(root) && JSON.stringify(a.paths)===JSON.stringify([...paths].sort()); if(same) SCRIPT_APPROVALS.delete(id); return same; }
 
 async function main(req,res) {
   if (req.method === 'OPTIONS') return send(res,204,{},req);
   try {
     const url = new URL(req.url,`http://${HOST}:${PORT}`);
-    if (url.pathname === '/health') return send(res,200,{ok:true,service:'sniper-local-agent',port:PORT,version:VERSION,auth:'supabase+cookie',approvalTTL:APPROVAL_TTL,rootBinding:'logical+realpath',features:{projectIndex:true,preconditionGuard:true,atomicWrite:true,audit:true,rollback:true,scriptWriteApproval:true},node:process.version,platform:process.platform,git:await git(process.cwd(),['--version']),sessions:SESSIONS.size},req);
+    if (url.pathname === '/health') return send(res,200,{ok:true,service:'sniper-local-agent',port:PORT,version:VERSION,auth:'supabase+cookie',approvalTTL:APPROVAL_TTL,rootBinding:'logical+realpath',features:{projectIndex:true,preconditionGuard:true,atomicWrite:true,audit:true,rollback:true},node:process.version,platform:process.platform,git:await git(process.cwd(),['--version']),sessions:SESSIONS.size},req);
     if (url.pathname === '/session' && req.method === 'POST') {
-      if (!originAllowed(req)) return send(res,403,{error:'허용되지 않은 Work Origin입니다.',code:'ORIGIN_NOT_ALLOWED',origin:req.headers.origin||'',allowedOrigins:allowedOrigins()},req);
+      if (!originAllowed(req)) return send(res,403,{error:'허용되지 않은 Work Origin입니다.'},req);
       const body=await readBody(req);
       const ver=await verifySupabaseToken(String(body.access_token||''));
       if(!ver.ok) return send(res,401,{error:ver.why},req);
@@ -387,7 +406,7 @@ async function main(req,res) {
       return send(res,200,{ok:true,version:VERSION,email:ver.email||null,token,__setCookie:token},req);
     }
     if (url.pathname === '/session' && req.method === 'DELETE') {
-      if (!originAllowed(req)) return send(res,403,{error:'허용되지 않은 Work Origin입니다.',code:'ORIGIN_NOT_ALLOWED',origin:req.headers.origin||'',allowedOrigins:allowedOrigins()},req);
+      if (!originAllowed(req)) return send(res,403,{error:'허용되지 않은 Work Origin입니다.'},req);
       const sess=sessionOf(req); if(sess) SESSIONS.delete(sess.token);
       return send(res,200,{ok:true},req);
     }
@@ -439,14 +458,6 @@ async function main(req,res) {
       if (!changes.length) return send(res,400,{error:'적용할 변경이 없습니다.'},req);
       if (changes.length>100) throw new Error('한 번에 최대 100개 변경까지만 적용할 수 있습니다.');
       const normalized=changes.map(ch=>({...ch,path:validateRel(ch.path),operation:ch.operation==='delete'?'delete':'replace'}));
-      const scriptPaths=normalized.filter(ch=>ch.operation!=='delete' && NO_WRITE_EXT.test(ch.path)).map(ch=>ch.path);
-      if(scriptPaths.length){
-        const approvalId=String(body.scriptApprovalId||'');
-        if(!consumeScriptApproval(session,root,approvalId,scriptPaths)){
-          const issued=createScriptApproval(session,root,scriptPaths);
-          return send(res,409,{error:'실행 가능한 스크립트 파일은 2차 승인이 필요합니다.',code:'SCRIPT_APPROVAL_REQUIRED',needsScriptApproval:true,scriptPaths,issuedScriptApprovalId:issued,approvalExpiresInMs:APPROVAL_TTL},req);
-        }
-      }
       if (normalized.some(ch=>ch.operation!=='delete' && Buffer.byteLength(String(ch.content??''),'utf8')>MAX_APPLY_FILE)) throw new Error('생성/수정 파일이 너무 큽니다.');
       // Safety: refuse mixing with pre-existing git changes unless explicitly allowed.
       const preconditions = body.preconditions && typeof body.preconditions==='object' ? body.preconditions : {};
@@ -458,6 +469,25 @@ async function main(req,res) {
         if(now!==expected) preconditionMismatches.push({path:ch.path,expected,current:now});
       }
       if(preconditionMismatches.length) return send(res,409,{error:'AI가 읽은 이후 파일이 변경되었습니다. 변경된 파일을 다시 읽고 패치를 재생성하세요.',code:'PATCH_PRECONDITION_FAILED',conflicts:preconditionMismatches},req);
+      /* ── 위험 실행 스크립트 2차 승인 ──────────────────────────
+         AI 가 .bat/.ps1 등을 만들거나 고치려 하면, 사용자가 화면에서
+         한 번 더 승인해야만 통과한다. 승인은 «이 경로들» 에만 유효하고
+         1회용이며 2분 뒤 만료된다. */
+      const scriptPaths = normalized.filter(ch=>DANGEROUS_WRITE_EXT.test(ch.path)).map(ch=>ch.path);
+      let scriptAllowed = false;
+      if (scriptPaths.length) {
+        scriptAllowed = consumeScriptApproval(session, root, body.scriptApprovalId, scriptPaths);
+        if (!scriptAllowed) {
+          const approvalId = createScriptApproval(session, root, scriptPaths);
+          await auditLog(root,{action:'script-approval-required',email:session.email||null,paths:scriptPaths});
+          return send(res,409,{
+            error:'실행 스크립트를 만들거나 고치려 합니다. 내용을 확인한 뒤 승인해 주세요.',
+            code:'SCRIPT_APPROVAL_REQUIRED',
+            scriptPaths,
+            approvalId
+          },req);
+        }
+      }
       const allowMixed = body.allowMixed === true;
       const statusBefore = await git(root,['status','--porcelain','--',...normalized.map(x=>x.path)]);
       if (!allowMixed && statusBefore.ok && statusBefore.stdout.trim()) {
@@ -467,18 +497,18 @@ async function main(req,res) {
       try {
         for (const ch of normalized) {
           if (ch.operation==='delete') await fs.rm(safePath(root,ch.path),{force:true});
-          else await writeFile(root,ch.path,String(ch.content??''));
+          else await writeFile(root,ch.path,String(ch.content??''),scriptAllowed);
         }
       } catch (e) {
         // Best-effort atomic recovery on partial failure.
         for (const s of snap) {
-          try { if (s.old===null) await fs.rm(safePath(root,s.path),{force:true}); else await writeFile(root,s.path,s.old); } catch {}
+          try { if (s.old===null) await fs.rm(safePath(root,s.path),{force:true}); else await writeFile(root,s.path,s.old,true); } catch {}
         }
         throw new Error(`적용 중 실패하여 변경을 복구했습니다: ${e.message||e}`);
       }
       for (const s of snap) s.new = await existsText(root,s.path), s.newHash = s.new===null?null:await sha256Text(s.new);
       const id=await addHistory(root,snap,body.message||'AI patch');
-      await auditLog(root,{action:'apply',email:session.email||null,historyId:id,paths:normalized.map(x=>x.path),mixed:allowMixed});
+      await auditLog(root,{action:'apply',email:session.email||null,historyId:id,paths:normalized.map(x=>x.path),mixed:allowMixed,scripts:scriptPaths});
       return send(res,200,{ok:true,changed:normalized.length,historyId:id,paths:normalized.map(x=>x.path),mixed:allowMixed},req);
       } finally { releaseOp(opKey); }
     }

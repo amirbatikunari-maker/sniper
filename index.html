@@ -721,11 +721,23 @@ function setupBox(){
         .map(([k,t])=>`<button class="chip${s.width===k?" on":""}" data-w="${k}">${t}</button>`).join("")}
     </div>
 
+    <label>왼쪽 사이드바</label>
+    <div class="chips" id="stProfile">
+      <button class="chip${s.profile_on===false?"":" on"}" data-pf="1">프로필 카드 보이기</button>
+      <button class="chip${s.profile_on===false?" on":""}" data-pf="0">숨기기</button>
+    </div>
+    <div class="chips" id="stTagOn" style="margin-top:6px">
+      <button class="chip${s.tagline_on===false?"":" on"}" data-tg="1">제목 아래 한 줄 보이기</button>
+      <button class="chip${s.tagline_on===false?" on":""}" data-tg="0">숨기기</button>
+    </div>
+
     <label>맨 아래 만든이 줄</label>
     <div class="chips" id="stFooter">
       <button class="chip${s.footer_on===false?"":" on"}" data-fo="1">보이기</button>
       <button class="chip${s.footer_on===false?" on":""}" data-fo="0">숨기기</button>
     </div>
+    <input id="stFooterTag" style="margin-top:7px" placeholder="맨 아래 문구 (예: 직접 만들어 쓰는 기록장)"
+           value="${esc(s.footer_tagline||"")}">
     <input id="stFooterTxt" style="margin-top:7px" placeholder="덧붙일 한마디 (선택)"
            value="${esc(s.footer_text||"")}">
 
@@ -771,13 +783,29 @@ function setupBox(){
     App.saveSettings({ footer_on: b.dataset.fo === "1" });
     App.drawMadeBy();
   });
+  $$("#stProfile [data-pf]", ov).forEach(b => b.onclick = () => {
+    $$("#stProfile [data-pf]", ov).forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    App.saveSettings({ profile_on: b.dataset.pf === "1" });
+    App.drawProfile();
+  });
+  $$("#stTagOn [data-tg]", ov).forEach(b => b.onclick = () => {
+    $$("#stTagOn [data-tg]", ov).forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    App.saveSettings({ tagline_on: b.dataset.tg === "1" });
+    App.applySettings();
+  });
+  $("#stFooterTag", ov).oninput = e => {
+    App.saveSettings({ footer_tagline: e.target.value });
+    App.drawMadeBy();
+  };
   $("#stFooterTxt", ov).oninput = e => {
     App.saveSettings({ footer_text: e.target.value });
     App.drawMadeBy();
   };
 
   $("#stTitle", ov).oninput = e => { App.saveSettings({ title: e.target.value }); App.drawMadeBy(); };
-  $("#stTag", ov).oninput   = e => App.saveSettings({ tagline: e.target.value });
+  $("#stTag", ov).oninput   = e => { App.saveSettings({ tagline: e.target.value }); App.applySettings?.(); };
   $("#stBlur", ov).oninput  = e => { $("#lbBlur", ov).textContent = e.target.value+"px"; App.saveSettings({ bg_blur:+e.target.value }); };
   $("#stDim", ov).oninput   = e => { $("#lbDim", ov).textContent = e.target.value+"%";  App.saveSettings({ bg_dim:+e.target.value }); };
 

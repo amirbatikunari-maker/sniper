@@ -18,7 +18,8 @@ const sb = (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
   ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true },
     })
-  : null;
+  /* CDN 이 막히거나 오프라인일 때도 화면이 살아 있게 한다 */
+  : ((CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) ? window.makeOfflineSupabase("blog") : null);
 
 let ME = null;
 
@@ -152,6 +153,10 @@ const DEFAULT_SETTINGS = {
   // 맨 아래 만든이 줄
   footer_on: true,
   footer_text: "",
+  footer_tagline: "",          /* 맨 아래 줄 문구. 비우면 «만든이 줄»에 사이트 이름만 남는다 */
+  owner_role: "",              /* 프로필 카드 전용 한 줄. 사이트 tagline 과 «따로» 쓴다 */
+  profile_on: true,            /* 사이드바 프로필 카드 보이기 */
+  tagline_on: true,            /* 사이트 제목 아래 한 줄 보이기 */
 
   // AI 창을 오른쪽에 붙박이로 둘지
   ai_dock: false,
@@ -298,7 +303,10 @@ function applySettings() {
   layer.style.opacity = String(1 - (s.bg_dim || 0) / 100);
 
   $$("#siteTitle").forEach(t => t.textContent = s.title || "sniper");
-  $$("#siteTagline").forEach(g => g.textContent = s.tagline || "");
+  $$("#siteTagline").forEach(g => {
+    g.textContent = s.tagline || "";
+    g.style.display = (s.tagline_on === false || !s.tagline) ? "none" : "";
+  });
   try { drawProfile(); drawMadeBy(); } catch {}
   document.title = (document.body.dataset.page === "post" && document.title !== "sniper")
     ? document.title : (s.title || "sniper");
@@ -603,6 +611,8 @@ function drawProfile(box) {
   box = box || $("#profile");
   if (!box) return;
   const s = SETTINGS;
+  /* 제목 줄과 겹쳐 보일 때는 통째로 끌 수 있다 */
+  if (s.profile_on === false) { box.innerHTML = ""; return; }
   const name = s.owner_name || s.title || "";
   const av = s.avatar_url
     ? `<img class="pfAv" src="${esc(safeUrl(s.avatar_url))}" alt="">`
@@ -613,7 +623,7 @@ function drawProfile(box) {
       ${av}
       <div class="pfWho">
         <div class="pfName">${esc(name || "이름 없음")}</div>
-        ${s.tagline ? `<div class="pfRole">${esc(s.tagline)}</div>` : ""}
+        ${s.owner_role ? `<div class="pfRole">${esc(s.owner_role)}</div>` : ""}
       </div>
     </div>
     ${s.owner_bio ? `<p class="pfBio">${esc(s.owner_bio)}</p>` : ""}
@@ -648,8 +658,8 @@ function profileBox() {
     <label>이름</label>
     <input id="pfName" placeholder="예: 조준원" value="${esc(s.owner_name || "")}">
 
-    <label>한 줄 소개 (이름 아래 작게)</label>
-    <input id="pfRole" placeholder="예: 데이터센터 기계설비" value="${esc(s.tagline || "")}">
+    <label>이름 아래 한 줄 <span class="muted sm">(사이트 제목 밑 문구와는 별개입니다)</span></label>
+    <input id="pfRole" placeholder="예: 데이터센터 기계설비" value="${esc(s.owner_role || "")}">
 
     <label>소개 글 (사이드바에 세 줄까지)</label>
     <textarea id="pfBio" rows="3" placeholder="무엇을 기록하는 곳인지 짧게">${esc(s.owner_bio || "")}</textarea>
@@ -698,7 +708,7 @@ function profileBox() {
     await saveSettings({
       avatar_url: $("#pfUrl", ov).value.trim(),
       owner_name: $("#pfName", ov).value.trim(),
-      tagline:    $("#pfRole", ov).value.trim(),
+      owner_role: $("#pfRole", ov).value.trim(),
       owner_bio:  $("#pfBio", ov).value.trim(),
       owner_links: links,
     });
@@ -715,12 +725,11 @@ function drawMadeBy(box) {
   if (s.footer_on === false) { box.innerHTML = ""; return; }
 
   const site = s.title || "sniper";
-  const who = (s.owner_name || "").trim();
   const mark = (site.trim()[0] || "S").toUpperCase();
 
   box.innerHTML = `
     <span class="mbMark"><span class="mbDot">${esc(mark)}</span>${esc(site)}</span>
-    <span>${who ? esc(who) + " 가 " : ""}직접 만들어 쓰는 기록장</span>
+    ${s.footer_tagline ? `<span>${esc(s.footer_tagline)}</span>` : ""}
     ${s.footer_text ? `<span>· ${esc(s.footer_text)}</span>` : ""}
     <span class="mbSp"></span>
     <a href="./about.html">소개</a>

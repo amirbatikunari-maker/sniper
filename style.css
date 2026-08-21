@@ -24,7 +24,9 @@
   --shadow-2:0 2px 4px rgba(15,23,42,.06), 0 12px 28px -20px rgba(15,23,42,.45);
   --r:10px;
   --maxw:900px;
-  --sidew:238px;
+  /* 왼쪽 사이드바 폭 = 오른쪽 AI 패널 폭(--aiw). 좌우 균형을 맞춘다. */
+  --aiw:376px;
+  --sidew:var(--aiw);
   --font:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --font-m:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
@@ -501,7 +503,7 @@ html[data-admin="1"] .profile .pfEdit{display:block}
 /* ════════════════════════════════════════════════════════
    9. AI 창을 오른쪽에 붙박이로
    ════════════════════════════════════════════════════════ */
-:root{ --aiw:376px }
+:root{ /* --aiw 는 위쪽 :root 에서 이미 정의한다 (사이드바와 공유) */ }
 
 @media(min-width:1180px){
   body.aiDock .shell{max-width:none;margin-right:var(--aiw)}
