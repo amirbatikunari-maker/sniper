@@ -14,8 +14,10 @@
 <link rel="stylesheet" href="./style.css">
 <style>
 /* ── 글쓰기 화면만의 모양 ──────────────────────────── */
+/* 사이트 공통 위쪽 띠(≤900px 에서만 보임)가 이제 이 화면에도 있어서,
+   글쓰기 전용 sticky 띠들은 그 높이(--topbar-h)만큼 밀어서 겹치지 않게 한다. */
 .wbar{
-  position:sticky;top:0;z-index:50;
+  position:sticky;top:var(--topbar-h, 0px);z-index:50;
   background:color-mix(in srgb, var(--paper) 90%, transparent);
   backdrop-filter:saturate(1.6) blur(10px);
   border-bottom:1px solid var(--rule)}
@@ -27,7 +29,7 @@
 
 /* 늘 보이는 도구 띠 */
 .tools{
-  position:sticky;top:51px;z-index:49;
+  position:sticky;top:calc(var(--topbar-h, 0px) + 51px);z-index:49;
   background:var(--card);border-bottom:1px solid var(--rule)}
 .toolsIn{
   max-width:1100px;margin:0 auto;padding:6px 12px;
@@ -58,6 +60,12 @@
   color:inherit;font:500 12.5px/1.3 var(--font);outline:none}
 .subbar input{flex:1;min-width:130px}
 .subbar select:focus,.subbar input:focus{border-color:var(--accent)}
+.secretBtn{padding:6px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--card);
+  color:var(--ink-2);font:600 12.5px/1.3 var(--font);cursor:pointer;white-space:nowrap}
+.secretBtn.on{border-color:var(--bad);color:var(--bad);background:color-mix(in srgb, var(--bad) 10%, transparent)}
+
+/* 이미 글을 쓰는 중인 화면이므로, 사이드바의 «새 글 쓰기» 는 초안을 날릴 수 있어 숨긴다 */
+body[data-page="write"] .sideWrite{display:none}
 
 /* Editor.js 를 우리 색·글꼴에 맞춘다 */
 #ed{min-height:52dvh}
@@ -109,63 +117,113 @@ body:has(.ce-popover--opened) .aic-fab{display:none}
 </head>
 <body data-page="write">
 
-<header class="wbar">
-  <div class="wbarIn">
-    <button class="ico" id="btnBack" title="나가기">←</button>
-    <button class="btn ghost sm" id="btnDraft">초안 저장</button>
-    <button class="btn sm" id="btnPub">게시</button>
-    <button class="ico" id="btnMore" title="더보기">⋯</button>
-    <span class="wstate" id="state">준비됨</span>
+<header class="top">
+  <div class="topin">
+    <button class="ico" id="btnMenu" title="메뉴 열기" aria-label="메뉴 열기">☰</button>
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
+    <button class="ico" id="btnThemeM" title="밝게/어둡게">◐</button>
   </div>
 </header>
+<div class="sideScrim" id="scrim"></div>
 
-<div class="tools">
-  <div class="toolsIn" id="tools">
-    <button class="tool" data-t="image" title="사진"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14v9H3z"/><circle cx="7" cy="9" r="1.3"/><path d="M3 12.5 7.5 9l3 2.5L14 8.5l3 3"/></svg>사진</button>
-    <button class="tool" data-t="embed" title="동영상"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M8.5 7.8 13 10l-4.5 2.2z"/></svg>동영상</button>
-    <button class="tool" data-t="attach" title="파일"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14 6.5 8 12.5a2.6 2.6 0 0 0 3.7 3.7l6-6a4.3 4.3 0 0 0-6-6l-6 6a6 6 0 0 0 8.5 8.5l4.3-4.3"/></svg>파일</button>
-    <span class="toolSep"></span>
-    <button class="tool" data-t="header" title="제목"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4v12M12 4v12M4 10h8"/><path d="M15 8.5h2V16"/></svg>제목</button>
-    <button class="tool" data-t="list" title="목록"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="4" cy="14" r="1"/><path d="M7.5 6H17M7.5 10H17M7.5 14H17"/></svg>목록</button>
-    <button class="tool" data-t="checklist" title="할 일"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3" width="6" height="6" rx="1.5"/><path d="M4.2 6 5.5 7.3 7 5.2"/><rect x="2.5" y="11" width="6" height="6" rx="1.5"/><path d="M11 6h6.5M11 14h6.5"/></svg>할 일</button>
-    <button class="tool" data-t="quote" title="인용"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 6H4.3v4.2h2.4c0 1.8-.8 2.9-2.4 3.6M16.7 6h-3.9v4.2h2.4c0 1.8-.8 2.9-2.4 3.6"/></svg>인용</button>
-    <button class="tool" data-t="delimiter" title="구분선"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10h15"/><circle cx="10" cy="10" r="1.6"/></svg>구분선</button>
-    <span class="toolSep"></span>
-    <button class="tool" data-t="link" title="링크"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.4-2.4a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0l-2.4 2.4a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>링크</button>
-    <button class="tool" data-t="table" title="표"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="1.5"/><path d="M2.5 8h15M2.5 12h15M8 4v12M13 4v12"/></svg>표</button>
-    <button class="tool" data-t="math" title="수식"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14.5 4.5h-9L10 10l-4.5 5.5h9"/></svg>수식</button>
-    <button class="tool" data-t="code" title="코드"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"/></svg>코드</button>
-    <button class="tool" data-t="warning" title="노트"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5 18 16.5H2z"/><path d="M10 8v3.6M10 13.8v.4"/></svg>노트</button>
-    <span class="toolSep"></span>
-    <button class="tool" data-t="cover" title="표지"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="M2.5 12.5 6.6 9l3 2.6L13 8.6l4.5 4"/><circle cx="6.8" cy="7.6" r="1"/></svg>표지</button>
-  </div>
-</div>
+<div class="shell">
 
-<main class="wmain">
-  <textarea id="title" rows="1" placeholder="제목을 쓰세요"></textarea>
+  <aside class="side" id="side">
+    <a class="brand" href="./index.html">
+      <span id="siteTitle">sniper</span>
+      <span id="siteTagline"></span>
+    </a>
 
-  <div class="subbar">
-    <select id="cat"><option value="">분류 없음</option></select>
-    <input id="tags" placeholder="태그 · 쉼표로 구분">
-    <input type="file" id="coverFile" accept="image/*" hidden>
-    <input type="file" id="pickImg" accept="image/*" hidden>
-    <input type="file" id="pickFile" hidden>
-  </div>
-  <div id="coverBox"></div>
+    <div class="profile" id="profile"></div>
 
-  <div id="ed"></div>
-</main>
+    <button class="btn sideWrite" id="btnWriteSide">✎ 새 글 쓰기</button>
 
-<div class="aiSide folded" id="aiSide">
-  <button class="aiToggle" id="aiToggle">AI 도움 ▾</button>
-  <button data-ai="polish">문장 다듬기</button>
-  <button data-ai="spell">맞춤법 · 띄어쓰기</button>
-  <button data-ai="outline">뼈대 잡아 주기</button>
-  <button data-ai="expand">이어서 써 주기</button>
-  <button data-ai="table">표로 정리</button>
-  <button data-ai="title">제목 후보</button>
-  <button data-ai="excerpt">한 줄 소개</button>
-  <button data-ai="check">사실 점검</button>
+    <div class="sideHead">글 모음</div>
+    <div class="navList">
+      <a class="navItem" href="./index.html"><span class="nm">← 목록으로</span></a>
+      <a class="navItem" href="./index.html?cat=draft"><span class="nm">초안</span></a>
+      <a class="navItem" href="./about.html"><span class="nm">소개</span></a>
+    </div>
+
+    <div class="sideHead">
+      카테고리
+      <a href="./index.html?openCatMgr=1" title="게시판 만들기·이름 바꾸기·순서·삭제·비공개">관리</a>
+    </div>
+    <div class="navList" id="navCats"></div>
+
+    <div class="sideFoot">
+      <button class="ico" id="btnTheme" title="밝게/어둡게">◐</button>
+      <button class="ico" id="btnDock" title="AI 를 오른쪽에 붙박이로">▤</button>
+      <button class="btn ghost sm" id="btnUser" style="flex:1">로그인</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+
+    <header class="wbar">
+      <div class="wbarIn">
+        <button class="ico" id="btnBack" title="나가기">←</button>
+        <button class="btn ghost sm" id="btnDraft">초안 저장</button>
+        <button class="btn sm" id="btnPub">게시</button>
+        <button class="ico" id="btnMore" title="더보기">⋯</button>
+        <span class="wstate" id="state">준비됨</span>
+      </div>
+    </header>
+
+    <div class="tools">
+      <div class="toolsIn" id="tools">
+        <button class="tool" data-t="image" title="사진"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14v9H3z"/><circle cx="7" cy="9" r="1.3"/><path d="M3 12.5 7.5 9l3 2.5L14 8.5l3 3"/></svg>사진</button>
+        <button class="tool" data-t="embed" title="동영상"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M8.5 7.8 13 10l-4.5 2.2z"/></svg>동영상</button>
+        <button class="tool" data-t="attach" title="파일"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14 6.5 8 12.5a2.6 2.6 0 0 0 3.7 3.7l6-6a4.3 4.3 0 0 0-6-6l-6 6a6 6 0 0 0 8.5 8.5l4.3-4.3"/></svg>파일</button>
+        <span class="toolSep"></span>
+        <button class="tool" data-t="header" title="제목"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4v12M12 4v12M4 10h8"/><path d="M15 8.5h2V16"/></svg>제목</button>
+        <button class="tool" data-t="list" title="목록"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="4" cy="14" r="1"/><path d="M7.5 6H17M7.5 10H17M7.5 14H17"/></svg>목록</button>
+        <button class="tool" data-t="checklist" title="할 일"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3" width="6" height="6" rx="1.5"/><path d="M4.2 6 5.5 7.3 7 5.2"/><rect x="2.5" y="11" width="6" height="6" rx="1.5"/><path d="M11 6h6.5M11 14h6.5"/></svg>할 일</button>
+        <button class="tool" data-t="quote" title="인용"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 6H4.3v4.2h2.4c0 1.8-.8 2.9-2.4 3.6M16.7 6h-3.9v4.2h2.4c0 1.8-.8 2.9-2.4 3.6"/></svg>인용</button>
+        <button class="tool" data-t="delimiter" title="구분선"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10h15"/><circle cx="10" cy="10" r="1.6"/></svg>구분선</button>
+        <span class="toolSep"></span>
+        <button class="tool" data-t="link" title="링크"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.4-2.4a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0l-2.4 2.4a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>링크</button>
+        <button class="tool" data-t="table" title="표"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="1.5"/><path d="M2.5 8h15M2.5 12h15M8 4v12M13 4v12"/></svg>표</button>
+        <button class="tool" data-t="math" title="수식"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14.5 4.5h-9L10 10l-4.5 5.5h9"/></svg>수식</button>
+        <button class="tool" data-t="code" title="코드"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"/></svg>코드</button>
+        <button class="tool" data-t="warning" title="노트"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5 18 16.5H2z"/><path d="M10 8v3.6M10 13.8v.4"/></svg>노트</button>
+        <span class="toolSep"></span>
+        <button class="tool" data-t="cover" title="표지"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="M2.5 12.5 6.6 9l3 2.6L13 8.6l4.5 4"/><circle cx="6.8" cy="7.6" r="1"/></svg>표지</button>
+      </div>
+    </div>
+
+    <div class="wmain">
+      <textarea id="title" rows="1" placeholder="제목을 쓰세요"></textarea>
+
+      <div class="subbar">
+        <select id="cat"><option value="">분류 없음</option></select>
+        <input id="tags" placeholder="태그 · 쉼표로 구분">
+        <button type="button" class="secretBtn" id="btnSecret" title="이 글을 비밀글로 하기(로그인한 나만 볼 수 있음)">🔓 공개</button>
+        <input type="file" id="coverFile" accept="image/*" hidden>
+        <input type="file" id="pickImg" accept="image/*" hidden>
+        <input type="file" id="pickFile" hidden>
+      </div>
+      <div id="coverBox"></div>
+
+      <div id="ed"></div>
+    </div>
+
+    <div class="aiSide folded" id="aiSide">
+      <button class="aiToggle" id="aiToggle">AI 도움 ▾</button>
+      <button data-ai="polish">문장 다듬기</button>
+      <button data-ai="spell">맞춤법 · 띄어쓰기</button>
+      <button data-ai="outline">뼈대 잡아 주기</button>
+      <button data-ai="expand">이어서 써 주기</button>
+      <button data-ai="table">표로 정리</button>
+      <button data-ai="title">제목 후보</button>
+      <button data-ai="excerpt">한 줄 소개</button>
+      <button data-ai="check">사실 점검</button>
+    </div>
+
+  </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -193,7 +251,7 @@ body:has(.ce-popover--opened) .aic-fab{display:none}
 <script>
 const { sb, $, $$, esc, toast, qs, ask } = App;
 
-let ED = null, POST = null, DIRTY = false, SAVING = false, COVER = null;
+let ED = null, POST = null, DIRTY = false, SAVING = false, COVER = null, SECRET = false, SIDE_CATS = [];
 const POST_ID = qs("id");
 const LOCAL = "blog:draft:" + (POST_ID || "new");
 
@@ -247,14 +305,61 @@ class MathTool {
   }
 
   wire();
+  wireSide();
   await loadCats();
+  loadSideCats();
   const data = await loadPost();
   await makeEditor(data);
   autoSaveLoop();
 })();
 
+/* ── 왼쪽 사이드바(다른 화면과 같은 게시판 목록) ───────── */
+function syncTopbarOffset(){
+  const t = $(".top");
+  document.documentElement.style.setProperty("--topbar-h", (t ? t.offsetHeight : 0) + "px");
+}
+
+function wireSide(){
+  const openSide  = () => document.body.classList.add("sideOpen");
+  const closeSide = () => document.body.classList.remove("sideOpen");
+  $("#btnMenu").onclick = openSide;
+  $("#scrim").onclick = closeSide;
+  $("#side").addEventListener("click", e => { if(e.target.closest(".navItem")) closeSide(); });
+
+  const flipTheme = () => {
+    const now = App.settings.theme;
+    const next = now === "dark" ? "light" : (now === "light" ? "auto" : "dark");
+    App.saveSettings({ theme: next });
+  };
+  $("#btnTheme").onclick = flipTheme;
+  $("#btnThemeM").onclick = flipTheme;
+  $("#btnUser").onclick = () => App.loginBox();
+  if(App.me) $("#btnUser").textContent = App.canEdit() ? "내 계정" : "권한 없음";
+
+  syncTopbarOffset();
+  window.addEventListener("resize", syncTopbarOffset);
+}
+
+async function loadSideCats(){
+  const { data } = await sb.from("blog_categories")
+    .select("id,name,color,emoji,parent_id,sort_order,is_private").order("sort_order").order("name");
+  SIDE_CATS = data || [];
+  $("#navCats").innerHTML = App.catTree(SIDE_CATS).map(c => `
+    <a class="navItem" href="./index.html?cat=${c.id}" data-depth="${c.depth}">
+      <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
+      <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}${c.is_private?" 🔒":""}</span>
+    </a>`).join("") || `<p class="muted sm" style="padding:4px 9px">아직 없습니다.</p>`;
+}
+
 function setState(t, cls=""){ const s = $("#state"); s.textContent = t; s.className = "wstate " + cls; }
 function markDirty(){ if(!DIRTY){ DIRTY = true; setState("저장 안 됨", "dirty"); } }
+
+function syncSecretBtn(){
+  const b = $("#btnSecret");
+  b.textContent = SECRET ? "🔒 비밀글" : "🔓 공개";
+  b.classList.toggle("on", SECRET);
+  b.title = SECRET ? "지금 로그인한 나만 볼 수 있습니다 — 눌러서 공개로" : "이 글을 비밀글로 하기(로그인한 나만 볼 수 있음)";
+}
 
 /* 새 글이면 «게시», 이미 있는 글이면 «수정» */
 function syncPubLabel(){
@@ -264,6 +369,7 @@ function syncPubLabel(){
 /* ── 위쪽 단추 ─────────────────────────────────────── */
 function wire(){
   syncPubLabel();
+  syncSecretBtn();
 
   $("#btnBack").onclick = async () => {
     if(DIRTY && !(await ask("아직 저장하지 않았습니다", "지금 나가면 쓴 내용이 사라집니다.", "그냥 나가기", true))) return;
@@ -284,6 +390,12 @@ function wire(){
   });
   $("#tags").addEventListener("input", markDirty);
   $("#cat").addEventListener("change", markDirty);
+
+  $("#btnSecret").onclick = () => {
+    SECRET = !SECRET;
+    syncSecretBtn();
+    markDirty();
+  };
 
   $("#coverFile").onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
@@ -454,9 +566,9 @@ function linkBox(){
 
 /* ── 카테고리 ──────────────────────────────────────── */
 async function loadCats(){
-  const { data } = await sb.from("blog_categories").select("id,name,emoji").order("sort_order");
+  const { data } = await sb.from("blog_categories").select("id,name,emoji,is_private").order("sort_order");
   $("#cat").innerHTML = `<option value="">분류 없음</option>` +
-    (data||[]).map(c => `<option value="${c.id}">${c.emoji?c.emoji+" ":""}${esc(c.name)}</option>`).join("");
+    (data||[]).map(c => `<option value="${c.id}">${c.emoji?c.emoji+" ":""}${esc(c.name)}${c.is_private?" 🔒 비공개":""}</option>`).join("");
 }
 
 /* ── 글 불러오기 ───────────────────────────────────── */
@@ -474,6 +586,7 @@ async function loadPost(){
     $("#cat").value = data.category_id || "";
     $("#tags").value = (data.tags||[]).join(", ");
     COVER = data.cover_url || null; drawCover();
+    SECRET = !!data.secret; syncSecretBtn();
 
     if(local && local.at > new Date(data.updated_at).getTime() + 2000 &&
        await ask("더 최근에 쓰다 만 내용이 있습니다", "이 기기에 남아 있는 내용을 불러올까요?", "불러오기")){
@@ -498,6 +611,7 @@ function applyLocal(local){
   $("#cat").value = local.cat || "";
   $("#tags").value = local.tags || "";
   COVER = local.cover || null; drawCover();
+  SECRET = !!local.secret; syncSecretBtn();
   setState("이어서 쓰는 중", "dirty");
   DIRTY = true;
 }
@@ -571,13 +685,164 @@ function htmlToBlocks(html){
   return { blocks };
 }
 
-/* AI 창이 «본문에 넣기» 를 누를 때 부르는 창구 */
+/* ═══════════════ 어디서 복사해오든 받아주는 붙여넣기 ═══════════════
+   위 htmlToBlocks() 는 «우리가 만든 HTML을 되읽는» 용도라, GPT·Gemini·
+   Claude 화면이나 다른 페이지에서 복사한 낯선 구조(카드·아이콘 뭉치 같은
+   div 뭉텅이)를 만나면 아무것도 못 건지고 비어 버립니다.
+   아래 둘은 "그래도 뭔가는 반드시 남긴다" 를 목표로 더 너그럽게 읽습니다. */
+const PASTE_BLOCKY_SEL = "h1,h2,h3,h4,h5,h6,ul,ol,blockquote,table,pre,figure,hr,img";
+
+function pasteIsHidden(el){
+  if(el.hasAttribute("aria-hidden")) return true;
+  if(el.classList?.contains("sr-only")) return true;
+  const st = el.getAttribute("style") || "";
+  return /display\s*:\s*none/i.test(st) || /visibility\s*:\s*hidden/i.test(st);
+}
+
+function pasteHtmlToBlocks(html){
+  const box = document.createElement("div");
+  box.innerHTML = html;
+  const blocks = [];
+
+  const para = innerHTML => {
+    const plain = innerHTML.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "").trim();
+    if(plain) blocks.push({ type:"paragraph", data:{ text: innerHTML.trim() } });
+  };
+
+  const eat = n => {
+    if(n.nodeType === 3){
+      const t = (n.textContent || "").trim();
+      if(t) blocks.push({ type:"paragraph", data:{ text: esc(t) } });
+      return;
+    }
+    if(n.nodeType !== 1) return;
+    if(/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|BUTTON|INPUT|SELECT|SVG)$/.test(n.tagName)) return;
+    if(pasteIsHidden(n)) return;
+
+    const tag = n.tagName.toLowerCase();
+
+    if(/^h[1-6]$/.test(tag)){
+      const t = n.innerHTML.trim();
+      if(t) blocks.push({ type:"header", data:{ text:t, level: Math.min(Math.max(+tag[1],2),4) } });
+      return;
+    }
+    if(tag === "ul" && n.classList.contains("checklist")){
+      const items = [...n.children].filter(li => li.tagName === "LI")
+        .map(li => ({ text: li.innerHTML.trim(), checked: li.classList.contains("done") }));
+      if(items.length) blocks.push({ type:"checklist", data:{ items } });
+      return;
+    }
+    if(tag === "ul" || tag === "ol"){
+      const items = [...n.children].filter(li => li.tagName === "LI")
+        .map(li => ({ content: li.innerHTML.trim(), items:[] }));
+      if(items.length) blocks.push({ type:"list", data:{ style: tag==="ol"?"ordered":"unordered", items } });
+      return;
+    }
+    if(tag === "blockquote"){
+      const t = n.innerHTML.trim();
+      if(t) blocks.push({ type:"quote", data:{ text:t, caption:"" } });
+      return;
+    }
+    if(tag === "pre"){
+      const t = n.textContent || "";
+      if(t.trim()) blocks.push({ type:"code", data:{ code:t } });
+      return;
+    }
+    if(tag === "hr"){ blocks.push({ type:"delimiter", data:{} }); return; }
+    if(tag === "table"){
+      const rows = [...n.querySelectorAll("tr")].map(tr => [...tr.children].map(td => td.innerHTML.trim()));
+      if(rows.length) blocks.push({ type:"table", data:{ withHeadings: !!n.querySelector("thead"), content: rows } });
+      return;
+    }
+    if(tag === "img"){
+      if(n.src) blocks.push({ type:"image", data:{ file:{ url:n.src }, caption: n.alt || "" } });
+      return;
+    }
+    if(tag === "figure"){
+      const img = n.querySelector("img");
+      if(img){ blocks.push({ type:"image", data:{ file:{ url:img.src },
+        caption: n.querySelector("figcaption")?.textContent || "" } }); return; }
+    }
+    if(tag === "a" && n.classList.contains("attach")){
+      blocks.push({ type:"attaches", data:{ file:{ url:n.href, name:n.querySelector(".nm")?.textContent || "첨부" },
+        title: n.querySelector(".nm")?.textContent || "" } });
+      return;
+    }
+    if(tag === "p"){ para(n.innerHTML); return; }
+
+    // 그 밖의 상자(div·section·span…): 안에 진짜 블록 요소가 있으면 더 들어가 보고,
+    // 없으면(카드·배지처럼 순전히 꾸밈용 상자면) 안의 글자를 통째로 문단 하나로 남긴다.
+    if(n.querySelector?.(PASTE_BLOCKY_SEL)){
+      [...n.childNodes].forEach(eat);
+    }else{
+      const t = (n.textContent || "").replace(/\s+/g, " ").trim();
+      if(t) para(n.innerHTML);
+    }
+  };
+
+  [...box.childNodes].forEach(eat);
+  return blocks;
+}
+
+/* html 이 아예 없거나(순수 텍스트 복사) html 에서 하나도 못 건졌을 때 쓰는
+   마지막 수단 — #·목록 기호·```코드```·> 인용처럼 마크다운으로 쓰인 줄도 알아본다. */
+function pasteTextToBlocks(text){
+  const lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+  const blocks = [];
+  let para = [], list = null, code = null;
+
+  const flushPara = () => { if(para.length){ blocks.push({ type:"paragraph", data:{ text: esc(para.join(" ")) } }); para = []; } };
+  const flushList = () => {
+    if(list && list.items.length) blocks.push({ type:"list",
+      data:{ style:list.style, items:list.items.map(t => ({ content: esc(t), items:[] })) } });
+    list = null;
+  };
+
+  for(const raw of lines){
+    const line = raw.trim();
+
+    if(/^```/.test(line)){
+      if(code === null){ flushPara(); flushList(); code = []; }
+      else{ blocks.push({ type:"code", data:{ code: code.join("\n") } }); code = null; }
+      continue;
+    }
+    if(code !== null){ code.push(raw); continue; }
+    if(!line){ flushPara(); flushList(); continue; }
+
+    const h = line.match(/^(#{1,4})\s+(.*)/);
+    if(h){ flushPara(); flushList();
+      blocks.push({ type:"header", data:{ text: esc(h[2]), level: Math.min(Math.max(h[1].length,2),4) } }); continue; }
+
+    const bullet = line.match(/^[-*•]\s+(.*)/);
+    const numbered = line.match(/^\d+[.)]\s+(.*)/);
+    if(bullet || numbered){
+      flushPara();
+      const style = numbered ? "ordered" : "unordered";
+      if(!list || list.style !== style){ flushList(); list = { style, items:[] }; }
+      list.items.push((bullet || numbered)[1]);
+      continue;
+    }
+
+    const q = line.match(/^>\s?(.*)/);
+    if(q){ flushPara(); flushList(); blocks.push({ type:"quote", data:{ text: esc(q[1]), caption:"" } }); continue; }
+
+    flushList();
+    para.push(line);
+  }
+  if(code !== null && code.length) blocks.push({ type:"code", data:{ code: code.join("\n") } });
+  flushPara(); flushList();
+  return blocks;
+}
+
+/* AI 창이 «본문에 넣기» 를 누를 때 부르는 창구 — 기존 파서가 못 건지면 위의
+   너그러운 파서를 예비로 쓴다(있던 동작은 그대로 두고 실패할 때만 보강). */
 window.__blogInsertHtml = async (html) => {
   if(!ED) return false;
-  const data = htmlToBlocks(html);
-  if(!data?.blocks?.length) return false;
+  let blocks = htmlToBlocks(html)?.blocks || [];
+  if(!blocks.length) blocks = pasteHtmlToBlocks(html);
+  if(!blocks.length) return false;
   let at = ED.blocks.getBlocksCount();
-  for(const b of data.blocks){
+  for(const b of blocks){
     await ED.blocks.insert(b.type, b.data, undefined, at++, false);
   }
   markDirty();
@@ -669,6 +934,37 @@ async function makeEditor(data){
 
   await ED.isReady;
   setState(DIRTY ? "저장 안 됨" : "준비됨", DIRTY ? "dirty" : "");
+  wirePaste();
+}
+
+/* ── 어디서 복사해오든 받아주는 붙여넣기 연결 ─────────── */
+function wirePaste(){
+  $("#ed").addEventListener("paste", e => {
+    const cd = e.clipboardData;
+    if(!cd) return;
+    if(cd.files && cd.files.length) return; // 사진 파일은 Editor.js 사진 도구 기본 동작에 맡긴다
+
+    const html = cd.getData("text/html");
+    const text = cd.getData("text/plain");
+    if(!html && !text) return;
+
+    let blocks = html ? pasteHtmlToBlocks(html) : [];
+    if(!blocks.length && text && text.trim()) blocks = pasteTextToBlocks(text);
+    if(!blocks.length) return; // 아무것도 못 건지면 Editor.js 기본 동작에 맡긴다
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    (async () => {
+      const cur = ED.blocks.getCurrentBlockIndex();
+      let at = cur < 0 ? ED.blocks.getBlocksCount() : cur + 1;
+      for(const b of blocks){
+        await ED.blocks.insert(b.type, b.data, undefined, at++, false);
+      }
+      try{ ED.caret.setToBlock(at - 1, "end"); }catch{}
+      markDirty();
+    })();
+  }, true);
 }
 
 /* ── 저장 ──────────────────────────────────────────── */
@@ -686,6 +982,7 @@ async function collect(){
     cover_url: COVER,
     category_id: $("#cat").value ? +$("#cat").value : null,
     tags: $("#tags").value.split(",").map(s => s.trim()).filter(Boolean).slice(0, 12),
+    secret: SECRET,
   };
 }
 
@@ -701,13 +998,15 @@ async function save(status){
     const id = POST_ID || POST?.id;
     if(id){
       const { error } = await sb.from("blog_posts").update(row).eq("id", id);
-      if(error) throw new Error(error.message);
+      if(error) throw new Error(error.message.includes("secret")
+        ? "04-secret-private.sql 을 먼저 돌려 주세요 (secret 칸이 없습니다)." : error.message);
       POST = { ...POST, ...row, id };
     }else{
       row.slug = App.slugify(row.title);
       row.author = App.me?.id || null;
       const { data, error } = await sb.from("blog_posts").insert(row).select("id,status,published_at").single();
-      if(error) throw new Error(error.message);
+      if(error) throw new Error(error.message.includes("secret")
+        ? "04-secret-private.sql 을 먼저 돌려 주세요 (secret 칸이 없습니다)." : error.message);
       POST = { ...row, ...data };
       history.replaceState(null, "", "./write.html?id=" + data.id);
       syncPubLabel();
@@ -733,7 +1032,7 @@ function autoSaveLoop(){
       const out = await ED.save();
       localStorage.setItem(LOCAL, JSON.stringify({
         at: Date.now(), title: $("#title").value, cat: $("#cat").value,
-        tags: $("#tags").value, cover: COVER, body: out,
+        tags: $("#tags").value, cover: COVER, secret: SECRET, body: out,
       }));
     }catch{}
   }, 30000);

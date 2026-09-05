@@ -121,10 +121,12 @@ function wire(){
 }
 
 async function loadCats(){
-  const { data } = await sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order");
-  const tree = App.catTree(data || []);
+  const { data } = await sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order,is_private");
+  const all = data || [];
+  const hidden = App.canEdit() ? new Set() : App.hiddenCatIds(all);
+  const tree = App.catTree(all).filter(c => !hidden.has(String(c.id)));
   $("#navCats").innerHTML = tree.map(c =>
-    `<a class="navItem" href="./index.html" data-depth="${c.depth}">
+    `<a class="navItem" href="./index.html?cat=${c.id}" data-depth="${c.depth}">
        <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
        <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span></a>`).join("");
 }

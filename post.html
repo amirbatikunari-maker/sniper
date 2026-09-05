@@ -120,18 +120,20 @@ function wire(){
 async function load(id){
   const [{ data:p, error }, { data:cats }] = await Promise.all([
     sb.from("blog_posts").select("*").eq("id", id).single(),
-    sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order"),
+    sb.from("blog_categories").select("id,name,emoji,color,parent_id,sort_order,is_private"),
   ]);
 
   CATS = cats || [];
-  $("#navCats").innerHTML = App.catTree(CATS).map(c =>
-    `<a class="navItem" href="./index.html" data-depth="${c.depth}">
+  const admin = App.canEdit();
+  const hiddenCats = admin ? new Set() : App.hiddenCatIds(CATS);
+  $("#navCats").innerHTML = App.catTree(CATS).filter(c => !hiddenCats.has(String(c.id))).map(c =>
+    `<a class="navItem" href="./index.html?cat=${c.id}" data-depth="${c.depth}">
        <span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>
        <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span></a>`).join("");
 
-  if(error || !p){
-    $("#mainIn").innerHTML = `<div class="empty"><b>글을 찾지 못했습니다</b>
-      ${esc(error?.message || "지워졌거나 아직 공개되지 않은 글일 수 있습니다.")}<br><br>
+  if(error || !p || (p.secret && !admin)){
+    $("#mainIn").innerHTML = `<div class="empty"><b>${p && p.secret ? "비밀글입니다" : "글을 찾지 못했습니다"}</b>
+      ${p && p.secret ? "글쓴이만 볼 수 있습니다." : esc(error?.message || "지워졌거나 아직 공개되지 않은 글일 수 있습니다.")}<br><br>
       <a href="./index.html">← 목록으로</a></div>`;
     return;
   }
@@ -139,7 +141,6 @@ async function load(id){
   POST = p;
   document.title = p.title + " · " + (App.settings.title || "sniper");
   const c = CATS.find(x => x.id === p.category_id);
-  const admin = App.canEdit();
 
   $("#mainIn").innerHTML = `
     <div class="postHead">
@@ -151,6 +152,7 @@ async function load(id){
         <span class="num">${fmtDate(p.published_at || p.created_at)}</span>
         ${p.pinned ? `<span class="pin-b">고정</span>` : ""}
         ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}
+        ${p.secret ? `<span class="secret-b">🔒 비밀글</span>` : ""}
         <span class="num" style="margin-left:auto">조회 ${p.view_count ?? 0}</span>
       </div>
     </div>

@@ -111,10 +111,10 @@
 <script src="./ai-plus.js" defer></script>
 <script src="./music.js" defer></script>
 <script>
-const { sb, $, $$, esc, fmtDate, toast, ask } = App;
+const { sb, $, $$, esc, fmtDate, toast, ask, qs } = App;
 
-let CATS = [], POSTS = [], SEL = "all", KEY = "", VIEW = "rows", SORT = "new";
-let DEEP = new Set(), PICKED = new Set();
+let CATS = [], POSTS = [], SEL = qs("cat") || "all", KEY = "", VIEW = "rows", SORT = "new";
+let DEEP = new Set(), PICKED = new Set(), HIDDEN_CATS = new Set();
 
 /* 왼쪽 «글 모음» 칸 — 관리자만 보이는 것도 있다 */
 const FIXED = [
@@ -142,6 +142,7 @@ const FIXED = [
   }
   await loadCats();
   await loadPosts();
+  if(qs("openCatMgr") && App.canEdit()) catBox();
 })();
 
 /* ── 단추 연결 ─────────────────────────────────────── */
@@ -243,7 +244,10 @@ async function loadCats(){
       <span class="muted sm">${esc(error.message)}</span></div>`;
     return;
   }
-  CATS = data || [];
+  const all = data || [];
+  const admin = App.canEdit();
+  HIDDEN_CATS = admin ? new Set() : App.hiddenCatIds(all);
+  CATS = admin ? all : all.filter(c => !HIDDEN_CATS.has(String(c.id)));
   drawNav();
 }
 
@@ -285,7 +289,7 @@ function drawNav(){
                   data-c="${id}" data-depth="${c.depth}">
           ${kid ? `<span class="navTw" data-tw="${id}" title="${fold?"펼치기":"접기"}">${fold?"▸":"▾"}</span>`
                 : `<span class="dot" style="background:${esc(c.color||"#9CA3AF")}"></span>`}
-          <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}</span>
+          <span class="nm">${c.emoji?c.emoji+" ":""}${esc(c.name)}${c.is_private?" 🔒":""}</span>
           <span class="ct">${countOf(c.id)}</span></button>`;
       }).join("")
     : `<p class="muted sm" style="padding:4px 9px">아직 없습니다.${admin?" 위 «관리» 로 만드세요.":""}</p>`;
@@ -304,13 +308,14 @@ function drawNav(){
 
 /* ── 글 ─────────────────────────────────────────────── */
 async function loadPosts(){
+  const admin = App.canEdit();
   let q = sb.from("blog_posts")
-    .select("id,slug,title,excerpt,cover_url,category_id,tags,status,pinned,view_count,published_at,updated_at")
+    .select("id,slug,title,excerpt,cover_url,category_id,tags,status,pinned,secret,view_count,published_at,updated_at")
     .order("pinned", { ascending:false })
     .order("published_at", { ascending:false, nullsFirst:false })
     .order("updated_at", { ascending:false })
     .limit(300);
-  if(!App.canEdit()) q = q.eq("status","published");
+  if(!admin) q = q.eq("status","published").eq("secret", false);
 
   const { data, error } = await q;
   if(error){
@@ -318,7 +323,7 @@ async function loadPosts(){
       <span class="muted sm">${esc(error.message)}</span></div>`;
     return;
   }
-  POSTS = data || [];
+  POSTS = (data || []).filter(p => admin || !HIDDEN_CATS.has(String(p.category_id)));
   drawNav();
   draw();
 }
@@ -329,19 +334,21 @@ async function deepSearch(){
   if(!sb || k.length < 2 || searching) return;
   searching = true;
   try{
+    const admin = App.canEdit();
     const pat = `%${k.replace(/[%_]/g, m => "\\" + m)}%`;
     let q = sb.from("blog_posts")
-      .select("id,slug,title,excerpt,cover_url,category_id,tags,status,pinned,view_count,published_at,updated_at")
+      .select("id,slug,title,excerpt,cover_url,category_id,tags,status,pinned,secret,view_count,published_at,updated_at")
       .or(`title.ilike.${pat},body_text.ilike.${pat},excerpt.ilike.${pat}`)
       .order("published_at", { ascending:false, nullsFirst:false })
       .limit(60);
-    if(!App.canEdit()) q = q.eq("status","published");
+    if(!admin) q = q.eq("status","published").eq("secret", false);
 
     const { data, error } = await q;
     if(error || !data) return;
+    const rows = data.filter(p => admin || !HIDDEN_CATS.has(String(p.category_id)));
     const have = new Set(POSTS.map(p => p.id));
-    POSTS = POSTS.concat(data.filter(p => !have.has(p.id)));
-    DEEP = new Set([...(DEEP||[]), ...data.map(p => p.id)]);
+    POSTS = POSTS.concat(rows.filter(p => !have.has(p.id)));
+    DEEP = new Set([...(DEEP||[]), ...rows.map(p => p.id)]);
     if(KEY === k){ drawNav(); draw(); }
   }catch{}
   finally{ searching = false; }
@@ -405,7 +412,8 @@ function draw(){
   const catOf = id => CATS.find(c => c.id === id);
   const badges = p => `
     ${p.pinned ? `<span class="pin-b">고정</span>` : ""}
-    ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}`;
+    ${p.status !== "published" ? `<span class="draft">${p.status==="draft"?"초안":"보관"}</span>` : ""}
+    ${p.secret ? `<span class="secret-b">🔒 비밀글</span>` : ""}`;
   const tagHtml = (p, n) => (p.tags||[]).slice(0, n)
     .map(t => `<span class="tag" data-tag="${esc(t)}">#${esc(t)}</span>`).join("");
 
@@ -540,6 +548,8 @@ function catBox(){
       <input type="text" id="ncName" placeholder="이름 (예: 설비 점검)">
       <select id="ncParent" style="width:130px;flex:none;margin:0;padding:6px 8px;font-size:13px"></select>
       <input type="color" id="ncColor" value="#1D4ED8">
+      <label style="display:flex;align-items:center;gap:3px;flex:none;font-size:11px;white-space:nowrap">
+        <input type="checkbox" id="ncPriv"> 비공개</label>
       <button class="btn sm" id="ncAdd">추가</button>
     </div>
 
@@ -571,6 +581,9 @@ function catBox(){
         <select data-f="parent_id" style="width:120px;flex:none;margin:0;padding:5px 7px;font-size:12.5px"
                 title="상위 게시판">${parentOpts(c.id)}</select>
         <input type="color" value="${esc(c.color||"#9CA3AF")}" data-f="color">
+        <label style="display:flex;align-items:center;gap:3px;flex:none;font-size:11px;white-space:nowrap"
+               title="비공개로 하면 이 게시판과 안의 글은 로그인한 사람만 볼 수 있습니다">
+          <input type="checkbox" data-priv="${c.id}" ${c.is_private?"checked":""}> 비공개</label>
         <button class="mini" data-up="${i}" title="위로">↑</button>
         <button class="mini" data-down="${i}" title="아래로">↓</button>
         <button class="mini del" data-del="${c.id}" title="지우기">🗑</button>
@@ -606,6 +619,35 @@ function catBox(){
         if(error) return toast(error.message, "err");
       }
       await loadCats(); paint(); draw();
+    });
+
+    /* 비공개 토글 — 켜면 이 게시판과 하위 게시판의 글을 전부 비밀글로 바꾼다.
+       끄는 것은 게시판 표시만 되돌리고, 안에 있던 개별 비밀글은 그대로 둔다. */
+    $$("#catList [data-priv]", ov).forEach(chk => chk.onchange = async () => {
+      const id = chk.dataset.priv;
+      const c = CATS.find(x => String(x.id) === id);
+      const branch = App.catBranch(CATS, id).map(x => +x);
+
+      if(chk.checked){
+        const n = POSTS.filter(p => branch.includes(+p.category_id)).length;
+        const ok = await ask(`«${esc(c?.name||"")}» 을 비공개로 바꿉니다`,
+          (n ? `안에 든 글 ${n}개가 모두 비밀글로 바뀝니다.` : "안에 글은 없습니다.") +
+          "<br>하위 게시판이 있으면 그 안의 글도 함께 바뀝니다.", "비공개로", true);
+        if(!ok){ chk.checked = false; return; }
+
+        const { error } = await sb.from("blog_categories").update({ is_private:true }).eq("id", id);
+        if(error) return toast(error.message.includes("column")
+          ? "04-secret-private.sql 을 먼저 돌려 주세요 (is_private 칸이 없습니다)." : error.message, "err");
+
+        const { error:e2 } = await sb.from("blog_posts").update({ secret:true }).in("category_id", branch);
+        if(e2) toast("게시판은 비공개로 됐지만 안의 글은 못 바꿨습니다: " + e2.message, "err");
+        else toast("비공개로 바꿨습니다 — 안의 글도 모두 비밀글이 됐습니다.");
+      }else{
+        const { error } = await sb.from("blog_categories").update({ is_private:false }).eq("id", id);
+        if(error) return toast(error.message, "err");
+        toast("공개로 바꿨습니다. 안에 있던 비밀글은 그대로 남습니다.");
+      }
+      await loadCats(); await loadPosts(); paint(); draw();
     });
 
     /* 같은 층 안에서 순서 바꾸기 */
@@ -649,6 +691,7 @@ function catBox(){
       slug: App.slugify(name), name,
       emoji: $("#ncEmoji", ov).value.trim() || null,
       color: $("#ncColor", ov).value,
+      is_private: $("#ncPriv", ov).checked,
       sort_order: CATS.filter(c => String(c.parent_id||"") === String(parent||"")).length + 1,
     };
     if(parent) row.parent_id = +parent;
@@ -656,7 +699,7 @@ function catBox(){
     const { error } = await sb.from("blog_categories").insert(row);
     if(error) return toast(error.message.includes("parent_id")
       ? "03-upgrade.sql 을 먼저 돌려 주세요 (parent_id 칸이 없습니다)." : error.message, "err");
-    $("#ncName", ov).value = ""; $("#ncEmoji", ov).value = "";
+    $("#ncName", ov).value = ""; $("#ncEmoji", ov).value = ""; $("#ncPriv", ov).checked = false;
     await loadCats(); paint();
   };
   $("#ncName", ov).addEventListener("keydown", e => { if(e.key === "Enter") $("#ncAdd", ov).click(); });

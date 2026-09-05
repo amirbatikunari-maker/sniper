@@ -353,6 +353,13 @@ function catBranch(list, id) {
   return out;
 }
 
+/* 비공개 게시판 — 상위가 비공개면 그 아래 전부(자기 자신 포함) 비공개로 친다 */
+function hiddenCatIds(list) {
+  const out = new Set();
+  for (const c of (list || [])) if (c.is_private) catBranch(list, c.id).forEach(id => out.add(id));
+  return out;
+}
+
 /* ═══════════════ KaTeX (수식) ═══════════════ */
 
 let katexLoading = null;
@@ -836,7 +843,7 @@ window.App = {
   drawProfile, profileBox, drawMadeBy, applyDock, initDock, initials,
   loadSettings, saveSettings, applySettings, applyAccent, luma, blend, contrast,
   blocksToHtml, blocksToText, inlineHtml, embedSrc,
-  catTree, catBranch,
+  catTree, catBranch, hiddenCatIds,
   uploadImage, uploadFile, shrink,
   deletePosts, setPostStatus,
   loadKatex, renderMath,

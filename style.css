@@ -266,6 +266,8 @@ html[data-admin="1"] .card-i:hover .acts{display:flex}
   border-radius:4px;padding:0 4px;white-space:nowrap}
 .draft{font:700 10px/1.5 var(--font);color:var(--warn);border:1px solid currentColor;
   border-radius:4px;padding:0 4px;white-space:nowrap}
+.secret-b{font:700 10px/1.5 var(--font);color:var(--bad);border:1px solid currentColor;
+  border-radius:4px;padding:0 4px;white-space:nowrap}
 .tag{font:600 10.5px/1.6 var(--font);color:var(--ink-2);background:var(--paper);
   border:1px solid var(--rule);border-radius:5px;padding:0 6px;cursor:pointer;white-space:nowrap}
 .tag:hover{border-color:var(--accent);color:var(--accent-ink)}

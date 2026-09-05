@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-if "%SNIPER_WORK_ORIGINS%"=="" set "SNIPER_WORK_ORIGINS=https://gichul-viewer.pages.dev,http://localhost:5500,http://127.0.0.1:5500"
+if "%SNIPER_WORK_ORIGINS%"=="" set "SNIPER_WORK_ORIGINS=https://sniper-web.pages.dev,https://gichul-viewer.pages.dev,http://localhost:5500,http://127.0.0.1:5500"
 echo sniper WORK Local Agent v12
 echo Allowed Work Origins: %SNIPER_WORK_ORIGINS%
 echo Starting on http://127.0.0.1:8788

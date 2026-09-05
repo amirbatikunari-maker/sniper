@@ -49,7 +49,7 @@
 
 | 증상 | 확인할 것 |
 |---|---|
-| `허용되지 않은 Work Origin` | `SNIPER_WORK_ORIGINS` 에 지금 주소가 있는지 |
+| `허용되지 않은 Work Origin` | `SNIPER_WORK_ORIGINS` 에 지금 주소가 있는지 (v16: `local-agent-start.bat/.ps1` 기본값이 실제 배포 주소를 빠뜨리고 있던 문제를 고쳤습니다 — 예전에 내려받은 스크립트를 그대로 쓰고 있다면 새 버전으로 바꾸거나, 환경변수를 직접 확인하세요) |
 | `Local Agent 세션이 없습니다` | Local Agent 를 껐다 켜고 Work 화면 새로고침 |
 | 요청이 아예 안 감 | 크롬 주소창의 사설망 접근 차단 아이콘 확인 |
 | AI 응답 401 | 워커 `ALLOWED_EMAILS` 에 로그인 계정이 있는지 |

@@ -42,7 +42,31 @@ async function showProjectIndex(){
   }catch(e){$('#projectIndexState').textContent='실패';log('프로젝트 구조 분석 실패: '+e.message)}
 }
 async function connectProject(show=true){rootPath=$('#rootPath').value.trim();if(!rootPath)throw new Error('프로젝트 폴더의 전체 경로를 입력하세요.');localStorage.setItem('sniper.work.root',rootPath);if(!await pingLocal())throw new Error('local-agent-start.bat를 먼저 실행하고 Work 페이지를 허용 Origin에서 열어주세요.');const t=await localRequest('POST','/tree',{root:rootPath});await loadProjectInfo();files=t.files.map(path=>({path,remote:true}));selected=new Set(files.map(f=>f.path));$('#folderState').textContent=`연결됨 · ${files.length}개 파일`;renderFiles();if(show){setStatus('프로젝트 연결 완료');await showGit();await showHistory();await showAudit();await loadServerState(); await loadProjectMemory()}saveState()}
-async function pickFolder(){if(!window.showDirectoryPicker)return alert('Chrome/Edge가 필요합니다.');try{const dir=await window.showDirectoryPicker({mode:'readwrite'});const picked=[];for await(const [name,h] of dir.entries())if(h.kind==='file'&&/\.(html?|css|js|mjs|cjs|json|md|txt|xml|svg|toml|yml|yaml|ts|tsx|jsx|vue|svelte|py|ps1|bat|cmd)$/i.test(name))picked.push({path:name,handle:h});files=picked;selected=new Set(files.map(f=>f.path));$('#folderState').textContent='브라우저 폴더 연결됨 · 자동 실행은 로컬 경로 연결을 사용하세요.';renderFiles();setStatus('브라우저 폴더 연결 완료')}catch(e){if(e.name!=='AbortError')alert(e.message)}}
+const PICK_IGNORE_DIRS=new Set(['node_modules','.git','.wrangler','dist','build','coverage','.next','.cache','.venv','venv','.turbo','.svelte-kit','.astro','.parcel-cache']);
+const PICK_SAFE_EXT=/\.(html?|css|js|mjs|cjs|json|md|txt|xml|svg|toml|yml|yaml|ts|tsx|jsx|vue|svelte|py|ps1|bat|cmd|astro)$/i;
+async function walkDirHandle(dir,prefix,picked){
+  for await(const [name,h] of dir.entries()){
+    if(picked.length>=3000) return;
+    const rel=prefix?prefix+'/'+name:name;
+    if(h.kind==='directory'){
+      if(PICK_IGNORE_DIRS.has(name)||name.startsWith('.')) continue;
+      await walkDirHandle(h,rel,picked);
+    }else if(h.kind==='file'&&PICK_SAFE_EXT.test(name)){
+      picked.push({path:rel,handle:h});
+    }
+  }
+}
+async function pickFolder(){
+  if(!window.showDirectoryPicker)return alert('Chrome/Edge가 필요합니다.');
+  try{
+    const dir=await window.showDirectoryPicker({mode:'readwrite'});
+    const picked=[];
+    await walkDirHandle(dir,'',picked);
+    files=picked;selected=new Set(files.map(f=>f.path));
+    $('#folderState').textContent=`브라우저 폴더 연결됨 · ${files.length}개 파일(하위 폴더 포함) · 자동 실행은 로컬 경로 연결을 사용하세요.`;
+    renderFiles();setStatus('브라우저 폴더 연결 완료');
+  }catch(e){if(e.name!=='AbortError')alert(e.message)}
+}
 function renderFiles(){const box=$('#fileTree');box.innerHTML=files.length?files.map((f,i)=>`<label class="fileItem"><input type="checkbox" data-i="${i}" ${selected.has(f.path)?'checked':''}><span class="path">${esc(f.path)}</span></label>`).join(''):'<div class="empty">읽을 수 있는 코드 파일이 없습니다.</div>';box.querySelectorAll('input').forEach(x=>x.onchange=()=>{const f=files[+x.dataset.i];x.checked?selected.add(f.path):selected.delete(f.path);$('#selectedCount').textContent=`선택 파일 ${selected.size}개`;saveState()});$('#selectedCount').textContent=`선택 파일 ${selected.size}개`}
 async function smartContext(){
   if(!localReady||!rootPath)return;
