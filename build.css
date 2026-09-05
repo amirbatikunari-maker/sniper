@@ -1,35 +1,135 @@
-.buildLayout{height:calc(100vh - 58px);display:grid;grid-template-columns:380px minmax(0,1fr);gap:12px;padding:12px;overflow:hidden}
+/* ═══════════════════════════════════════════════════════════════
+   새로 만들기(build) 화면
+   ─────────────────────────────────────────────────────────────
+   work.css 를 먼저 읽고 그 위에 얹힙니다. 색·모서리·그림자는
+   work.css 값을 그대로 따라가고, 여기서는 «배치» 만 정합니다.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 전체 배치 ─────────────────────────────────────────────── */
+.buildLayout{
+  height:calc(100vh - 58px);
+  display:grid;
+  grid-template-columns:360px 232px minmax(0,1fr);
+  gap:12px;padding:12px;overflow:hidden;
+}
+.buildLayout>section{min-width:0;min-height:0}
+
+/* 화면 전환 탭 — 좁은 화면에서만 보입니다 */
+.paneTabs{display:none}
+
+/* ── 왼쪽: 대화 ────────────────────────────────────────────── */
 .buildChat{display:flex;flex-direction:column;overflow:hidden}
 .chatLog{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.chatMsg{border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.55;max-width:92%}
+.chatMsg{border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.55;max-width:92%;white-space:pre-wrap;word-break:break-word}
 .chatMsg.user{align-self:flex-end;background:#16181d;color:#fff}
 .chatMsg.assistant{align-self:flex-start;background:#f1f2f4;color:#333}
+.chatMsg .msgFiles{display:block;margin-top:6px;font-size:11px;opacity:.72}
+
 .buildInputs{border-top:1px solid #eee;padding:10px;display:flex;flex-direction:column;gap:8px}
-.buildInputs textarea{width:100%;min-height:96px;resize:vertical;border:1px solid #dfe3e8;border-radius:9px;padding:10px;font:inherit;outline:none}
+.buildInputs textarea{width:100%;min-height:92px;resize:vertical;border:1px solid #dfe3e8;border-radius:9px;padding:10px;font:inherit;outline:none}
 .buildInputs textarea:focus{border-color:#9aa4b2}
-.refFiles{display:flex;gap:6px;flex-wrap:wrap}
-.refChip{display:inline-flex;align-items:center;gap:5px;background:#f1f2f4;border-radius:999px;padding:3px 8px;font-size:11px;color:#444}
-.refChip button{border:0;background:none;cursor:pointer;color:#888;font-size:13px;line-height:1;padding:0}
-.refChip button:hover{color:#b6222d}
 .buildRow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .buildRow input[type="text"]{flex:1;min-width:120px;padding:8px 10px;border:1px solid #dfe3e8;border-radius:8px;font-size:12px;outline:none}
 .buildRow select{padding:8px 9px;border:1px solid #dfe3e8;border-radius:8px;background:#fff;font-size:12px}
 .buildRow .btn.big{flex:none;padding:10px 16px;font-weight:700}
-.status{font-size:11.5px;color:#777;min-height:14px}
+.grow{flex:1}
+.status{font-size:11.5px;color:#777;min-height:14px;line-height:1.5}
 .status.err{color:#b6222d}
 
-.buildPreview{display:flex;flex-direction:column;gap:10px;overflow:hidden}
-.previewPanel{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.previewWrap{position:relative;flex:1;background:#fff}
-#previewFrame{width:100%;height:100%;border:0;display:block}
-.previewEmpty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9aa0a8;font-size:12.5px;background:#fafbfc;pointer-events:none}
-.previewEmpty[hidden]{display:none}
-.codePanel{max-height:38%;display:flex;flex-direction:column;overflow:hidden}
-.codePanel[hidden]{display:none}
-#codeView{margin:0;padding:12px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:11.5px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;flex:1;background:#f7f8fa}
+/* 스타일 요청 칩 */
+.chipRow{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid #dfe3e8;background:#fff;color:#5d646f;border-radius:999px;padding:5px 10px;font-size:11.5px;cursor:pointer;line-height:1;font-family:inherit}
+.chip:hover{background:#f6f7f9}
+.chip[aria-pressed="true"]{background:#16181d;border-color:#16181d;color:#fff}
 
-@media(max-width:900px){
-  .buildLayout{grid-template-columns:1fr;height:auto;overflow:visible}
-  .buildChat{height:60vh}
-  .previewWrap{min-height:50vh}
+/* 드래그해서 놓는 자리 */
+.dropHint{border:1px dashed #cfd5dd;border-radius:9px;padding:9px 10px;font-size:11.5px;color:#8a8f98;text-align:center;cursor:pointer;background:none;width:100%;font-family:inherit}
+.dropHint:hover{border-color:#9aa4b2;color:#5d646f}
+.buildChat.dragover{outline:2px solid #16181d;outline-offset:-2px}
+.buildChat.dragover .dropHint{border-color:#16181d;color:#16181d;background:#f4f5f7}
+
+/* ── 가운데: 파일 ──────────────────────────────────────────── */
+.buildFiles{display:flex;flex-direction:column;overflow:hidden}
+.fileSection{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.fileSection+.fileSection{border-top:1px solid #eee}
+.fileSection.attached{flex:0 0 auto;max-height:46%}
+.fileSection.made{flex:1}
+.secHead{padding:9px 12px;display:flex;align-items:center;gap:6px;font-size:11px;color:#6d7380}
+.secHead b{font-size:11.5px;color:#3d434c}
+.secHead .count{margin-left:auto;font-variant-numeric:tabular-nums}
+.treeWrap{overflow:auto;padding:2px 6px 8px;flex:1;min-height:44px}
+.treeEmpty{font-size:11px;color:#9aa0a8;padding:8px 6px;line-height:1.6}
+
+.tree details{margin:0}
+.tree summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:6px;font-size:11.5px;color:#5d646f}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary:hover{background:#f5f6f8}
+.tree summary::before{content:"\25B8";font-size:9px;color:#a8aeb8;width:8px}
+.tree details[open]>summary::before{content:"\25BE"}
+.tree .kids{padding-left:11px;border-left:1px solid #f0f1f3;margin-left:9px}
+.tree .row{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;font-size:11.5px;color:#3d434c}
+.tree .row:hover{background:#f5f6f8}
+.tree .row.on{background:#16181d;color:#fff}
+.tree .row.on .sz{color:#c9ccd2}
+.tree .row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0}
+.tree .row .sz{font-size:10px;color:#9aa0a8;font-variant-numeric:tabular-nums;flex:none}
+.tree .row.off .nm{opacity:.4;text-decoration:line-through}
+.tree input[type="checkbox"]{margin:0;flex:none}
+.tree .rm{border:0;background:none;color:#b0b5bd;cursor:pointer;font-size:13px;line-height:1;padding:0 2px;flex:none}
+.tree .rm:hover{color:#b6222d}
+.thumb{width:16px;height:16px;border-radius:3px;object-fit:cover;flex:none;background:#eee}
+
+/* ── 오른쪽: 미리보기 / 코드 ───────────────────────────────── */
+.buildPreview{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.previewPanel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.paneHead .headTools{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.segbar{display:inline-flex;border:1px solid #dfe3e8;border-radius:8px;overflow:hidden}
+.segbar button{border:0;background:#fff;padding:6px 9px;font-size:11px;cursor:pointer;color:#6d7380;font-family:inherit}
+.segbar button+button{border-left:1px solid #eceef1}
+.segbar button[aria-pressed="true"]{background:#16181d;color:#fff}
+
+.previewWrap{position:relative;flex:1;background:#eef0f3;display:flex;justify-content:center;overflow:auto}
+#previewFrame{width:100%;height:100%;max-width:100%;border:0;display:block;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.05)}
+.previewWrap.narrow #previewFrame{max-width:400px}
+.previewWrap.mid #previewFrame{max-width:840px}
+.previewEmpty{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;color:#9aa0a8;font-size:12.5px;background:#fafbfc;pointer-events:none;text-align:center;padding:20px;line-height:1.7}
+.previewEmpty[hidden]{display:none}
+
+/* 코드 + 미니맵 */
+.codePanel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.codePanel[hidden]{display:none}
+.codeBody{flex:1;display:flex;min-height:0}
+#codeView{margin:0;padding:12px 14px;overflow:auto;white-space:pre;word-break:normal;font:11.5px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;flex:1;background:#fbfcfd;color:#33383f;tab-size:2}
+.minimapBox{position:relative;width:78px;flex:none;border-left:1px solid #eceef1;background:#f7f8fa;cursor:pointer;overflow:hidden}
+#minimap{display:block;width:100%;height:100%}
+.mmView{position:absolute;left:0;right:0;background:rgba(22,24,29,.11);border-top:1px solid rgba(22,24,29,.22);border-bottom:1px solid rgba(22,24,29,.22);pointer-events:none;min-height:6px}
+.codeFoot{padding:6px 12px;border-top:1px solid #eee;font-size:11px;color:#8a8f98;display:flex;gap:10px;align-items:center}
+
+/* ── 좁은 화면 ─────────────────────────────────────────────── */
+@media(max-width:1180px){
+  .buildLayout{grid-template-columns:320px 200px minmax(0,1fr)}
+}
+@media(max-width:980px){
+  .buildLayout{
+    grid-template-columns:1fr;
+    grid-template-rows:auto minmax(0,1fr);
+    height:calc(100dvh - 58px);
+  }
+  .paneTabs{display:flex;gap:6px;background:#fff;border:1px solid #e2e5e9;border-radius:12px;padding:5px}
+  .paneTabs button{flex:1;border:0;background:none;border-radius:8px;padding:9px 4px;font:inherit;font-size:12px;color:#6d7380;cursor:pointer}
+  .paneTabs button[aria-pressed="true"]{background:#16181d;color:#fff}
+  .buildLayout>section{display:none}
+  body[data-pane="chat"]  .buildChat,
+  body[data-pane="files"] .buildFiles,
+  body[data-pane="view"]  .buildPreview{display:flex}
+  .fileSection.attached{max-height:none;flex:1}
+  .minimapBox{width:52px}
+  .top{padding:0 12px}
+  .top .brand span{display:none}
+}
+@media(max-width:560px){
+  .buildLayout{padding:8px;gap:8px}
+  .topRight .btn{padding:8px 10px;font-size:12px}
+  #userPill{display:none}
+  .buildInputs textarea{min-height:78px}
 }

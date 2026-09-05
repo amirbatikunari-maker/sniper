@@ -1,9 +1,10 @@
 /* 앱 껍데기는 캐시, 글 내용은 네트워크 우선.
    새로 배포하면 바로 반영되도록 HTML 은 항상 네트워크를 먼저 본다. */
-const SHELL = "sniper-shell-v15";
+const SHELL = "sniper-shell-v18";
 const FILES = ["./","./index.html","./post.html","./write.html","./work.html",
                "./style.css","./app.js","./config.js","./ai-chat.js","./ai-plus.js","./music.js",
-               "./about.html","./work.css","./work.js","./manifest.json","./icon.svg"];
+               "./about.html","./work.css","./work.js","./manifest.json","./icon.svg",
+               "./build.html","./build.css","./build.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

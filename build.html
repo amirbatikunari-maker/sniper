@@ -1,4 +1,5 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sniper · 새로 만들기</title><link rel="stylesheet" href="./work.css"><link rel="stylesheet" href="./build.css"></head><body>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>sniper · 새로 만들기</title><link rel="stylesheet" href="./work.css"><link rel="stylesheet" href="./build.css"></head><body data-pane="chat">
+
 <div id="loginPage" class="login-page" hidden><div class="login-card"><div class="brand">sniper <span>BUILD</span></div><h1>로그인 후 사용</h1><p>블로그의 Supabase 계정으로 로그인하세요.</p><input id="loginEmail" type="email" placeholder="이메일"><input id="loginPassword" type="password" placeholder="비밀번호"><button class="btn primary" id="btnLogin">로그인</button><button class="btn" id="btnLoginBack">블로그</button><div id="loginError" class="error" hidden></div></div></div>
 
 <div id="app" hidden>
@@ -6,52 +7,112 @@
 
 <main class="buildLayout">
 
-  <section class="left panel buildChat">
+  <nav class="paneTabs" id="paneTabs" aria-label="화면 전환">
+    <button data-pane="chat"  aria-pressed="true">대화</button>
+    <button data-pane="files" aria-pressed="false">파일 <span id="tabFileCount"></span></button>
+    <button data-pane="view"  aria-pressed="false">결과</button>
+  </nav>
+
+  <!-- ── 대화 ─────────────────────────────────────────────── -->
+  <section class="left panel buildChat" id="paneChat">
     <div class="paneHead"><b>대화</b><button class="btn tiny" id="btnNewChat">새로 시작</button></div>
-    <div id="chatLog" class="chatLog"><div class="empty">설명을 쓰고 "만들기"를 누르면 오른쪽에 결과가 뜹니다.</div></div>
+    <div id="chatLog" class="chatLog"><div class="empty">만들고 싶은 걸 설명하고 “만들기”를 누르면 결과가 오른쪽에 뜹니다. 참고할 파일은 아무거나 끌어다 놓거나 Ctrl+V 로 붙여넣으세요.</div></div>
 
     <div class="buildInputs">
       <textarea id="prompt" placeholder="무엇을 만들고 싶은지 설명하세요.
-예: 헬스장 회원 관리 대시보드, 카드에 이번 달 매출·회원수·오늘 방문자, 파란 톤"></textarea>
+예: 전기기사 실기 훈련 페이지. 회차별 문제 카드, 타임차트 빈칸 채우기, 왼쪽에 진도 사이드바"></textarea>
 
-      <div id="refFiles" class="refFiles"></div>
+      <button class="dropHint" id="btnPickFiles" type="button">파일 · 폴더 · zip 을 여기로 끌어다 놓기 (또는 눌러서 고르기 · Ctrl+V)</button>
+      <input type="file" id="pickFiles" multiple hidden>
+      <input type="file" id="pickFolder" webkitdirectory directory multiple hidden>
 
       <div class="buildRow">
-        <input type="file" id="pickImages" accept="image/*" multiple hidden>
-        <button class="btn tiny" id="btnPickImages">사진 첨부</button>
-        <input type="text" id="refUrl" placeholder="참고하고 싶은 사이트 주소(선택)">
+        <input type="text" id="refUrl" placeholder="참고할 사이트 주소(선택)">
+        <button class="btn tiny" id="btnPickFolder" title="폴더 통째로 첨부">폴더</button>
+      </div>
+
+      <div class="chipRow" id="styleChips">
+        <button class="chip" type="button" data-hint="tight"   aria-pressed="false">여백 줄이기</button>
+        <button class="chip" type="button" data-hint="light"   aria-pressed="false">밝은 배경</button>
+        <button class="chip" type="button" data-hint="legible" aria-pressed="false">가독성 우선</button>
+        <button class="chip" type="button" data-hint="mobile"  aria-pressed="false">모바일 대응</button>
+        <button class="chip" type="button" data-hint="onepage" aria-pressed="false">한 화면에</button>
+      </div>
+
+      <div class="buildRow">
+        <select id="outputMode" title="결과를 몇 개 파일로 받을지">
+          <option value="multi" selected>여러 파일 (GitHub용)</option>
+          <option value="single">한 파일 HTML</option>
+        </select>
+        <select id="tier"><option value="fast">빠르게</option><option value="balanced" selected>균형</option><option value="quality">고품질</option></select>
+        <select id="provider">
+          <option value="openai" selected>GPT</option>
+          <option value="gemini">Gemini</option>
+          <option value="anthropic">Claude</option>
+        </select>
       </div>
       <div class="buildRow">
-        <select id="tier"><option value="fast">빠르게</option><option value="balanced" selected>균형</option><option value="quality">고품질</option></select>
-        <select id="provider"><option value="openai" selected>GPT</option><option value="gemini">Gemini</option></select>
+        <input type="text" id="modelOverride" placeholder="모델 직접 입력(비우면 기본값)">
         <button class="btn primary big" id="btnBuild">만들기 ▶</button>
       </div>
       <div class="status" id="statusText"></div>
     </div>
   </section>
 
-  <section class="center buildPreview">
-    <div class="panel previewPanel">
+  <!-- ── 파일 ─────────────────────────────────────────────── -->
+  <section class="panel buildFiles" id="paneFiles">
+    <div class="fileSection attached">
+      <div class="secHead"><b>첨부한 파일</b><span class="count" id="attCount"></span><button class="btn tiny" id="btnClearAtt">비우기</button></div>
+      <div class="treeWrap"><div class="tree" id="attTree"></div></div>
+    </div>
+    <div class="fileSection made">
+      <div class="secHead"><b>만들어진 파일</b><span class="count" id="madeCount"></span></div>
+      <div class="treeWrap"><div class="tree" id="madeTree"></div></div>
+    </div>
+  </section>
+
+  <!-- ── 미리보기 / 코드 ──────────────────────────────────── -->
+  <section class="buildPreview" id="paneView">
+    <div class="panel previewPanel" id="previewPanel">
       <div class="paneHead">
         <b>미리보기</b>
-        <div>
-          <button class="btn tiny" id="btnViewCode">코드 보기</button>
-          <button class="btn tiny" id="btnDownload" disabled>다운로드</button>
-          <button class="btn tiny" id="btnOpenTab" disabled>새 탭에서 열기</button>
+        <div class="headTools">
+          <span class="segbar" id="widthBar">
+            <button data-w="narrow" aria-pressed="false" title="휴대폰 폭">📱</button>
+            <button data-w="mid"    aria-pressed="false" title="태블릿 폭">▭</button>
+            <button data-w="full"   aria-pressed="true"  title="꽉 채우기">⬛</button>
+          </span>
+          <button class="btn tiny" id="btnViewCode">코드</button>
+          <button class="btn tiny" id="btnZip" disabled>ZIP 받기</button>
+          <button class="btn tiny" id="btnOpenTab" disabled>새 탭</button>
         </div>
       </div>
-      <div class="previewWrap">
+      <div class="previewWrap" id="previewWrap">
         <iframe id="previewFrame" sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerpolicy="no-referrer"></iframe>
-        <div class="previewEmpty" id="previewEmpty">아직 만든 게 없습니다.</div>
+        <div class="previewEmpty" id="previewEmpty">아직 만든 게 없습니다.<br>왼쪽에 설명을 쓰고 “만들기”를 누르세요.</div>
       </div>
     </div>
+
     <div class="panel codePanel" id="codePanel" hidden>
-      <div class="paneHead"><b>코드</b></div>
-      <pre id="codeView"></pre>
+      <div class="paneHead">
+        <b id="codeTitle">코드</b>
+        <div class="headTools">
+          <button class="btn tiny" id="btnCopyCode">복사</button>
+          <button class="btn tiny" id="btnSaveOne">이 파일 저장</button>
+          <button class="btn tiny" id="btnCloseCode">닫기</button>
+        </div>
+      </div>
+      <div class="codeBody">
+        <pre id="codeView"></pre>
+        <div class="minimapBox" id="minimapBox"><canvas id="minimap"></canvas><div class="mmView" id="mmView"></div></div>
+      </div>
+      <div class="codeFoot"><span id="codeMeta"></span></div>
     </div>
   </section>
 
 </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="./config.js"></script><script src="./build.js"></script></body></html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="./config.js"></script><script src="./build.js"></script></body></html>
