@@ -48,6 +48,47 @@ async function signIn(email, password) {
 
 async function signOut() { await sb?.auth.signOut(); await refreshMe(); }
 
+/* ═══════════════ 비밀번호 재설정 ═══════════════
+   이메일의 «Reset password» 링크를 누르면 이 사이트로 돌아오면서
+   Supabase 가 PASSWORD_RECOVERY 이벤트를 쏜다. 어느 화면(index/write/
+   post/about)으로 떨어지든 app.js 는 항상 불러오므로, 여기 한 곳에서만
+   들으면 새 비밀번호 입력창을 띄울 수 있다. */
+function newPasswordBox() {
+  if ($("#pwNewOv")) return;
+  const ov = document.createElement("div");
+  ov.id = "pwNewOv";
+  ov.className = "ov";
+  ov.innerHTML = `
+    <div class="ovbox" style="max-width:400px">
+      <h3>새 비밀번호 설정</h3>
+      <p class="muted sm">비밀번호 재설정 링크로 들어왔습니다. 새 비밀번호를 정해 주세요.</p>
+      <input id="npPw" type="password" placeholder="새 비밀번호(6자 이상)" autocomplete="new-password">
+      <input id="npPw2" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password">
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="npOk">바꾸기</button></div>
+      <p class="err" id="npErr" hidden></p>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const err = $("#npErr", ov);
+  const submit = async () => {
+    err.hidden = true;
+    const p1 = $("#npPw", ov).value, p2 = $("#npPw2", ov).value;
+    if (p1.length < 6) { err.hidden = false; err.textContent = "6자 이상으로 정해 주세요."; return; }
+    if (p1 !== p2) { err.hidden = false; err.textContent = "두 번 입력한 비밀번호가 다릅니다."; return; }
+    try {
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      if (error) throw error;
+      ov.remove();
+      toast("비밀번호를 바꿨습니다");
+      await refreshMe();
+    } catch (e) { err.hidden = false; err.textContent = e.message; }
+  };
+  $("#npOk", ov).onclick = submit;
+  $("#npPw2", ov).addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+}
+
+sb?.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") newPasswordBox(); });
+
 /* ═══════════════ 도우미 ═══════════════ */
 
 const $  = (s, r = document) => r.querySelector(s);
@@ -781,6 +822,7 @@ function loginBox() {
       ` : `
         <input id="lgEm" type="email" placeholder="이메일" autocomplete="username">
         <input id="lgPw" type="password" placeholder="비밀번호" autocomplete="current-password">
+        <button type="button" id="lgForgot" class="linklike sm" style="background:none;border:0;padding:2px 0;color:var(--ink-2);text-decoration:underline;cursor:pointer;font:500 12px/1.3 var(--font)">비밀번호를 잊으셨나요?</button>
         <div class="row" style="justify-content:flex-end"><button class="btn ghost" id="lgClose">닫기</button>
         <button class="btn" id="lgIn">들어가기</button></div>
       `}
@@ -792,6 +834,18 @@ function loginBox() {
   ov.onclick = e => { if (e.target === ov) close(); };
   $("#lgClose", ov).onclick = close;
   $("#lgOut", ov)?.addEventListener("click", async () => { await signOut(); close(); location.reload(); });
+
+  $("#lgForgot", ov)?.addEventListener("click", async () => {
+    const err = $("#lgErr", ov);
+    err.hidden = true;
+    const email = $("#lgEm", ov).value.trim();
+    if (!email) { err.hidden = false; err.textContent = "이메일을 먼저 입력해 주세요."; return; }
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      toast("재설정 링크를 이메일로 보냈습니다. 메일함을 확인하세요.");
+    } catch (e) { err.hidden = false; err.textContent = e.message; }
+  });
 
   $("#lgIn", ov)?.addEventListener("click", async () => {
     const err = $("#lgErr", ov);
