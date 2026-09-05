@@ -57,6 +57,7 @@
     <div class="sideHead" style="padding-top:16px">더 보기</div>
     <div class="navList">
       <a class="navItem" href="./work.html" id="navWork"><span class="nm">WORK</span><span class="badge">로그인</span></a>
+      <a class="navItem" href="./build.html" id="navBuild"><span class="nm">새로 만들기</span><span class="badge">로그인</span></a>
       <a class="navItem" href="./about.html"><span class="nm">소개</span></a>
     </div>
 
@@ -216,14 +217,14 @@ function wire(){
   $("#bulkArch").onclick = () => bulkStatus("archived", "보관함으로 옮겼습니다");
 
   if(App.me) $("#btnUser").textContent = App.canEdit() ? "내 계정" : "권한 없음";
-  const work = $("#navWork");
-  if(work){
+  [$("#navWork"), $("#navBuild")].forEach(work => {
+    if(!work) return;
     if(App.me){ work.querySelector(".badge")?.remove(); }
     else work.classList.add("mutedNav");
     work.onclick = e => {
       if(!App.me){ e.preventDefault(); App.loginBox(); }
     };
-  }
+  });
 }
 
 function openCmd(){ const p=$("#cmdPal"); if(!p)return; p.hidden=false; const i=$("#cmdInput"); i.value=""; paintCmd(""); i.focus(); }

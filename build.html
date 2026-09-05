@@ -1,0 +1,57 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sniper · 새로 만들기</title><link rel="stylesheet" href="./work.css"><link rel="stylesheet" href="./build.css"></head><body>
+<div id="loginPage" class="login-page" hidden><div class="login-card"><div class="brand">sniper <span>BUILD</span></div><h1>로그인 후 사용</h1><p>블로그의 Supabase 계정으로 로그인하세요.</p><input id="loginEmail" type="email" placeholder="이메일"><input id="loginPassword" type="password" placeholder="비밀번호"><button class="btn primary" id="btnLogin">로그인</button><button class="btn" id="btnLoginBack">블로그</button><div id="loginError" class="error" hidden></div></div></div>
+
+<div id="app" hidden>
+<header class="top"><div class="brand">sniper <span>새로 만들기</span></div><div class="topRight"><span id="userPill"></span><a class="btn" href="./work.html">WORK</a><button class="btn" id="btnBlog">블로그</button><button class="btn danger" id="btnLogout">로그아웃</button></div></header>
+
+<main class="buildLayout">
+
+  <section class="left panel buildChat">
+    <div class="paneHead"><b>대화</b><button class="btn tiny" id="btnNewChat">새로 시작</button></div>
+    <div id="chatLog" class="chatLog"><div class="empty">설명을 쓰고 "만들기"를 누르면 오른쪽에 결과가 뜹니다.</div></div>
+
+    <div class="buildInputs">
+      <textarea id="prompt" placeholder="무엇을 만들고 싶은지 설명하세요.
+예: 헬스장 회원 관리 대시보드, 카드에 이번 달 매출·회원수·오늘 방문자, 파란 톤"></textarea>
+
+      <div id="refFiles" class="refFiles"></div>
+
+      <div class="buildRow">
+        <input type="file" id="pickImages" accept="image/*" multiple hidden>
+        <button class="btn tiny" id="btnPickImages">사진 첨부</button>
+        <input type="text" id="refUrl" placeholder="참고하고 싶은 사이트 주소(선택)">
+      </div>
+      <div class="buildRow">
+        <select id="tier"><option value="fast">빠르게</option><option value="balanced" selected>균형</option><option value="quality">고품질</option></select>
+        <select id="provider"><option value="openai" selected>GPT</option><option value="gemini">Gemini</option></select>
+        <button class="btn primary big" id="btnBuild">만들기 ▶</button>
+      </div>
+      <div class="status" id="statusText"></div>
+    </div>
+  </section>
+
+  <section class="center buildPreview">
+    <div class="panel previewPanel">
+      <div class="paneHead">
+        <b>미리보기</b>
+        <div>
+          <button class="btn tiny" id="btnViewCode">코드 보기</button>
+          <button class="btn tiny" id="btnDownload" disabled>다운로드</button>
+          <button class="btn tiny" id="btnOpenTab" disabled>새 탭에서 열기</button>
+        </div>
+      </div>
+      <div class="previewWrap">
+        <iframe id="previewFrame" sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerpolicy="no-referrer"></iframe>
+        <div class="previewEmpty" id="previewEmpty">아직 만든 게 없습니다.</div>
+      </div>
+    </div>
+    <div class="panel codePanel" id="codePanel" hidden>
+      <div class="paneHead"><b>코드</b></div>
+      <pre id="codeView"></pre>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="./config.js"></script><script src="./build.js"></script></body></html>
