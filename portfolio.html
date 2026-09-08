@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>포트폴리오 · 기출 해설 노트</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{--paper:#E9ECE6;--card:#FCFCFA;--ink:#10233D;--ink-2:#5A6B7F;--rule:#D3D8CD;
+      --accent:#1D4ED8;--stamp:#BE2B26;--ok:#137A4B;--warn:#9A6B12;
+      --font-d:"IBM Plex Sans KR",Pretendard,sans-serif;--font-m:"IBM Plex Mono",monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Pretendard,sans-serif;font-size:14px;line-height:1.65}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 14px calc(90px + env(safe-area-inset-bottom))}
+h1{font:700 21px/1.3 var(--font-d);margin:0 0 4px;letter-spacing:-.02em}
+.lead{color:var(--ink-2);font-size:13px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:16px;margin-bottom:14px}
+.eyebrow{display:flex;align-items:baseline;gap:10px;font:600 11px/1 var(--font-d);letter-spacing:.14em;color:var(--ink-2);margin-bottom:14px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+label{display:block;font:600 11px/1 var(--font-d);letter-spacing:.08em;color:var(--ink-2);margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px 12px;border:1.4px solid var(--rule);border-radius:9px;background:var(--card);color:var(--ink);font:500 15px/1.45 Pretendard,sans-serif}
+textarea{min-height:130px;resize:vertical;font-family:var(--font-m);font-size:13px}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.grid.w1{grid-template-columns:1fr}
+button{font:600 13px/1 var(--font-d);padding:12px 15px;border:0;border-radius:9px;background:var(--ink);color:var(--paper);cursor:pointer;min-height:40px}
+button.ghost{background:transparent;border:1.4px solid var(--rule);color:var(--ink)}
+button.sm{font-size:12px;padding:9px 12px;min-height:34px}
+button.danger{background:var(--stamp)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{padding:11px 13px;border-radius:9px;font-size:13px;display:none;margin-bottom:12px;white-space:pre-wrap;font-family:var(--font-m)}
+.msg.on{display:block;background:#E4ECFD;color:var(--accent)}
+.msg.err{display:block;background:#FBE9E8;color:var(--stamp)}
+.msg.ok{display:block;background:#E3F3EA;color:var(--ok)}
+.hint{font-size:12px;color:var(--ink-2);margin-top:9px}
+.hide{display:none !important}
+
+/* ── 섹션 탭 ── */
+.stabs{display:flex;gap:4px;overflow-x:auto;margin:0 -14px 14px;padding:8px 14px;
+  position:sticky;top:0;z-index:20;-webkit-overflow-scrolling:touch;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px)}
+.stabs::-webkit-scrollbar{display:none}
+.stb{flex:none;background:transparent;border:1.3px solid transparent;color:var(--ink-2);
+  padding:9px 13px;border-radius:999px;font:600 12.5px/1 var(--font-d);min-height:36px}
+.stb.on{background:var(--card);border-color:var(--rule);color:var(--ink)}
+.stb .cnt{font-family:var(--font-m);font-size:10px;opacity:.62;margin-left:5px}
+
+/* ── 항목 줄 ── */
+.row{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:13px 14px;margin-bottom:8px}
+.row .rt{font:700 15px/1.35 var(--font-d);letter-spacing:-.01em}
+.row .rs{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.row .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.row .acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+/* 갈래 고르기 칩 — 학력·병역의 «구분» 처럼 값이 정해진 칸에 쓴다 */
+.pickrow{display:flex;flex-wrap:wrap;gap:6px}
+.pickchip{padding:8px 13px;border-radius:999px;border:1.4px solid var(--rule);
+  background:var(--paper);color:var(--ink-2);cursor:pointer;
+  font:600 12.5px/1 var(--font-d);min-height:34px}
+.pickchip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent)}
+.tag{font:500 10.5px/1 var(--font-m);padding:5px 7px;border-radius:6px;background:var(--paper);color:var(--ink-2);border:1px solid var(--rule)}
+.tag.cat{border-color:var(--accent);color:var(--accent)}
+.tag.ok{border-color:#B7DEC8;background:#E3F3EA;color:var(--ok)}
+
+/* 회사 밑에 붙는 성과 */
+.kid{margin:8px 0 0 0;padding:11px 12px;border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:0 10px 10px 0;background:var(--paper)}
+.kid .kt{font:600 13.5px/1.4 var(--font-d)}
+.kid .kb{font-size:13px;margin-top:5px}
+.kid .kb ul{margin:4px 0;padding-left:18px}
+.kid .kb li{margin:3px 0}
+
+.body{font-size:13.5px}
+.body h2{font:700 15px/1.4 var(--font-d);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--rule)}
+.body h3{font:600 13.5px/1.4 var(--font-d);margin:13px 0 4px;color:var(--accent)}
+.body ul,.body ol{padding-left:20px;margin:6px 0}
+.body li{margin:3px 0}
+.body p{margin:7px 0}
+.body strong{font-weight:600}
+.body code{font-family:var(--font-m);font-size:12px;background:var(--paper);padding:1px 5px;border-radius:4px}
+.body table{width:100%;border-collapse:collapse;margin:9px 0;font-size:12.5px}
+.body th,.body td{border:1px solid var(--rule);padding:7px 9px;text-align:left}
+.body th{background:var(--paper);font:600 12px/1.4 var(--font-d)}
+
+/* ── 한 장 미리보기 (노션 문서처럼) ── */
+.doc{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:34px 30px;color:#10233D}
+.doc .dh{font:700 30px/1.2 var(--font-d);letter-spacing:-.03em;margin:0 0 4px}
+.doc .dsub{font:500 13.5px/1.6 Pretendard,sans-serif;color:var(--ink-2);margin-bottom:14px}
+.doc .dlinks{display:flex;gap:14px;flex-wrap:wrap;font:500 12px/1 var(--font-m);margin-bottom:22px}
+.doc .dlinks a{color:var(--accent);text-decoration:none}
+.doc .sec{margin-top:26px}
+.doc .sech{font:700 12px/1 var(--font-d);letter-spacing:.16em;color:var(--accent);
+  padding-bottom:7px;border-bottom:2px solid var(--accent);margin-bottom:14px}
+.doc .co{margin-bottom:20px}
+.doc .co .cn{font:700 15.5px/1.4 var(--font-d)}
+.doc .co .cd{font:500 12px/1.5 var(--font-m);color:var(--ink-2);margin-top:2px}
+.doc .co .cx{font-size:12.5px;color:var(--ink-2);margin-top:6px;padding:8px 10px;background:#F6F7F4;border-radius:8px}
+.doc .ach{margin-top:11px;padding-left:13px;border-left:2px solid var(--rule)}
+.doc .ach .an{font:600 13.5px/1.45 var(--font-d);margin-bottom:3px}
+.doc .ach ul{margin:3px 0 0;padding-left:17px;font-size:13px}
+.doc .ach li{margin:3px 0}
+.doc table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.doc th,.doc td{border:1px solid var(--rule);padding:7px 9px;text-align:left;vertical-align:top}
+.doc th{background:#F6F7F4;font:600 11.5px/1.4 var(--font-d);letter-spacing:.04em}
+.doc .quiet{color:var(--ink-2);font-size:12.5px}
+
+.linkbtn{display:inline-block;font:600 13px/1 var(--font-d);padding:11px 14px;border-radius:9px;
+  background:var(--accent);color:#fff;text-decoration:none}
+.sharebox{font-family:var(--font-m);font-size:11.5px;word-break:break-all;background:var(--paper);
+  border:1px solid var(--rule);border-radius:9px;padding:10px 12px;margin-top:9px}
+.ro{font-size:12px;color:var(--ink-2);text-align:center;margin-top:26px;padding-top:14px;border-top:1px solid var(--rule)}
+.nav3{display:flex;gap:2px;padding:7px 8px;padding-top:calc(7px + env(safe-area-inset-top));background:var(--ink);overflow-x:auto}
+.nav3 a{flex:1;text-align:center;padding:8px 5px;border-radius:8px;font:600 11px/1 var(--font-d);color:color-mix(in srgb,var(--paper) 55%,transparent);text-decoration:none;white-space:nowrap;position:relative}
+.nav3 a.on{background:color-mix(in srgb,var(--paper) 15%,transparent);color:var(--paper)}
+.nav3 a + a::before{content:"";position:absolute;left:-1px;top:24%;bottom:24%;width:1px;
+  background:color-mix(in srgb,var(--paper) 20%,transparent)}
+.nav3 a.on::before,.nav3 a.on + a::before{background:transparent}
+.nav3 .authbtn{flex:none;padding:8px 11px;border-radius:8px;border:0;cursor:pointer;min-height:0;
+  background:color-mix(in srgb,var(--paper) 15%,transparent);color:var(--paper);
+  font:600 11px/1 var(--font-d);white-space:nowrap}
+.gate{max-width:430px;margin:34px auto 0}
+.gate .lock{width:44px;height:44px;margin:0 auto 14px;border-radius:13px;display:grid;place-items:center;
+  background:var(--card);border:1px solid var(--rule)}
+.gate .lock svg{width:20px;height:20px;fill:none;stroke:var(--ink-2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gate h1,.gate .lead{text-align:center}
+.gate .lead{margin-bottom:18px}
+.ckl{display:flex;align-items:center;gap:7px;margin:0;font-size:12.5px;letter-spacing:0;color:var(--ink-2)}
+.ckl input{width:auto;min-height:0}
+
+@media(min-width:880px){
+  .two{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:14px;align-items:start}
+  .two>.card{margin-bottom:0}
+  .two>.col{position:sticky;top:60px}
+}
+/* ── 공유 링크로 들어온 손님 화면 ── */
+body.guest{background:#F4F5F1}
+body.guest .wrap{max-width:920px;padding-top:26px}
+body.guest #docView .bar{align-items:center;margin-bottom:16px}
+body.guest .gname{flex:1;font:600 12px/1 var(--font-d);letter-spacing:.14em;color:var(--ink-2);
+  text-transform:uppercase}
+body.guest .doc{box-shadow:0 18px 50px -28px rgba(16,35,61,.4)}
+body.guest #musicBtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+body.guest #musicBtn{font-variant-numeric:tabular-nums}
+@media print{ body.guest .ro{display:none} }
+
+@media print{
+  .nav3,.stabs,.msg,.bar,button,.hint,.noprint{display:none !important}
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .doc{border:0;border-radius:0;padding:0}
+  .doc .sec{break-inside:avoid}
+  .doc .co{break-inside:avoid}
+}
+</style>
+<link rel="stylesheet" href="./app-enhance.css?v=228">
+</head>
+<body>
+<nav class="nav3">
+  <a href="./index.html">필기뷰어</a>
+  <a href="./practice.html">실기뷰어</a>
+  <a href="./calc.html">계산기</a><a href="./upload.html">기계</a>
+  <a href="./ingest.html">자동 변환</a>
+  <a href="./interview.html">면접</a>
+  <a href="./portfolio.html" class="on">포트폴리오</a>
+  <button class="authbtn" id="authBtn">로그인</button>
+
+</nav>
+
+<div class="wrap">
+  <div class="msg" id="m"></div>
+
+  <div class="gate hide" id="gate">
+    <div class="lock"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></svg></div>
+    <h1>포트폴리오</h1>
+    <div class="lead">경력·자격·프로젝트·활동을 칸마다 쌓아 두고, 한 장으로 뽑아 씁니다. 로그인해야 내용이 보입니다.</div>
+    <div class="card">
+      <div class="eyebrow">로그인</div>
+      <div class="grid" style="margin-bottom:12px">
+        <div><label>이메일</label><input id="em" type="email" autocomplete="username" inputmode="email"></div>
+        <div><label>비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+      </div>
+      <div class="bar" style="margin-bottom:11px">
+        <label class="ckl"><input type="checkbox" id="keep"> 이 기기에서 로그인 유지</label>
+      </div>
+      <button id="login">로그인</button>
+    </div>
+  </div>
+
+  <!-- ══ 목록 ══ -->
+  <div id="listView" class="hide">
+    <h1>포트폴리오</h1>
+    <div class="lead" id="pfLead">칸마다 하나씩 쌓아 두면, 마지막에 한 장짜리 문서로 합쳐집니다.
+      면접 탭에서 이 내용을 그대로 근거로 씁니다.</div>
+
+    <div class="bar noprint" style="margin-bottom:12px">
+      <button id="new">＋ 새로 넣기</button>
+      <button class="ghost sm" id="preview">한 장으로 보기</button>
+      <button class="ghost sm" id="copyAll">전체 복사</button>
+      <button class="ghost sm" id="share">공유 링크</button>
+    </div>
+    <div id="shareOut"></div>
+
+    <div class="stabs" id="stabs"></div>
+    <div id="secHead"></div>
+    <div id="rows"></div>
+  </div>
+
+  <!-- ══ 한 장 미리보기 ══ -->
+  <div id="docView" class="hide">
+    <div class="bar noprint" style="margin-bottom:12px">
+      <button class="ghost sm" id="docBack">← 목록</button>
+      <button class="ghost sm" id="docPrint">인쇄 · PDF</button>
+    </div>
+    <div class="doc" id="docBody"></div>
+  </div>
+
+  <!-- ══ 편집 ══ -->
+  <div id="editView" class="hide">
+    <div class="bar" style="margin-bottom:12px">
+      <button class="ghost sm" id="cancel">← 취소</button>
+      <span class="tag cat" id="eKindTag"></span>
+      <button class="ghost sm" id="del" style="margin-left:auto">삭제</button>
+    </div>
+    <div class="card">
+      <div class="eyebrow" id="eHead">항목</div>
+      <div id="eFields"></div>
+      <div class="bar" style="margin-top:12px">
+        <input id="eFile" type="file" class="hide">
+        <button class="ghost sm" id="pick">파일 첨부</button>
+        <span class="hint" style="margin:0" id="fname">선택된 파일 없음</span>
+        <button id="save" style="margin-left:auto">저장</button>
+      </div>
+      <div class="hint" id="eHint"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script>
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const CFG = window.APP_CONFIG || {};
+const KEEP = localStorage.getItem("pf-keep") === "1";
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY,
+  { auth:{ persistSession:KEEP, autoRefreshToken:KEEP, storageKey:"sb-pf-session" } });
+
+/* 손님 화면에서는 알림 상자를 아예 들어내므로, 없어도 안 터지게 해 둔다 */
+const say  = (t, c) => { const m = $("#m"); if(!m) return; m.textContent = t; m.className = "msg " + (c || "on");
+  if(c === "ok") setTimeout(() => { if(m.textContent === t) m.className = "msg"; }, 3200); };
+const hide = () => { const m = $("#m"); if(m) m.className = "msg"; };
+const esc  = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ═══════════════════════════════════════════════════════
+   틀 — 노션 페이지를 그대로 옮긴 구조
+
+   표를 새로 만들지 않는다. pf_item 한 곳에 kind 로 갈래를 나눈다.
+     · title / category / period / summary / body_md / link_url  → 원래 있던 칸
+     · 그 밖의 것(발급기관, 회사소개, 이직사유 …)               → meta 에 담는다
+   이렇게 하면 나중에 칸을 더 붙일 때 SQL 을 또 돌릴 필요가 없다.
+   ═══════════════════════════════════════════════════════ */
+const T = {
+  text:"text", area:"area", md:"md", url:"url", date:"date",
+  /* pick — 미리 정해 둔 갈래 중 하나를 눌러 고른다.
+     학력·병역처럼 «값이 뻔한데 매번 손으로 적게 하면 표기가 제각각» 이 되는 칸에 쓴다. */
+  pick:"pick"
+};
+/* 학력·병역의 갈래. 순서가 곧 문서에서 줄 서는 순서다(위가 먼저). */
+const EDU_LEVELS = ["대학원","대학교","전문대학","고등학교","병역","기타"];
+const eduRank = v => { const i = EDU_LEVELS.indexOf(v); return i < 0 ? EDU_LEVELS.length : i; };
+
+const SECTIONS = [
+  { kind:"profile", name:"프로필", one:true,
+    desc:"문서 맨 위에 붙는 얼굴. 한 번만 채우면 됩니다.",
+    fields:[
+      { k:"title",  label:"이름",        t:T.text, ph:"조준원", req:true },
+      { k:"summary",label:"한 줄 직함",  t:T.text, ph:"Data Center Infrastructure Engineer (Mechanical / Electrical / Control)" },
+      { k:"category",label:"한글 직함",  t:T.text, ph:"데이터센터 인프라 엔지니어 (기계/전기/자동제어)" },
+      { k:"m.github",label:"Github",     t:T.url,  ph:"https://github.com/..." },
+      { k:"m.linkedin",label:"LinkedIn", t:T.url,  ph:"https://linkedin.com/in/..." },
+      { k:"m.email", label:"Email",      t:T.text, ph:"name@email.com" },
+      { k:"m.blog",  label:"Blog",       t:T.url,  ph:"https://..." },
+      { k:"body_md", label:"About Me — 나를 한 문단으로", t:T.md,
+        ph:"작은 시도들이 모여 큰 변화를 만든다고 믿습니다.\n\n- 포기하지 않고 스스로 해결합니다\n- 배운 것을 꾸준히 기록합니다" }
+    ]},
+
+  { kind:"career", name:"경력", child:"achieve",
+    desc:"회사 한 곳이 한 줄입니다. 그 아래에 «성과» 를 붙여 쌓습니다.",
+    fields:[
+      { k:"title",   label:"회사명", t:T.text, ph:"에스앤아이 코퍼레이션", req:true },
+      { k:"category",label:"소속 · 직급", t:T.text, ph:"카카오데이터센터 안산운영센터파트너 / 선임" },
+      { k:"period",  label:"기간",   t:T.text, ph:"2024.04 ~ 재직 중 (2년 3개월)" },
+      { k:"m.about", label:"회사 소개 한 줄", t:T.area,
+        ph:"데이터센터·연구소·초고층 빌딩 대상 시설·자산관리(FM/PM) 서비스를 제공하는 국내 1위 공간관리 전문 기업" },
+      { k:"summary", label:"담당 업무", t:T.text, ph:"전력·기계 인프라 운영 및 야간당직 책임자" },
+      { k:"m.leave", label:"이직 사유", t:T.area,
+        ph:"시설운영을 벗어나 현장 중심의 인프라 구축 프로젝트로 커리어를 전환하기 위함" }
+    ]},
+
+  { kind:"achieve", name:"성과", hidden:true,
+    desc:"어느 회사 밑에 붙는 성과 한 덩어리.",
+    fields:[
+      { k:"title",   label:"성과 제목", t:T.text, ph:"주요 기계·전기 설비 통합커미셔닝(IST) 및 초기 운영 안정화", req:true },
+      { k:"body_md", label:"내용 — 한 줄에 하나씩", t:T.md,
+        ph:"- 냉동기 교체 시 IST 를 주도하여 비상 상황을 가정한 자동 절체 테스트를 수행\n- UPS 실부하 테스트로 무순단 절체 시퀀스와 배터리 방전 보증 시간을 실측·검증" },
+      { k:"m.numbers", label:"이 성과의 숫자 (면접에서 그대로 말할 것)", t:T.text,
+        ph:"40MVA · 9,000RT · 24/7 · 무사고 6년" },
+      { k:"m.mine",  label:"내가 «직접 손으로» 한 것 / 지시·검토만 한 것", t:T.area,
+        ph:"직접: IST 시나리오 작성, 절체 시험 입회, 데이터 판독\n검토: 벤더 작업계획서 승인, 결과 보고" }
+    ]},
+
+  { kind:"project", name:"프로젝트",
+    desc:"한 건씩 STAR 로. 면접에서 그대로 꺼내 씁니다.",
+    fields:[
+      { k:"title",   label:"제목", t:T.text, ph:"IDC 냉동기 프리쿨링 운전 표준화", req:true },
+      { k:"category",label:"분류", t:T.text, ph:"운영개선" },
+      { k:"period",  label:"기간", t:T.text, ph:"2023.03 ~ 2023.11" },
+      { k:"summary", label:"한 줄 요약", t:T.text, ph:"카드에 보일 한 문장" },
+      { k:"link_url",label:"바깥 링크 (노션·드라이브)", t:T.url, ph:"https://www.notion.so/..." },
+      { k:"body_md", label:"본문", t:T.md, skeleton:"star" }
+    ]},
+
+  { kind:"cert", name:"자격 · 이력",
+    desc:"자격증·면허·어학. 취득일 순으로 정렬됩니다.",
+    fields:[
+      { k:"title",   label:"자격명", t:T.text, ph:"전기기사", req:true },
+      { k:"category",label:"발급 기관", t:T.text, ph:"한국산업인력공단" },
+      { k:"period",  label:"취득일 · 상태", t:T.text, ph:"2026.05.28 필기합격" },
+      { k:"m.no",    label:"등록번호", t:T.text, ph:"24203102148H" }
+    ]},
+
+  { kind:"edu", name:"학력 · 병역",
+    desc:"먼저 «구분» 을 골라 주세요. 문서에서는 대학원 → 대학교 → 전문대 → 고등학교 → 병역 순으로 저절로 줄을 섭니다.",
+    fields:[
+      { k:"m.level", label:"구분", t:T.pick, opts:EDU_LEVELS, ph:"대학교" },
+      { k:"title",   label:"학교 · 기관", t:T.text, ph:"한국폴리텍1대학교 정수캠퍼스(서울)", req:true },
+      { k:"category",label:"전공 · 과정", t:T.text, ph:"전기공학과(학사과정) / 편입졸업" },
+      { k:"period",  label:"기간", t:T.text, ph:"2019.03 ~ 2021.02" }
+    ]},
+
+  { kind:"spec", name:"스펙 · 수상",
+    desc:"자격증 말고 «남에게 보여줄 것» — 수상, 봉사, 어학, 툴.",
+    fields:[
+      { k:"title",   label:"내용", t:T.text, ph:"제17회 서강대 스타트업 오디션 최우수상", req:true },
+      { k:"category",label:"분류", t:T.text, ph:"수상이력 / 자격증 / 봉사시간 / 툴" },
+      { k:"period",  label:"날짜", t:T.text, ph:"2025.12.05" },
+      { k:"link_url",label:"증빙 링크", t:T.url, ph:"https://..." }
+    ]},
+
+  { kind:"activity", name:"교내외 활동",
+    desc:"동아리·학회·강의·멘토링처럼 «경력은 아닌데 말할 거리» 가 되는 것.",
+    fields:[
+      { k:"title",   label:"소속 · 활동", t:T.text, ph:"심리학과 학생회 사무재정부 부원", req:true },
+      { k:"category",label:"키워드", t:T.text, ph:"사무 / 교육 / 봉사" },
+      { k:"period",  label:"활동 기간", t:T.text, ph:"2025.03 ~ 2025.08" },
+      { k:"summary", label:"한 줄", t:T.text, ph:"무엇을 맡아 무엇을 했는지" }
+    ]},
+
+  { kind:"archive", name:"경험 아카이빙",
+    desc:"웨비나·표준·논문·현장 견학. 면접에서 «요즘 뭐 보십니까» 에 답하는 밑천입니다.",
+    fields:[
+      { k:"title",   label:"주제", t:T.text, ph:"유럽 AI 데이터센터를 위한 친환경 기반 냉각유", req:true },
+      { k:"category",label:"공종", t:T.text, ph:"기계(냉각) / 전기 / 소방 / 보안" },
+      { k:"m.type",  label:"유형", t:T.text, ph:"웨비나 / 표준 / 논문 / 견학 / 검사" },
+      { k:"m.sub",   label:"구분 · 출처", t:T.text, ph:"OCP 글로벌 서밋" },
+      { k:"period",  label:"날짜", t:T.text, ph:"2025.08" },
+      { k:"link_url",label:"링크", t:T.url, ph:"https://youtu.be/..." },
+      { k:"summary", label:"내가 건진 한 줄", t:T.text, ph:"면접에서 이걸로 무슨 말을 할 수 있는지" }
+    ]}
+];
+const SEC = k => SECTIONS.find(s => s.kind === k);
+
+const STAR = `## 상황
+어느 현장에서 무엇이 문제였는지
+
+## 내 역할
+내가 맡은 범위와 권한
+
+## 한 일
+- 구체적인 행동 (설비명·수치 포함)
+- 그렇게 판단한 근거
+
+## 결과
+- 숫자로 말할 수 있는 성과
+- 이후 남은 것 (표준·문서·설비)
+
+## 면접관이 파고들면
+- 구성요소: 이 일에 들어간 항목 이름들
+- 절차: 어떤 순서로 했고 각 단계에서 뭐가 나왔는지
+- 내 몫: 직접 한 것과 지시·검토만 한 것`;
+
+let ME = null, ITEMS = [], CUR = null, FILE = null, TAB = "profile", KIND = "profile";
+
+const SHARE = new URLSearchParams(location.search).get("share");
+const RO = !!SHARE;
+
+/* «없음» 처럼 «빈칸이라고 적어 둔 값» 은 아예 안 보이게 한다.
+   빈칸으로 두면 알아서 사라지는데, 손으로 «없음» 을 적어 넣으면
+   [ Github ] 없음 같은 죽은 링크가 만들어져서 문서가 지저분해진다. */
+const NOVAL = /^(없음|없슴|없다|해당\s*없음|미보유|미해당|무|해당사항\s*없음|n\/?a|none|null|-{1,3}|\.)$/i;
+const vv = s => { const t = String(s ?? "").trim(); return NOVAL.test(t) ? "" : t; };
+
+/* 값 꺼내기·넣기 — "m.xxx" 는 meta 안, 나머지는 표의 칸 */
+const gv = (it, k) => k.startsWith("m.") ? ((it?.meta || {})[k.slice(2)] ?? "") : (it?.[k] ?? "");
+function sv(row, k, v){
+  if(k.startsWith("m.")){ (row.meta = row.meta || {})[k.slice(2)] = v || undefined; }
+  else row[k] = v || null;
+}
+
+/* ══ 로그인 ══ */
+async function boot(){
+  if(RO) return bootShared();
+  const { data } = await sb.auth.getSession();
+  ME = data.session?.user || null;
+  $("#gate").className = ME ? "gate hide" : "gate";
+  $("#authBtn").textContent = ME ? "로그아웃" : "로그인";
+  $("#keep").checked = KEEP;
+  ["listView","docView","editView"].forEach(id => $("#"+id).className = "hide");
+  if(ME) load();
+}
+$("#keep").onchange = e => { localStorage.setItem("pf-keep", e.target.checked ? "1" : "0");
+  say("다음 로그인부터 적용됩니다.", "ok"); };
+$("#authBtn").onclick = async () => {
+  if(ME){
+    if(!confirm("로그아웃할까요?")) return;
+    await sb.auth.signOut(); ITEMS = []; CUR = null; hide(); return boot();
+  }
+  $("#em").focus();
+};
+$("#login").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email:$("#em").value.trim(), password:$("#pw").value });
+  if(error) return say("로그인 실패 — " + error.message, "err");
+  $("#pw").value = ""; hide(); boot();
+};
+$("#pw").addEventListener("keydown", e => { if(e.key === "Enter") $("#login").click(); });
+
+/* ══════════════════════════════════════════════════════
+   공유 링크로 들어온 손님 화면
+   ──────────────────────────────────────────────────────
+   문서 한 장만 남긴다. 탭바·로그인·편집·목록은 아예 DOM 에서 걷어낸다.
+   숨기기만 하면 개발자 도구로 되살릴 수 있고, 무엇보다
+   «보는 사람» 에게는 그 단추들이 있다는 것 자체가 군더더기다.
+   살려 두는 것은 딱 둘 — 본문 안의 링크, 그리고 인쇄.
+   (실제 차단은 화면이 아니라 Supabase 의 pf_shared 함수가 한다.
+    그 함수는 토큰에 걸린 사람의 항목만 «읽기» 로 돌려준다.)
+   ══════════════════════════════════════════════════════ */
+/* 갈래(kind)가 비어 온 항목을 내용만 보고 되짚는다.
+   공유 함수가 kind 를 안 넘겨줄 때만 쓰인다 — 제대로 오면 그대로 통과. */
+function repairKinds(rows){
+  const known = new Set(SECTIONS.map(s => s.kind).concat("achieve"));
+  const hasProfile = rows.some(r => r.kind === "profile");
+  let takenProfile = hasProfile;
+  return rows.map(r => {
+    if(r.kind && known.has(r.kind)) return r;
+    const m = r.meta || {};
+    const looksProfile = !takenProfile &&
+      (m.github || m.linkedin || m.email || m.blog || (!r.period && !r.parent_id && rows.length === 1));
+    if(looksProfile){ takenProfile = true; return { ...r, kind:"profile" }; }
+    if(r.parent_id)                          return { ...r, kind:"achieve" };
+    if(m.no)                                 return { ...r, kind:"cert" };
+    if(m.level)                              return { ...r, kind:"edu" };
+    if(m.about || m.leave)                   return { ...r, kind:"career" };
+    if(m.type || m.sub)                      return { ...r, kind:"archive" };
+    return { ...r, kind:"project" };
+  });
+}
+
+async function bootShared(){
+  document.body.classList.add("guest");
+  const { data, error } = await sb.rpc("pf_shared", { p_token: SHARE });
+
+  /* 손님 화면에서 필요 없는 것을 통째로 들어낸다 */
+  ["gate","listView","editView","stabs","authBtn"].forEach(id => document.getElementById(id)?.remove());
+  document.querySelector(".nav3")?.remove();
+
+  if(error){
+    document.querySelector(".wrap").innerHTML =
+      `<div class="doc" style="text-align:center;padding:60px 24px">
+         <div class="dh" style="font-size:22px">링크를 열 수 없습니다</div>
+         <div class="quiet" style="margin-top:8px">주소가 잘못됐거나, 만든 사람이 링크를 끊었습니다.</div>
+       </div>`;
+    return;
+  }
+
+  /* ★ 여기가 «프로필 칸을 채우면 이름이 붙습니다» 가 계속 뜨던 자리.
+     pf_shared 함수가 kind 칸을 안 돌려주면 모든 항목이 «project» 로 떨어져서,
+     프로필이 문서 머리가 아니라 «프로젝트» 목록 안으로 들어가 버린다.
+     근본 해결은 SQL 쪽(pf_shared 반환값에 kind 추가)이지만,
+     화면에서도 되살릴 수 있게 갈래를 되짚어 준다. */
+  ITEMS = repairKinds((data || []).map(x =>
+    ({ ...x, kind:x.kind || null, meta:x.meta || {} })));
+  drawDoc();
+  $("#docView").className = "";
+  $("#m").remove();
+
+  /* 문서 안의 링크는 전부 새 창으로 — 이 페이지를 떠나지 않게 */
+  $("#docBody").querySelectorAll("a[href]").forEach(a => {
+    a.target = "_blank"; a.rel = "noopener noreferrer";
+  });
+
+  /* 위 단추줄을 손님용으로 갈아 끼운다 */
+  const bar = $("#docView").querySelector(".bar");
+  bar.innerHTML = `<span class="gname" id="gName"></span>
+    <button class="ghost sm" id="docPrint2">인쇄 · PDF</button>
+    <button class="ghost sm" id="musicBtn" title="가사 없는 재즈">♪ 음악 켜기</button>`;
+  const p = ITEMS.find(x => x.kind === "profile");
+  $("#gName").textContent = p ? `${p.title} · 포트폴리오` : "포트폴리오";
+  $("#docPrint2").onclick = () => window.print();
+  $("#musicBtn").onclick  = toggleJazz;
+
+  document.querySelector(".wrap").insertAdjacentHTML("beforeend",
+    `<div class="ro">읽기 전용으로 공유된 포트폴리오입니다.</div>`);
+
+  /* 지난번에 켜 뒀다면 이어서 튼다.
+     다만 브라우저는 «사용자가 무언가 건드리기 전» 에는 소리를 못 내게 막는다.
+     그래서 첫 클릭·터치·스크롤을 기다렸다가 그때 시작한다. */
+  if(localStorage.getItem("pf-jazz") === "1"){
+    const kick = () => { if(!JZ.on) toggleJazz(); off(); };
+    const off  = () => ["pointerdown","keydown","wheel","touchstart"]
+      .forEach(e => removeEventListener(e, kick));
+    ["pointerdown","keydown","wheel","touchstart"]
+      .forEach(e => addEventListener(e, kick, { once:false, passive:true }));
+  }
+}
+
+function show(v){
+  ["listView","docView","editView"].forEach(id => $("#"+id).className = id === v ? "" : "hide");
+  window.scrollTo(0, 0);
+}
+
+/* ══ 불러오기 ══ */
+async function load(){
+  const { data, error } = await sb.from("pf_item").select("*")
+    .order("sort_order", { ascending:true }).order("created_at", { ascending:true });
+  if(error) return say("불러오지 못했습니다 — " + error.message
+    + "\n\nkind · parent_id · meta 칸이 없으면 이 오류가 납니다.\n추가SQL_포트폴리오.sql 을 먼저 실행해 주세요.", "err");
+  ITEMS = (data || []).map(x => ({ ...x, kind: x.kind || "project", meta: x.meta || {} }));
+  drawTabs(); drawRows(); show("listView");
+}
+const of = k => ITEMS.filter(x => x.kind === k);
+const kidsOf = id => ITEMS.filter(x => x.kind === "achieve" && String(x.parent_id) === String(id));
+/* 학력·병역은 «구분» 순서로 줄을 세운다. 구분이 같으면 원래 순서 그대로. */
+const eduRows = () => of("edu").map((r, i) => ({ r, i }))
+  .sort((a, b) => eduRank(gv(a.r,"m.level")) - eduRank(gv(b.r,"m.level")) || a.i - b.i)
+  .map(x => x.r);
+
+function drawTabs(){
+  $("#stabs").innerHTML = SECTIONS.filter(s => !s.hidden).map(s => {
+    const n = of(s.kind).length;
+    return `<button class="stb ${s.kind === TAB ? "on" : ""}" data-k="${s.kind}">${s.name}
+      ${s.one ? (n ? `<span class="cnt">✓</span>` : `<span class="cnt">비어 있음</span>`) : `<span class="cnt">${n}</span>`}</button>`;
+  }).join("");
+  $$("#stabs .stb").forEach(b => b.onclick = () => { TAB = b.dataset.k; drawTabs(); drawRows(); });
+}
+
+function drawRows(){
+  const s = SEC(TAB);
+  $("#secHead").innerHTML = `<div class="hint" style="margin:0 0 12px">${esc(s.desc)}</div>`;
+  const rows = of(TAB);
+
+  if(!rows.length){
+    $("#rows").innerHTML = `<div class="card"><div class="hint" style="margin:0">
+      아직 없습니다. 위의 <b>＋ 새로 넣기</b> 를 누르면 «${esc(s.name)}» 칸이 열립니다.</div></div>`;
+    return;
+  }
+
+  $("#rows").innerHTML = rows.map((it, i) => {
+    const kids = TAB === "career" ? kidsOf(it.id) : [];
+    const sub = [gv(it,"category"), gv(it,"period")].filter(Boolean).join(" · ");
+    return `<div class="row" data-id="${it.id}">
+      <div class="rt">${gv(it,"m.level")
+        ? `<span class="tag cat" style="margin-right:7px;vertical-align:2px">${esc(gv(it,"m.level"))}</span>` : ""
+      }${esc(it.title || "제목 없음")}</div>
+      ${sub ? `<div class="rs">${esc(sub)}</div>` : ""}
+      ${it.summary ? `<div class="rs">${esc(it.summary)}</div>` : ""}
+      ${gv(it,"m.about") ? `<div class="rs" style="margin-top:6px">${esc(gv(it,"m.about"))}</div>` : ""}
+      <div class="meta">
+        ${it.link_url ? `<a class="tag cat" href="${esc(it.link_url)}" target="_blank" rel="noopener">링크 ↗</a>` : ""}
+        ${it.file_path ? `<span class="tag">첨부</span>` : ""}
+        ${gv(it,"m.numbers") ? `<span class="tag ok">${esc(gv(it,"m.numbers"))}</span>` : ""}
+      </div>
+      ${kids.map(k => `<div class="kid">
+          <div class="kt">${esc(k.title)}</div>
+          ${k.body_md ? `<div class="kb">${mdToHtml(k.body_md)}</div>` : ""}
+          <div class="acts"><button class="ghost sm" data-edit="${k.id}">고치기</button></div>
+        </div>`).join("")}
+      <div class="acts">
+        <button class="ghost sm" data-edit="${it.id}">고치기</button>
+        ${TAB === "career" ? `<button class="ghost sm" data-addkid="${it.id}">＋ 성과 넣기</button>` : ""}
+        ${i > 0 ? `<button class="ghost sm" data-up="${it.id}">▲</button>` : ""}
+        ${i < rows.length - 1 ? `<button class="ghost sm" data-down="${it.id}">▼</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  $$("#rows [data-edit]").forEach(b => b.onclick = () => openEdit(b.dataset.edit));
+  $$("#rows [data-addkid]").forEach(b => b.onclick = () => newItem("achieve", b.dataset.addkid));
+  $$("#rows [data-up]").forEach(b   => b.onclick = () => move(b.dataset.up, -1));
+  $$("#rows [data-down]").forEach(b => b.onclick = () => move(b.dataset.down, +1));
+}
+
+async function move(id, d){
+  const rows = of(TAB);
+  const i = rows.findIndex(x => String(x.id) === String(id));
+  const j = i + d;
+  if(i < 0 || j < 0 || j >= rows.length) return;
+  /* 순서 번호를 새로 매겨 저장한다 — 가운데가 비어 있어도 항상 0,1,2… 가 되게 */
+  const order = rows.slice();
+  [order[i], order[j]] = [order[j], order[i]];
+  await Promise.all(order.map((x, n) =>
+    sb.from("pf_item").update({ sort_order:n }).eq("id", x.id)));
+  await load();
+}
+
+/* ══ 편집 ══ */
+function newItem(kind, parent){
+  CUR = null; FILE = null; KIND = kind || TAB;
+  const s = SEC(KIND);
+  CUR_PARENT = parent || null;
+  drawForm({}, s);
+  $("#del").className = "ghost sm hide";
+  show("editView");
+}
+let CUR_PARENT = null;
+
+function openEdit(id){
+  CUR = ITEMS.find(x => String(x.id) === String(id)); if(!CUR) return;
+  FILE = null; KIND = CUR.kind; CUR_PARENT = CUR.parent_id || null;
+  drawForm(CUR, SEC(KIND));
+  $("#del").className = "ghost sm";
+  show("editView");
+}
+
+function drawForm(it, s){
+  $("#eHead").textContent = s.name + " 내용";
+  $("#eKindTag").textContent = s.name;
+  $("#fname").textContent = it.file_path ? "기존 첨부 유지" : "선택된 파일 없음";
+  $("#eHint").innerHTML = s.kind === "achieve"
+    ? `내용은 <code>-</code> 로 시작하는 줄마다 하나씩 적으세요. 한 줄에 «무엇을 · 어떻게 · 결과(숫자)» 가 다 들어가야 합니다.`
+    : `본문은 마크다운으로 씁니다 — <code>##</code> 제목, <code>-</code> 목록, <code>**굵게**</code>.`;
+  if(CUR_PARENT){
+    const p = ITEMS.find(x => String(x.id) === String(CUR_PARENT));
+    if(p) $("#eHead").textContent = `${p.title} 밑의 성과`;
+  }
+  $("#eFields").innerHTML = s.fields.map(f => {
+    const v = esc(gv(it, f.k) || (!it.id && f.skeleton === "star" ? STAR : ""));
+    const lab = `<label>${esc(f.label)}${f.req ? " *" : ""}</label>`;
+    if(f.t === T.pick){
+      /* 값은 숨은 칸에 담는다 — 저장 쪽(#eFields [data-f])을 손대지 않아도 그대로 실린다 */
+      const cur = gv(it, f.k) || "";
+      return `<div style="margin-bottom:11px">${lab}
+        <div class="pickrow" data-pickfor="${f.k}">${(f.opts || []).map(o =>
+          `<button type="button" class="pickchip${o === cur ? " on" : ""}" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>
+        <input type="hidden" data-f="${f.k}" value="${esc(cur)}"></div>`;
+    }
+    if(f.t === T.md || f.t === T.area)
+      return `<div style="margin-bottom:11px">${lab}<textarea data-f="${f.k}"
+        style="min-height:${f.t === T.md ? 200 : 74}px" placeholder="${esc(f.ph || "")}">${v}</textarea></div>`;
+    return `<div style="margin-bottom:11px">${lab}<input data-f="${f.k}"
+      type="${f.t === T.url ? "url" : "text"}" placeholder="${esc(f.ph || "")}" value="${v}"></div>`;
+  }).join("");
+
+  /* 갈래 고르기 — 한 번 더 누르면 선택이 풀린다(안 고른 상태로 두고 싶을 때) */
+  $$("#eFields .pickrow").forEach(row => {
+    const box = row.parentElement.querySelector('input[type="hidden"]');
+    row.querySelectorAll(".pickchip").forEach(b => b.onclick = () => {
+      const same = b.classList.contains("on");
+      row.querySelectorAll(".pickchip").forEach(x => x.classList.remove("on"));
+      if(!same) b.classList.add("on");
+      box.value = same ? "" : b.dataset.v;
+    });
+  });
+}
+
+$("#cancel").onclick = () => { CUR_PARENT = null; load(); };
+$("#new").onclick    = () => newItem(TAB === "career" ? "career" : TAB);
+$("#pick").onclick   = () => $("#eFile").click();
+$("#eFile").onchange = e => { FILE = e.target.files[0]; $("#fname").textContent = FILE ? FILE.name : "선택된 파일 없음"; };
+
+$("#del").onclick = async () => {
+  if(!CUR) return;
+  const kids = kidsOf(CUR.id);
+  if(!confirm(`"${CUR.title}" 을(를) 지웁니다.` + (kids.length ? `\n밑에 달린 성과 ${kids.length}개도 같이 지워집니다.` : ""))) return;
+  for(const k of kids) await sb.from("pf_item").delete().eq("id", k.id);
+  await sb.from("pf_item").delete().eq("id", CUR.id);
+  CUR = null; CUR_PARENT = null; load();
+};
+
+$("#save").onclick = async () => {
+  const s = SEC(KIND);
+  const row = { user_id: ME.id, kind: KIND, meta: { ...(CUR?.meta || {}) } };
+  $$("#eFields [data-f]").forEach(el => sv(row, el.dataset.f, el.value.trim()));
+  if(!row.title) return say((s.fields.find(f => f.req)?.label || "제목") + " 은(는) 있어야 합니다.", "err");
+  if(CUR_PARENT) row.parent_id = String(CUR_PARENT);
+
+  /* 프로필은 한 건만 둔다 — 두 번 넣으면 문서 머리가 겹친다 */
+  if(s.one && !CUR){
+    const exist = of(KIND)[0];
+    if(exist) CUR = exist;
+  }
+
+  say("저장하는 중…");
+  let file_path = CUR?.file_path || null;
+  if(FILE){
+    /* 보관함 키에는 한글·공백을 넣을 수 없다 */
+    const ext  = (FILE.name.match(/\.([A-Za-z0-9]{1,8})$/) || [,"bin"])[1].toLowerCase();
+    const stem = FILE.name.replace(/\.[^.]*$/, "").replace(/[^A-Za-z0-9._-]+/g, "-")
+                          .replace(/-{2,}/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "file";
+    const key = `${ME.id}/portfolio/${Date.now()}_${stem}.${ext}`;
+    const { error } = await sb.storage.from("iv-docs").upload(key, FILE);
+    if(error) say("첨부 업로드 실패 — " + error.message + "\n본문만 저장합니다.", "err");
+    else file_path = key;
+  }
+  row.file_path = file_path;
+  if(!CUR) row.sort_order = of(KIND).length;
+
+  const { error } = CUR
+    ? await sb.from("pf_item").update(row).eq("id", CUR.id)
+    : await sb.from("pf_item").insert(row);
+  if(error) return say("저장 실패 — " + error.message, "err");
+  hide(); FILE = null; CUR = null; CUR_PARENT = null;
+  TAB = KIND === "achieve" ? "career" : KIND;
+  await load();
+};
+
+/* ══════════════════════════════════════════════
+   한 장으로 보기 — 노션에서 뽑은 문서와 같은 모양
+   인쇄하면 그대로 PDF 가 된다.
+   ══════════════════════════════════════════════ */
+function drawDoc(){
+  const p = of("profile")[0];
+  const L = (t, u) => u ? `<a href="${esc(u)}" target="_blank" rel="noopener">[ ${t} ] ${esc(u.replace(/^https?:\/\//,""))}</a>` : "";
+  const sec = (title, inner) => inner ? `<div class="sec"><div class="sech">${title}</div>${inner}</div>` : "";
+
+  const head = p ? `
+    <div class="dh">${esc(p.title)}</div>
+    <div class="dsub">${esc(vv(p.summary))}${vv(p.category) ? `<br>${esc(vv(p.category))}` : ""}</div>
+    <div class="dlinks">
+      ${L("Github", vv(gv(p,"m.github")))}${L("LinkedIn", vv(gv(p,"m.linkedin")))}
+      ${vv(gv(p,"m.email")) ? `<span>[ Email ] ${esc(vv(gv(p,"m.email")))}</span>` : ""}
+      ${L("Blog", vv(gv(p,"m.blog")))}
+    </div>
+    ${p.body_md ? `<div class="body">${mdToHtml(p.body_md)}</div>` : ""}`
+    : `<div class="dh">포트폴리오</div>
+       <div class="quiet">«프로필» 칸을 채우면 여기에 이름과 링크가 붙습니다.</div>`;
+
+  /* 경력 — 회사 밑에 성과를 계층으로 */
+  const careers = of("career").map(c => `
+    <div class="co">
+      <div class="cn">${esc(c.title)}${c.category ? ` — ${esc(c.category)}` : ""}</div>
+      <div class="cd">${esc(c.period || "")}</div>
+      ${gv(c,"m.about") ? `<div class="cx">${esc(gv(c,"m.about"))}</div>` : ""}
+      ${c.summary ? `<div class="cd" style="margin-top:6px"><b>담당업무</b> · ${esc(c.summary)}</div>` : ""}
+      ${kidsOf(c.id).map(k => `<div class="ach">
+          <div class="an">${esc(k.title)}</div>
+          ${k.body_md ? mdToHtml(k.body_md) : ""}
+          ${gv(k,"m.numbers") ? `<div class="cd" style="margin-top:4px"><b>숫자</b> · ${esc(gv(k,"m.numbers"))}</div>` : ""}
+        </div>`).join("")}
+      ${gv(c,"m.leave") ? `<div class="cd" style="margin-top:9px"><b>이직 사유</b> · ${esc(gv(c,"m.leave"))}</div>` : ""}
+    </div>`).join("");
+
+  const cell = html => {
+    const plain = String(html).replace(/<[^>]+>/g, "").trim();
+    return NOVAL.test(plain) ? "" : html;
+  };
+  const tbl = (cols, rows) => rows.length ? `<table><thead><tr>${
+    cols.map(c => `<th>${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r => `<tr>${cols.map(c => `<td>${cell(c[1](r))}</td>`).join("")}</tr>`).join("")}</tbody></table>` : "";
+
+  const link = r => vv(r.link_url) ? `<a href="${esc(r.link_url)}" target="_blank" rel="noopener">열기 ↗</a>` : "";
+
+  const projects = of("project").map(pr => `
+    <div class="co">
+      <div class="cn">${esc(pr.title)}</div>
+      <div class="cd">${[pr.category, pr.period].filter(Boolean).map(esc).join(" · ")}</div>
+      ${pr.summary ? `<div class="cx">${esc(pr.summary)}</div>` : ""}
+      ${pr.body_md ? `<div class="body">${mdToHtml(pr.body_md)}</div>` : ""}
+      ${pr.link_url ? `<div class="cd" style="margin-top:5px">${link(pr)}</div>` : ""}
+    </div>`).join("");
+
+  $("#docBody").innerHTML = head
+    + sec("경력사항", careers)
+    + sec("학력 · 병역", tbl(
+        [["구분", r => esc(gv(r,"m.level") || "")], ["학교 · 기관", r => esc(r.title)],
+         ["전공 · 과정", r => esc(r.category || "")], ["기간", r => esc(r.period || "")]],
+        eduRows()))
+    + sec("자격 · 면허", tbl(
+        [["자격명", r => esc(r.title)], ["발급 기관", r => esc(r.category || "")],
+         ["취득일 · 상태", r => esc(r.period || "")], ["등록번호", r => esc(gv(r,"m.no"))]],
+        of("cert")))
+    + sec("프로젝트", projects)
+    + sec("스펙 · 수상", tbl(
+        [["내용", r => esc(r.title) + (r.link_url ? " " + link(r) : "")],
+         ["분류", r => esc(r.category || "")], ["날짜", r => esc(r.period || "")]],
+        of("spec")))
+    + sec("교내외 활동", tbl(
+        [["소속 · 활동", r => esc(r.title)], ["키워드", r => esc(r.category || "")],
+         ["기간", r => esc(r.period || "")], ["한 줄", r => esc(r.summary || "")]],
+        of("activity")))
+    + sec("경험 아카이빙", tbl(
+        [["공종", r => esc(r.category || "")], ["유형", r => esc(gv(r,"m.type"))],
+         ["구분", r => esc(gv(r,"m.sub"))], ["주제", r => esc(r.title) + (r.link_url ? " " + link(r) : "")],
+         ["건진 것", r => esc(r.summary || "")]],
+        of("archive")));
+}
+$("#preview").onclick = () => { drawDoc(); show("docView"); };
+$("#docBack").onclick = () => show("listView");
+$("#docPrint").onclick = () => window.print();
+
+/* ══ 전체를 글로 뽑기 — 면접 탭 «자료» 에 그대로 붙여넣는 용도 ══ */
+function asText(){
+  const p = of("profile")[0];
+  const line = [];
+  if(p){
+    line.push(`# ${p.title}`, p.summary || "", p.category || "");
+    const c = [["Github",gv(p,"m.github")],["LinkedIn",gv(p,"m.linkedin")],
+               ["Email",gv(p,"m.email")],["Blog",gv(p,"m.blog")]].filter(x=>x[1]);
+    if(c.length) line.push(c.map(x => `${x[0]}: ${x[1]}`).join(" / "));
+    if(p.body_md) line.push("", p.body_md);
+  }
+  const add = (t, rows, fn) => { if(!rows.length) return;
+    line.push("", `## ${t}`); rows.forEach(r => line.push(fn(r))); };
+
+  add("경력사항", of("career"), c => {
+    const b = [`### ${c.title}${c.category ? " — " + c.category : ""} (${c.period || ""})`];
+    if(gv(c,"m.about")) b.push(`회사소개: ${gv(c,"m.about")}`);
+    if(c.summary) b.push(`담당업무: ${c.summary}`);
+    kidsOf(c.id).forEach(k => {
+      b.push(`■ ${k.title}`);
+      if(k.body_md) b.push(k.body_md);
+      if(gv(k,"m.numbers")) b.push(`숫자: ${gv(k,"m.numbers")}`);
+      if(gv(k,"m.mine"))    b.push(`내 몫: ${gv(k,"m.mine")}`);
+    });
+    if(gv(c,"m.leave")) b.push(`이직사유: ${gv(c,"m.leave")}`);
+    return b.join("\n");
+  });
+  add("학력 · 병역", eduRows(), r =>
+    `- [${gv(r,"m.level") || "구분없음"}] ${r.title} / ${r.category || ""} / ${r.period || ""}`);
+  add("자격 · 면허", of("cert"), r => `- ${r.title} (${r.category || ""}) ${r.period || ""} ${gv(r,"m.no")}`);
+  add("프로젝트", of("project"), r =>
+    `### ${r.title} (${[r.category, r.period].filter(Boolean).join(" · ")})\n${r.summary || ""}\n${r.body_md || ""}`);
+  add("스펙 · 수상", of("spec"), r => `- ${r.title} / ${r.category || ""} / ${r.period || ""}`);
+  add("교내외 활동", of("activity"), r => `- ${r.title} / ${r.category || ""} / ${r.period || ""} ${r.summary || ""}`);
+  add("경험 아카이빙", of("archive"), r =>
+    `- [${r.category || ""}/${gv(r,"m.type")}] ${r.title}${r.summary ? " → " + r.summary : ""} ${r.link_url || ""}`);
+  return line.filter(x => x !== undefined).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+$("#copyAll").onclick = () => {
+  const t = asText();
+  if(!t) return say("아직 내용이 없습니다.", "err");
+  navigator.clipboard?.writeText(t).then(
+    () => say(`${t.length.toLocaleString()}자를 복사했습니다.\n면접 탭 → 자료 → 포트폴리오 에 붙여넣으세요.`, "ok"),
+    () => say("복사에 실패했습니다.", "err"));
+};
+
+/* ══ 공유 링크 ══ */
+$("#share").onclick = async () => {
+  const { data: rows } = await sb.from("pf_share").select("token").limit(1);
+  let token = rows?.[0]?.token;
+  if(!token){
+    const { data, error } = await sb.from("pf_share")
+      .insert({ user_id: ME.id, label: "portfolio" }).select("token").single();
+    if(error) return say("링크를 만들지 못했습니다 — " + error.message, "err");
+    token = data.token;
+  }
+  const url = location.origin + location.pathname + "?share=" + token;
+  $("#shareOut").innerHTML = `<div class="sharebox">${esc(url)}</div>
+    <div class="bar" style="margin-top:8px">
+      <button class="ghost sm" id="copyShare">복사</button>
+      <button class="ghost sm" id="killShare">링크 끊기</button></div>`;
+  $("#copyShare").onclick = () => navigator.clipboard.writeText(url)
+    .then(() => say("복사했습니다.", "ok"), () => say("주소를 길게 눌러 복사해 주세요.", "err"));
+  $("#killShare").onclick = async () => {
+    if(!confirm("이 링크를 무효로 만듭니다. 받은 사람은 더 못 봅니다.")) return;
+    await sb.from("pf_share").delete().eq("token", token);
+    $("#shareOut").innerHTML = ""; say("링크를 끊었습니다.", "ok");
+  };
+};
+
+/* ══ 마크다운 ══ */
+const inline = s => s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+function mdToHtml(md){
+  const lines = esc(md).split("\n");
+  let html = "", inUl = false, inOl = false;
+  const close = () => { if(inUl){ html += "</ul>"; inUl = false; } if(inOl){ html += "</ol>"; inOl = false; } };
+  for(const raw of lines){
+    const t = raw.trim();
+    if(!t){ close(); continue; }
+    if(/^#{1,2}\s/.test(t)){ close(); html += `<h2>${inline(t.replace(/^#{1,2}\s/, ""))}</h2>`; continue; }
+    if(/^#{3,}\s/.test(t)){ close(); html += `<h3>${inline(t.replace(/^#+\s/, ""))}</h3>`; continue; }
+    if(/^[-*·⦁•]\s?/.test(t)){ if(inOl){ html += "</ol>"; inOl = false; } if(!inUl){ html += "<ul>"; inUl = true; }
+      html += `<li>${inline(t.replace(/^[-*·⦁•]\s?/, ""))}</li>`; continue; }
+    if(/^\d+[.)]\s/.test(t)){ if(inUl){ html += "</ul>"; inUl = false; } if(!inOl){ html += "<ol>"; inOl = true; }
+      html += `<li>${inline(t.replace(/^\d+[.)]\s/, ""))}</li>`; continue; }
+    close(); html += `<p>${inline(t)}</p>`;
+  }
+  close(); return html;
+}
+
+/* ══════════════════════════════════════════════════════
+   배경 음악 — 가사 없는 재즈
+
+   음원 파일을 싣지 않는다. 녹음물은 전부 누군가의 저작물이고,
+   포트폴리오 링크에 남의 음원을 얹어 두면 그것부터 문제가 된다.
+   그래서 브라우저가 «그 자리에서 연주하게» 했다.
+   워킹 베이스 + 스윙 라이드 + 7화음 컴핑, ii-V-I 을 돌린다.
+   화성 진행 자체는 재즈의 공용 문법이라 누구의 것도 아니다.
+
+   · 저절로 켜지지 않는다. 손님이 ♪ 를 눌러야 시작한다
+     (브라우저도 그렇게만 허용하고, 남의 페이지에서 소리가 튀어나오는 건 결례다)
+   · 켠 상태는 이 기기에 기억해 둔다
+   ══════════════════════════════════════════════════════ */
+const JZ = { ctx:null, on:false, timer:null, t:0, bar:0, master:null, noise:null };
+
+/* 화음 — [반음 간격들]. 컴핑은 3음·7음·9음만 쥔다(루트는 베이스가 친다) */
+const QUAL = {
+  m7:   { chord:[0,3,7,10], voice:[3,10,14] },
+  d7:   { chord:[0,4,7,10], voice:[4,10,14] },
+  M7:   { chord:[0,4,7,11], voice:[4,11,14] },
+  h7:   { chord:[0,3,6,10], voice:[3,10,13] }   /* m7♭5 */
+};
+/* 한 마디 = 화음 하나 또는 둘. ii-V-I 을 조를 옮겨 가며 돈다 */
+const TUNE = [
+  [[62,"m7"]], [[67,"d7"]], [[60,"M7"]], [[60,"M7"]],
+  [[64,"h7"]], [[69,"d7"]], [[62,"m7"]], [[62,"m7"]],
+  [[67,"m7"]], [[60,"d7"]], [[65,"M7"]], [[65,"M7"]],
+  [[62,"h7"]], [[67,"d7"]], [[60,"m7"]], [[62,"m7"],[67,"d7"]]
+];
+const BPM = 132, SWING = 0.64;
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function jzInit(){
+  const C = new (window.AudioContext || window.webkitAudioContext)();
+  JZ.ctx = C;
+  const g = C.createGain(); g.gain.value = 0.0001; g.connect(C.destination);
+  JZ.master = g;
+  /* 심벌·하이햇에 쓸 잡음 한 덩어리를 미리 만들어 둔다 */
+  const n = C.createBuffer(1, C.sampleRate * 2, C.sampleRate);
+  const d = n.getChannelData(0);
+  for(let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  JZ.noise = n;
+}
+function jzNoise(t, dur, freq, q, vol){
+  const C = JZ.ctx;
+  const src = C.createBufferSource(); src.buffer = JZ.noise; src.loop = true;
+  const bp = C.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = q;
+  const g = C.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp).connect(g).connect(JZ.master);
+  src.start(t); src.stop(t + dur + 0.02);
+}
+function jzTone(t, midi, dur, vol, type, cut){
+  const C = JZ.ctx;
+  const o = C.createOscillator(); o.type = type; o.frequency.value = hz(midi);
+  const lp = C.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cut;
+  const g = C.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(lp).connect(g).connect(JZ.master);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+
+/* 한 마디를 통째로 예약한다 */
+function jzBar(t0){
+  const beat = 60 / BPM;
+  const bar  = TUNE[JZ.bar % TUNE.length];
+  const next = TUNE[(JZ.bar + 1) % TUNE.length][0];
+  const pick = b => bar.length === 1 ? bar[0] : (b < 2 ? bar[0] : bar[1]);
+
+  for(let b = 0; b < 4; b++){
+    const t = t0 + b * beat;
+    const [root, q] = pick(b);
+    const ch = QUAL[q];
+
+    /* ── 라이드 심벌 — 스윙 8분음표 ── */
+    jzNoise(t, 0.9, 7200, 0.7, b % 2 === 0 ? 0.055 : 0.04);
+    if(b === 1 || b === 3) jzNoise(t + beat * SWING, 0.5, 7600, 0.7, 0.032);
+    /* ── 하이햇(발) — 2·4박 ── */
+    if(b === 1 || b === 3) jzNoise(t, 0.12, 4200, 1.4, 0.07);
+
+    /* ── 워킹 베이스 — 4분음표로 걷는다 ── */
+    let n;
+    if(b === 0) n = root - 24;
+    else if(b === 3){
+      /* 다음 화음 루트로 반음 붙여 들어간다 — 이게 걷는 맛이다 */
+      const tgt = next[0] - 24;
+      n = tgt + (Math.random() < 0.5 ? 1 : -1);
+    } else {
+      n = root - 24 + ch.chord[1 + Math.floor(Math.random() * 3)];
+    }
+    while(n < 33) n += 12; while(n > 52) n -= 12;
+    jzTone(t, n, beat * 0.92, 0.16, "triangle", 520);
+
+    /* ── 피아노 컴핑 — 박에 딱 맞추지 않고 살짝 어긋나게 ── */
+    const hit = (b === 0 && Math.random() < 0.55) || (b === 1 && Math.random() < 0.5)
+             || (b === 2 && Math.random() < 0.35) || (b === 3 && Math.random() < 0.45);
+    if(hit){
+      const off = Math.random() < 0.5 ? 0 : beat * SWING;
+      const vs = ch.voice.map(iv => {
+        let m = root + iv;
+        while(m < 60) m += 12; while(m > 78) m -= 12;
+        return m;
+      });
+      vs.forEach((m, i) => jzTone(t + off + i * 0.006, m, 1.05, 0.045, "triangle", 2400));
+    }
+  }
+  JZ.bar++;
+  return t0 + beat * 4;
+}
+
+function jzLoop(){
+  const C = JZ.ctx;
+  /* 0.6초 앞까지 미리 예약해 둔다 — 브라우저가 잠깐 멈춰도 끊기지 않게 */
+  while(JZ.t < C.currentTime + 0.6) JZ.t = jzBar(Math.max(JZ.t, C.currentTime + 0.05));
+}
+
+function toggleJazz(){
+  const btn = $("#musicBtn");
+  if(!JZ.ctx) jzInit();
+  const C = JZ.ctx;
+  if(JZ.on){
+    JZ.on = false;
+    clearInterval(JZ.timer); JZ.timer = null;
+    JZ.master.gain.cancelScheduledValues(C.currentTime);
+    JZ.master.gain.setValueAtTime(JZ.master.gain.value, C.currentTime);
+    JZ.master.gain.exponentialRampToValueAtTime(0.0001, C.currentTime + 0.8);
+    btn.textContent = "♪ 음악 켜기"; btn.classList.remove("on");
+    localStorage.setItem("pf-jazz", "0");
+    return;
+  }
+  C.resume?.();
+  JZ.on = true; JZ.t = C.currentTime + 0.15;
+  JZ.master.gain.cancelScheduledValues(C.currentTime);
+  JZ.master.gain.setValueAtTime(0.0001, C.currentTime);
+  JZ.master.gain.exponentialRampToValueAtTime(0.14, C.currentTime + 1.6);  /* 살며시 올라온다 */
+  jzLoop();
+  JZ.timer = setInterval(jzLoop, 180);
+  btn.textContent = "♪ 음악 끄기"; btn.classList.add("on");
+  localStorage.setItem("pf-jazz", "1");
+}
+
+boot();
+</script>
+
+<!-- ══ AI 대화 상자 ══ config.js 의 AI_WORKER_URL 을 채워야 작동합니다 -->
+<script src="./ai-chat.js" defer></script>
+<script src="./ai-viewer.js" defer></script>
+<script src="./app-enhance.js?v=228" defer></script>
+</body>
+</html>

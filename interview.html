@@ -1,0 +1,2881 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>면접 · 기출 해설 노트</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{--paper:#E9ECE6;--card:#FCFCFA;--ink:#10233D;--ink-2:#5A6B7F;--rule:#D3D8CD;
+      --accent:#1D4ED8;--stamp:#BE2B26;--ok:#137A4B;--warn:#9A6B12;
+      --font-d:"IBM Plex Sans KR",Pretendard,sans-serif;--font-m:"IBM Plex Mono",monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Pretendard,sans-serif;font-size:14px;line-height:1.65}
+.wrap{max-width:920px;margin:0 auto;padding:18px 14px calc(96px + env(safe-area-inset-bottom))}
+h1{font:700 20px/1.3 var(--font-d);margin:0 0 4px;letter-spacing:-.02em}
+.lead{color:var(--ink-2);font-size:13px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:16px;margin-bottom:14px}
+.eyebrow{display:flex;align-items:baseline;gap:10px;font:600 11px/1 var(--font-d);letter-spacing:.14em;color:var(--ink-2);margin-bottom:14px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+label{display:block;font:600 11px/1 var(--font-d);letter-spacing:.08em;color:var(--ink-2);margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px 12px;border:1.4px solid var(--rule);border-radius:9px;background:var(--card);color:var(--ink);font:500 15px/1.45 Pretendard,sans-serif}
+textarea{min-height:110px;resize:vertical;font-family:var(--font-m);font-size:13px}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+button{font:600 13px/1 var(--font-d);padding:12px 15px;border:0;border-radius:9px;background:var(--ink);color:var(--paper);cursor:pointer;min-height:40px}
+button.ghost{background:transparent;border:1.4px solid var(--rule);color:var(--ink)}
+button.sm{font-size:12px;padding:9px 12px;min-height:36px}
+button.danger{background:var(--stamp)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{padding:11px 13px;border-radius:9px;font-size:13px;display:none;margin-bottom:12px;white-space:pre-wrap;font-family:var(--font-m)}
+.msg.on{display:block;background:#E4ECFD;color:var(--accent)}
+.msg.err{display:block;background:#FBE9E8;color:var(--stamp)}
+.msg.ok{display:block;background:#E3F3EA;color:var(--ok)}
+.hint{font-size:12px;color:var(--ink-2);margin-top:9px}
+.hide{display:none !important}
+
+/* 채용 건 카드 */
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px}
+.cs{background:var(--card);border:1.4px solid var(--rule);border-radius:13px;padding:14px;cursor:pointer;text-align:left;color:var(--ink);min-height:0}
+.cs:active{transform:scale(.985)}
+.cs .co{font:700 15px/1.3 var(--font-d);letter-spacing:-.01em}
+.cs .ro{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.cs .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.cs .rdy{height:5px;border-radius:3px;background:var(--rule);margin-top:11px;overflow:hidden}
+.cs .rdy i{display:block;height:100%;background:var(--accent)}
+.tag{font:500 10.5px/1 var(--font-m);padding:5px 7px;border-radius:6px;background:var(--paper);color:var(--ink-2);border:1px solid var(--rule)}
+.tag.st{border-color:var(--accent);color:var(--accent)}
+.tag.on{background:#E3F3EA;border-color:#B7DEC8;color:var(--ok)}
+.tag.dd{background:#FBE9E8;border-color:#F0C9C7;color:var(--stamp)}
+
+/* 라운드 선택 */
+.rounds{display:flex;gap:6px;margin-bottom:14px}
+.rd{flex:1;padding:11px 8px;border:1.4px solid var(--rule);border-radius:10px;background:var(--card);cursor:pointer;text-align:center}
+.rd .n{font:700 13px/1.3 var(--font-d)}
+.rd .d{font-size:11px;color:var(--ink-2);margin-top:2px}
+.rd.on{border-color:var(--accent);background:#E4ECFD}
+.rd.on .n{color:var(--accent)}
+
+/* 자료 목록 */
+.doc{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;margin-bottom:7px;background:var(--paper);flex-wrap:wrap}
+.doc .t{flex:1;min-width:130px}
+.doc .t b{display:block;font:600 13px/1.35 var(--font-d);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc .t span{font-size:11.5px;color:var(--ink-2)}
+
+/* 산출물 블록 */
+.blk{border:1px solid var(--rule);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--card)}
+.blk>summary{padding:13px 14px;cursor:pointer;font:600 13.5px/1.35 var(--font-d);list-style:none;display:flex;align-items:center;gap:9px}
+.blk>summary::-webkit-details-marker{display:none}
+.blk>summary::before{content:"▸";color:var(--ink-2);font-size:12px}
+.blk[open]>summary::before{content:"▾"}
+.blk>summary .sub{font-weight:400;font-size:11.5px;color:var(--ink-2);flex:1}
+.blk>summary .dot{width:7px;height:7px;border-radius:50%;background:var(--rule);flex:none}
+.blk>summary .dot.f{background:var(--ok)}
+.body{padding:0 14px 14px;font-size:13.5px}
+.body h2{font:700 14px/1.4 var(--font-d);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--rule)}
+.body h3{font:600 13px/1.4 var(--font-d);margin:13px 0 4px;color:var(--accent)}
+.body ul,.body ol{padding-left:20px;margin:6px 0}
+.body li{margin:3px 0}
+.body p{margin:6px 0}
+.body strong{font-weight:600}
+.body code{font-family:var(--font-m);font-size:12px;background:var(--paper);padding:1px 5px;border-radius:4px}
+.body blockquote{margin:8px 0;padding:9px 12px;border-left:3px solid var(--accent);background:var(--paper);border-radius:0 8px 8px 0}
+.body table{width:100%;border-collapse:collapse;margin:9px 0;font-size:12.5px;display:block;overflow-x:auto;white-space:nowrap}
+.body th,.body td{border:1px solid var(--rule);padding:7px 9px;text-align:left}
+.body th{background:var(--paper);font:600 12px/1.4 var(--font-d)}
+/* [면접 답변] / [핵심] / [꼬리질문] 라인 강조 */
+.body .tl3{margin:7px 0;padding:9px 11px;border-radius:9px;background:var(--paper);white-space:pre-wrap}
+.body .tl3 b{display:block;font:600 10.5px/1 var(--font-d);letter-spacing:.1em;color:var(--ink-2);margin-bottom:5px}
+.body .tl3.a{background:#EEF3FD;border-left:3px solid var(--accent)}
+.body .tl3.a b{color:var(--accent)}
+.body .tl3.k b{color:var(--ok)}
+.body .tl3.f b{color:var(--warn)}
+.body .pen{color:var(--stamp);font-size:12.5px;margin:5px 0}
+
+.pouch{background:var(--card);border:1px solid var(--rule);border-radius:14px;margin-bottom:11px;overflow:hidden}
+.pouch>summary{padding:14px 16px;cursor:pointer;font:600 13.5px/1.35 var(--font-d);list-style:none;display:flex;align-items:center;gap:9px}
+.pouch>summary::-webkit-details-marker{display:none}
+.pouch>summary::before{content:"▸";color:var(--ink-2);font-size:12px}
+.pouch[open]>summary::before{content:"▾"}
+.pouch>summary .sub{font-weight:400;font-size:11.5px;color:var(--ink-2);flex:1}
+.pbody{padding:0 16px 16px}
+.nav3{display:flex;gap:2px;padding:7px 8px;padding-top:calc(7px + env(safe-area-inset-top));background:var(--ink);overflow-x:auto;position:sticky;top:0;z-index:30}
+.nav3 a{flex:1;text-align:center;padding:8px 5px;border-radius:8px;font:600 11px/1 var(--font-d);color:color-mix(in srgb,var(--paper) 55%,transparent);text-decoration:none;white-space:nowrap;position:relative}
+.nav3 a.on{background:color-mix(in srgb,var(--paper) 15%,transparent);color:var(--paper)}
+.nav3 a + a::before{content:"";position:absolute;left:-1px;top:24%;bottom:24%;width:1px;
+  background:color-mix(in srgb,var(--paper) 20%,transparent)}
+.nav3 a.on::before,.nav3 a.on + a::before{background:transparent}
+.nav3 .authbtn{flex:none;padding:8px 11px;border-radius:8px;border:0;cursor:pointer;min-height:0;
+  background:color-mix(in srgb,var(--paper) 15%,transparent);color:var(--paper);
+  font:600 11px/1 var(--font-d);white-space:nowrap}
+
+/* ── 말주머니 · 꿀팁 · 단계별 ── */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{padding:8px 13px;border-radius:999px;border:1.3px solid var(--rule);background:transparent;
+  color:var(--ink-2);font:600 12px/1 var(--font-d);cursor:pointer;min-height:34px}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.bub{position:relative;background:var(--paper);border:1px solid var(--rule);border-radius:14px;
+  padding:12px 14px;margin-bottom:8px;font-size:13.5px;line-height:1.6}
+.bub:last-child{margin-bottom:0}
+.bub .by{display:block;margin-top:6px;font-size:11.5px;color:var(--ink-2);font-family:var(--font-m)}
+.stage{border:1px solid var(--rule);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--card)}
+.stage .sh{width:100%;display:flex;align-items:center;gap:9px;padding:12px 13px;background:transparent;
+  border:0;cursor:pointer;font:600 13.5px/1 var(--font-d);color:var(--ink);text-align:left}
+.stage .sh .n{width:20px;height:20px;flex:none;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font:600 11px/1 var(--font-m)}
+.stage .sh .cv{margin-left:auto;color:var(--ink-2);transition:transform .18s}
+.stage.open .sh .cv{transform:rotate(180deg)}
+.stage .sb{display:none;margin:0;padding:0 15px 13px 40px;font-size:13px;color:var(--ink)}
+.stage.open .sb{display:block}
+.stage .sb li{margin:5px 0}
+
+/* ══ 서브탭 ══ */
+.subtabs{display:flex;gap:4px;overflow-x:auto;margin:14px -14px 13px;padding:8px 14px;
+  -webkit-overflow-scrolling:touch;position:sticky;top:38px;z-index:20;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px)}
+.subtabs::-webkit-scrollbar{display:none}
+.stb{flex:none;background:transparent;border:1.3px solid transparent;color:var(--ink-2);
+  padding:9px 13px;border-radius:999px;font:600 12.5px/1 var(--font-d);min-height:36px}
+.stb.on{background:var(--card);border-color:var(--rule);color:var(--ink)}
+.stb .cnt{font-family:var(--font-m);font-size:10px;opacity:.65;margin-left:5px}
+/* 탭 안의 탭 */
+.itabs{display:flex;gap:5px;margin-bottom:12px;background:var(--card);border:1px solid var(--rule);
+  border-radius:11px;padding:4px}
+.itb{flex:1;background:transparent;border:0;color:var(--ink-2);padding:9px 6px;border-radius:8px;
+  font:600 12.5px/1 var(--font-d);min-height:36px}
+.itb.on{background:var(--ink);color:var(--paper)}
+
+/* ══ 전형 타임라인 ══ */
+.tl{display:flex;overflow-x:auto;padding:4px 0 2px;-webkit-overflow-scrolling:touch}
+.tl::-webkit-scrollbar{display:none}
+.tn{flex:1;min-width:80px;position:relative;background:none;border:0;padding:8px 3px 6px;cursor:pointer;text-align:center;color:var(--ink)}
+.tn+.tn::before{content:"";position:absolute;left:-50%;right:50%;top:31px;height:2px;background:var(--rule);z-index:0}
+.tn.done+.tn::before,.tn.done::before{background:var(--ok)}
+.tn .ring{position:relative;z-index:1;width:46px;height:46px;margin:0 auto 7px;border-radius:50%;
+  background:conic-gradient(var(--accent) calc(var(--p,0)*1%),var(--rule) 0);display:grid;place-items:center}
+.tn .ring i{width:37px;height:37px;border-radius:50%;background:var(--card);display:grid;place-items:center;
+  font:600 12px/1 var(--font-m);font-style:normal;color:var(--ink)}
+.tn.pass .ring{background:var(--ok)} .tn.pass .ring i{color:var(--ok)}
+.tn.fail .ring{background:var(--stamp)} .tn.fail .ring i{color:var(--stamp)}
+.tn .lb{font:600 11.5px/1.25 var(--font-d);color:var(--ink-2);display:block}
+.tn.on .lb{color:var(--accent)}
+.tn.on .ring{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.tn .stt{display:block;margin-top:3px;font:500 10px/1 var(--font-m)}
+.tn.pass .stt{color:var(--ok)} .tn.fail .stt{color:var(--stamp)} .tn .stt{color:var(--ink-2)}
+.cum{font:600 11px/1 var(--font-m);color:var(--accent);letter-spacing:0}
+
+.pnl{border-top:1px solid var(--rule);margin-top:12px;padding-top:13px}
+.pnl h4{font:700 14px/1.3 var(--font-d);margin:0 0 3px}
+.sbtn{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}
+.sbtn button{padding:9px 12px;font-size:12px;background:transparent;border:1.3px solid var(--rule);color:var(--ink-2)}
+.sbtn button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sbtn button.on[data-s="pass"]{background:var(--ok);border-color:var(--ok)}
+.sbtn button.on[data-s="fail"]{background:var(--stamp);border-color:var(--stamp)}
+.fac{display:grid;gap:7px;margin:11px 0}
+.fr{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.fr .fn{flex:none;width:118px;color:var(--ink-2)}
+.fr .fb{flex:1;height:6px;border-radius:3px;background:var(--rule);overflow:hidden}
+.fr .fb i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.fr .fp{flex:none;width:62px;text-align:right;font:500 11px/1 var(--font-m);color:var(--ink-2)}
+.fr.full .fp{color:var(--ok)}
+.ftip{font-size:11.5px;color:var(--warn);margin:-2px 0 4px 127px;line-height:1.45}
+
+/* ══ 다음 할 일 ══ */
+.todo{display:flex;gap:9px;align-items:flex-start;padding:11px 12px;border:1px solid var(--rule);
+  border-left:3px solid var(--accent);border-radius:0 10px 10px 0;background:var(--card);margin-bottom:7px;
+  width:100%;text-align:left;color:var(--ink);font:500 13px/1.5 Pretendard,sans-serif;min-height:0}
+.todo .num{flex:none;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font:600 10.5px/1 var(--font-m);margin-top:2px}
+.todo .why{display:block;font-size:11.5px;color:var(--ink-2);margin-top:2px}
+
+/* ══ 답변 은행 ══ */
+.qa{border:1px solid var(--rule);border-radius:12px;background:var(--card);margin-bottom:8px;overflow:hidden}
+.qa>summary{padding:12px 13px;cursor:pointer;list-style:none;display:flex;gap:8px;align-items:flex-start}
+.qa>summary::-webkit-details-marker{display:none}
+.qa .qt{flex:1;font:600 13.5px/1.45 var(--font-d)}
+.qa .qb{padding:0 13px 13px}
+.ansbox{background:var(--paper);border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.7;margin-bottom:8px;white-space:pre-wrap}
+.ansbox.blur{filter:blur(5px);cursor:pointer;user-select:none}
+.kv{display:flex;gap:7px;font-size:12.5px;margin:5px 0}
+.kv b{flex:none;font:600 10.5px/1.7 var(--font-d);letter-spacing:.06em;color:var(--ink-2)}
+.stars{display:flex;gap:3px}
+.stars button{padding:7px 9px;font-size:11px;background:transparent;border:1.2px solid var(--rule);color:var(--ink-2);min-height:32px}
+.stars button.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.secs{font:500 10.5px/1 var(--font-m);color:var(--ink-2);white-space:nowrap}
+
+/* ══ 용어 카드 ══ */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+.tc{background:var(--card);border:1.4px solid var(--rule);border-radius:13px;padding:13px;cursor:pointer}
+.tc .tt{font:700 14.5px/1.3 var(--font-d);letter-spacing:-.01em}
+.tc .tcat{font:500 10px/1 var(--font-m);color:var(--ink-2);margin-top:4px;display:block}
+.tc .ta{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed var(--rule);font-size:13px;line-height:1.65}
+.tc.open .ta{display:block}
+.tc .tk{display:block;margin-top:7px;font:500 11px/1.5 var(--font-m);color:var(--accent)}
+.tc.m0{border-color:var(--rule)} .tc.m1{border-color:#E0C27A} .tc.m2{border-color:#9CCDB3}
+.tc .mrow{display:flex;gap:4px;margin-top:10px}
+.tc .mrow button{flex:1;padding:8px 0;font-size:11px;background:transparent;border:1.2px solid var(--rule);color:var(--ink-2);min-height:32px}
+.tc .mrow button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.flip{text-align:center;padding:22px 16px;font-size:15px;line-height:1.7}
+.flip .fq{font:700 19px/1.35 var(--font-d);margin-bottom:12px}
+
+/* ══ 복기 ══ */
+.rv{border:1px solid var(--rule);border-left:3px solid var(--rule);border-radius:0 11px 11px 0;background:var(--card);
+  padding:12px 13px;margin-bottom:8px}
+.rv.good{border-left-color:var(--ok)} .rv.mid{border-left-color:var(--warn)} .rv.bad{border-left-color:var(--stamp)}
+.rv .rq{font:600 13.5px/1.45 var(--font-d)}
+.rv .rm{margin-top:7px;font-size:13px;color:var(--ink-2);white-space:pre-wrap}
+.st8{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.st8 .n{background:var(--card);border:1px solid var(--rule);border-radius:11px;padding:9px 13px;flex:1;min-width:88px}
+.st8 .n b{display:block;font:700 19px/1.2 var(--font-m)}
+.st8 .n span{font-size:11px;color:var(--ink-2)}
+
+/* ══ 실전 모의면접 ══ */
+.mock{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px 16px}
+.mock .mq{font:700 17px/1.5 var(--font-d);letter-spacing:-.01em;margin:10px 0 4px}
+.mock .mmeta{font:500 11px/1 var(--font-m);color:var(--ink-2)}
+.clock{display:flex;align-items:center;gap:12px;margin:14px 0 10px}
+.clock .cring{width:62px;height:62px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--accent) calc(var(--p,0)*1%),var(--rule) 0)}
+.clock .cring i{width:52px;height:52px;border-radius:50%;background:var(--card);display:grid;place-items:center;
+  font:600 15px/1 var(--font-m);font-style:normal}
+.clock.warn .cring{background:conic-gradient(var(--warn) calc(var(--p,0)*1%),var(--rule) 0)}
+.clock.over .cring{background:var(--stamp)}
+.clock.over .cring i{color:var(--stamp)}
+.clock .ctxt{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.mic{width:100%;padding:14px;border-radius:11px;background:var(--stamp);color:#fff;font:600 14px/1 var(--font-d)}
+.mic.rec{background:var(--ok);animation:pulse 1.3s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.62}}
+.scoreband{display:flex;align-items:center;gap:12px;padding:13px;border-radius:12px;background:var(--paper);margin-bottom:10px}
+.scoreband b{font:700 30px/1 var(--font-m)}
+.scoreband.hi b{color:var(--ok)} .scoreband.mid b{color:var(--warn)} .scoreband.lo b{color:var(--stamp)}
+.scoreband span{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.prog{height:5px;border-radius:3px;background:var(--rule);overflow:hidden;margin:12px 0}
+.prog i{display:block;height:100%;background:var(--accent)}
+
+/* ── 로그인 잠금 화면 ── */
+.gate{max-width:430px;margin:34px auto 0}
+.gate .lock{width:44px;height:44px;margin:0 auto 14px;border-radius:13px;display:grid;place-items:center;
+  background:var(--card);border:1px solid var(--rule)}
+.gate .lock svg{width:20px;height:20px;fill:none;stroke:var(--ink-2);stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.gate h1,.gate .lead{text-align:center}
+.gate .lead{margin-bottom:18px}
+.ckl{display:flex;align-items:center;gap:7px;margin:0;font-size:12.5px;letter-spacing:0;color:var(--ink-2)}
+.ckl input{width:auto;min-height:0}
+
+/* ══ 반응형 ══ */
+@media(max-width:520px){
+  .fr .fn{width:84px;font-size:11.5px}
+  .fr .fp{width:54px}
+  .ftip{margin-left:93px}
+  .tn{min-width:72px}
+  .cases{grid-template-columns:1fr}
+  .tgrid{grid-template-columns:1fr}
+}
+/* 태블릿 이상 — 입력 폼과 목록을 나란히 */
+@media(min-width:860px){
+  .wrap{max-width:1160px;padding-left:20px;padding-right:20px}
+  .two{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:14px;align-items:start}
+  .two>.card{margin-bottom:0}
+  .two>.col{position:sticky;top:96px}
+  .subtabs{margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+}
+@media(min-width:1180px){
+  .two{grid-template-columns:minmax(0,420px) minmax(0,1fr)}
+}
+/* ── 화면 크기별 마무리 ── */
+@media(max-width:560px){
+  .wrap{padding:14px 12px calc(90px + env(safe-area-inset-bottom))}
+  h1{font-size:19px}
+  .card{padding:14px;border-radius:12px}
+  .grid{grid-template-columns:1fr}          /* 폰에서 두 칸은 글자가 잘린다 */
+  .subtabs{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
+  .stb{padding:9px 11px;font-size:12px}
+  .rounds{flex-direction:column}
+  .bar > button{flex:1 1 auto}
+  .foldb{padding-top:11px}
+  #flash{left:10px;right:10px;transform:none;max-width:none}
+}
+@media(min-width:561px) and (max-width:1023px){
+  .wrap{max-width:820px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1024px){
+  .wrap{max-width:1180px}
+  .cases{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .subtabs{top:0}
+  .stb{padding:10px 15px;font-size:13px}
+  /* 넓은 화면에서는 접힌 줄이 한눈에 들어오게 조금 성기게 */
+  .card.fold{padding:18px 20px}
+  .foldb{padding-top:16px}
+}
+@media(min-width:1500px){ .wrap{max-width:1320px} }
+/* 마우스가 있는 환경에서만 hover */
+@media(hover:hover){
+  .cs:hover,.tc:hover{border-color:var(--accent)}
+  button:hover:not(:disabled){filter:brightness(1.08)}
+}
+/* 인쇄 — 브리핑 한 장 */
+@media print{
+  body{background:#fff}
+  .nav3,.subtabs,.msg,.bar,button,.tl,.pnl,.gate{display:none !important}
+  .wrap{max-width:none;padding:0}
+  .card{border:0;padding:0;margin:0}
+  .body{padding:0;font-size:11.5pt}
+  .print-only{display:block !important}
+  .noprint{display:none !important}
+}
+.print-only{display:none}
+
+/* ══ 줄마다 접기 ══
+   면접 탭은 한 화면에 담을 것이 너무 많다. 전부 펼쳐 두면 지금 무엇을 하는지
+   놓치고 스크롤만 하게 된다. 그래서 기본을 «접힘» 으로 두고 필요한 줄만 편다. */
+.eyebrow.foldh{width:100%;background:none;border:0;padding:0;cursor:pointer;text-align:left;
+  font:600 11px/1 var(--font-d);letter-spacing:.14em;color:var(--ink-2);
+  display:flex;align-items:center;gap:9px;margin-bottom:0}
+.eyebrow.foldh .arw{font-size:10px;color:var(--accent);transition:transform .18s;flex:none}
+.eyebrow.foldh .cum{letter-spacing:0}
+.foldb{display:none;padding-top:14px}
+.fold.open > .foldb{display:block}
+.fold.open > .eyebrow.foldh .arw{transform:rotate(-90deg)}
+.card.fold{padding-bottom:16px}
+.card.fold:not(.open){padding-bottom:16px}
+.foldall{display:flex;gap:7px;margin:0 0 12px}
+
+/* 화면 아래에 붙어 따라오는 알림 띠 — 어디까지 내려가 있어도 보인다 */
+#flash{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  z-index:9998;max-width:min(680px,92vw);padding:12px 16px;border-radius:12px;
+  font:500 13px/1.55 Pretendard,sans-serif;white-space:pre-wrap;text-align:center;
+  box-shadow:0 12px 34px -14px rgba(16,35,61,.55);opacity:0;pointer-events:none;transition:opacity .18s;
+  background:var(--ink);color:var(--paper)}
+#flash.on{opacity:.97}
+#flash.run::before{content:"";display:inline-block;width:11px;height:11px;margin-right:8px;
+  vertical-align:-1px;border:2px solid color-mix(in srgb,var(--paper) 35%,transparent);
+  border-top-color:var(--paper);border-radius:50%;animation:spin .8s linear infinite}
+#flash.ok{background:var(--ok)}
+#flash.err{background:var(--stamp)}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<link rel="stylesheet" href="./app-enhance.css?v=228">
+</head>
+<body data-data-domain="interview">
+<nav class="nav3">
+  <a href="./index.html">필기뷰어</a>
+  <a href="./practice.html">실기뷰어</a>
+  <a href="./calc.html">계산기</a><a href="./upload.html">기계</a>
+  <a href="./ingest.html">자동 변환</a>
+  <a href="./interview.html" class="on">면접</a>
+  <a href="./portfolio.html">포트폴리오</a>
+  <button class="authbtn" id="authBtn">로그인</button>
+
+</nav>
+
+<div class="wrap">
+  <div class="msg" id="m"></div>
+
+  <!-- ══ 로그인 ══ -->
+  <div class="gate hide" id="gate">
+    <div class="lock"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></svg></div>
+    <h1>면접</h1>
+    <div class="lead">업체별 채용공고·자소서·경력기술서를 모아 면접을 준비합니다. 로그인해야 내용이 보입니다.</div>
+    <div class="card">
+      <div class="eyebrow">로그인</div>
+      <div class="grid" style="margin-bottom:12px">
+        <div><label>이메일</label><input id="em" type="email" autocomplete="username" inputmode="email"></div>
+        <div><label>비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+      </div>
+      <div class="bar" style="margin-bottom:11px">
+        <label class="ckl"><input type="checkbox" id="keep"> 이 기기에서 로그인 유지</label>
+      </div>
+      <button id="login">로그인</button>
+      <div class="hint">뷰어·자동 변환에서 쓰는 계정과 같습니다. 공용 기기라면 로그인 유지를 켜지 마세요.</div>
+    </div>
+  </div>
+
+  <!-- ══ 목록 화면 ══ -->
+  <div id="listView" class="hide">
+    <h1>면접</h1>
+    <div class="lead">업체별로 채용공고·자소서·경력기술서를 모아두고, 그 자료를 근거로
+      방향성 → 예상질문 → 실전 모의면접 → 복기까지 한 번에 돌립니다.</div>
+
+    <div class="card">
+      <div class="eyebrow">새 채용 건</div>
+      <div class="grid" style="margin-bottom:11px">
+        <div><label>업체명</label><input id="nCo" placeholder="예: ○○데이터센터"></div>
+        <div><label>직무명</label><input id="nRo" placeholder="예: IDC Architect"></div>
+        <div><label>면접 예정일 (선택)</label><input id="nDt" type="date"></div>
+      </div>
+      <button id="add">추가</button>
+    </div>
+
+    <div class="eyebrow">진행 중인 건</div>
+    <div class="cases" id="cases"></div>
+
+    <div class="eyebrow" style="margin-top:26px">받았던 질문 모아보기
+      <span class="cum" id="allRevN"></span></div>
+    <div class="card" id="allRevCard">
+      <div class="lead" style="margin-bottom:12px">회사를 가리지 않고, 실제 면접에서 받았던 질문을 한자리에 모읍니다.
+        회사가 달라도 묻는 것은 겹칩니다 — 같은 데서 두 번 막히지 않게.</div>
+      <div class="chips" id="allRevChips"></div>
+      <div class="bar" style="margin-bottom:12px">
+        <input id="allRevQ" placeholder="검색" style="flex:1;min-width:130px">
+        <button class="ghost sm" id="allRevCopy">전부 복사</button>
+      </div>
+      <div id="allRevList"></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:26px">마음 다지기</div>
+
+    <details class="pouch" open>
+      <summary>자기암시 말주머니<span class="sub">5줄 · 자존감이 내려앉는 날</span></summary>
+      <div class="pbody">
+        <div class="chips" id="selfChips"></div>
+        <div id="selfOut"></div>
+        <div class="bar" style="margin-top:11px"><button class="sm" id="selfRoll">다시 5줄 뽑기</button></div>
+      </div>
+    </details>
+
+    <details class="pouch">
+      <summary>명언 말주머니<span class="sub">5줄</span></summary>
+      <div class="pbody">
+        <div class="chips" id="quoteChips"></div>
+        <div id="quoteOut"></div>
+        <div class="bar" style="margin-top:11px"><button class="sm" id="quoteRoll">다시 5줄 뽑기</button></div>
+      </div>
+    </details>
+
+    <details class="pouch">
+      <summary>면접 꿀팁 주머니<span class="sub">5줄 · 차수를 골라서</span></summary>
+      <div class="pbody">
+        <div class="chips" id="tipChips"></div>
+        <div id="tipOut"></div>
+        <div class="bar" style="margin-top:11px"><button class="sm" id="tipRoll">다시 5줄 뽑기</button></div>
+      </div>
+    </details>
+
+    <div class="eyebrow">단계별로 생각할 것</div>
+    <div id="stages"></div>
+  </div>
+
+  <!-- ══ 상세 화면 ══ -->
+  <div id="caseView" class="hide">
+    <div class="bar noprint" style="margin-bottom:12px">
+      <button class="ghost sm" id="back">← 목록</button>
+      <span class="tag" id="ddTag" style="display:none"></span>
+      <button class="ghost sm" id="edit" style="margin-left:auto">건 정보</button>
+      <button class="ghost sm" id="del">삭제</button>
+    </div>
+    <h1 id="cTitle">—</h1>
+    <div class="lead" id="cSub">—</div>
+
+    <!-- 다음 할 일 -->
+    <div class="card noprint" id="nextCard">
+      <div class="eyebrow">지금 당장 할 것 <span class="cum" id="rdyTxt"></span></div>
+      <div id="nextList"></div>
+    </div>
+
+    <!-- 전형 타임라인 -->
+    <div class="card noprint">
+      <div class="eyebrow">전형 타임라인 <span class="cum" id="cumTxt"></span></div>
+      <div class="tl" id="tl"></div>
+      <div id="tlPanel"></div>
+    </div>
+
+    <!-- 서브탭 -->
+    <div class="subtabs" id="subtabs">
+      <button class="stb on" data-t="prep">전략</button>
+      <button class="stb" data-t="bank">답변<span class="cnt" id="cBank">0</span></button>
+      <button class="stb" data-t="mock">실전</button>
+      <button class="stb" data-t="term">용어<span class="cnt" id="cTerm">0</span></button>
+      <button class="stb" data-t="review">복기<span class="cnt" id="cRev">0</span></button>
+      <button class="stb" data-t="brief">브리핑</button>
+      <button class="stb" data-t="docs">자료<span class="cnt" id="cDoc">0</span></button>
+    </div>
+
+    <!-- ── 전략 ── -->
+    <div class="pane" id="pane-prep">
+      <div class="card">
+        <div class="eyebrow">회차 선택</div>
+        <div class="rounds">
+          <div class="rd on" data-r="1"><div class="n">1차 면접</div><div class="d">실무진</div></div>
+          <div class="rd" data-r="2"><div class="n">2차 면접</div><div class="d">임원 · 인사</div></div>
+        </div>
+        <div class="bar" style="margin-bottom:14px">
+          <button id="gen">이 회차 전략 전부 만들기</button>
+          <button class="ghost sm" id="genOne">비어 있는 것만</button>
+        </div>
+        <div id="blocks"></div>
+        <div class="hint">모든 답변은 <b>[면접 답변] 20~30초 구어체 → [핵심] 키워드 3개 → [꼬리질문] → [감점]</b> 형식으로만 나옵니다.
+          블록마다 하나씩 따로 다시 만들 수 있습니다.</div>
+      </div>
+    </div>
+
+    <!-- ── 답변 ── -->
+    <div class="pane hide" id="pane-bank">
+      <div class="itabs" id="bankScope">
+        <button class="itb on" data-s="case">이 회사 답변</button>
+        <button class="itb" data-s="master">공통 답변함</button>
+      </div>
+      <div class="two">
+        <div class="col">
+          <div class="card">
+            <div class="eyebrow" id="bankFormTitle">답변 등록 · 수정</div>
+            <div class="grid" style="margin-bottom:10px">
+              <div><label>분류</label><select id="aCat"></select></div>
+              <div><label>회차</label><select id="aRound">
+                <option value="1">1차 실무</option><option value="2">2차 임원</option><option value="0">공통</option></select></div>
+            </div>
+            <label>질문</label><input id="aQ" placeholder="예: 실제로 작성해 본 MOP 하나 말해보세요">
+            <label style="margin-top:10px">[면접 답변] — 20~30초 구어체 <span id="aLen" class="secs"></span></label>
+            <textarea id="aA" style="min-height:104px" placeholder="실제 면접에서 그대로 입 밖으로 낼 문장으로."></textarea>
+            <div class="grid" style="margin-top:10px">
+              <div><label>[핵심] 키워드 3개</label><input id="aK" placeholder="SOP · MOP · EOP"></div>
+              <div><label>[꼬리질문]</label><input id="aF" placeholder="그럼 EOP는 누가 승인합니까?"></div>
+            </div>
+            <div class="bar" style="margin-top:11px">
+              <label class="ckl"><input type="checkbox" id="aAsked"> 실제로 받았던 질문</label>
+              <button class="sm" id="aSave" style="margin-left:auto">저장</button>
+              <button class="ghost sm hide" id="aCancel">취소</button>
+            </div>
+            <div class="bar" style="margin-top:11px">
+              <button class="ghost sm" id="aGen">공고 기반 예상질문 뽑기</button>
+              <button class="ghost sm" id="aPolish">내 답변 20초로 다듬기</button>
+              <button class="ghost sm" id="aBulk">여러 개 한꺼번에 붙여넣기</button>
+            </div>
+            <div class="hint">뽑기는 공고·자소서·경력기술서를 근거로 20개를 만들어 오른쪽에 바로 쌓습니다.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">목록</div>
+          <div class="chips" id="bankChips"></div>
+          <div class="bar" style="margin-bottom:11px">
+            <input id="bankQ" placeholder="검색" style="flex:1;min-width:130px">
+            <button class="ghost sm" id="bankAsked">받은 질문만</button>
+            <button class="ghost sm" id="bankWeak">약한 것만</button>
+            <button class="ghost sm" id="bankBlur">답 가리기</button>
+            <button class="ghost sm" id="bankOut">내보내기</button>
+          </div>
+          <div id="bankList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 실전 모의면접 ── -->
+    <div class="pane hide" id="pane-mock">
+      <div class="card" id="mockSetup">
+        <div class="eyebrow">실전 모의면접</div>
+        <div class="lead" style="margin-bottom:12px">질문이 한 개씩 뜹니다. 30초 안에 소리 내어 답하고,
+          그 자리에서 점수와 고친 답을 받습니다. 실제 면접에서 무너지는 건 아는 게 없어서가 아니라 입에 안 붙어서입니다.</div>
+        <label>출제 범위</label>
+        <div class="chips" id="mockSrc">
+          <button class="chip on" data-s="all">전부 섞어서</button>
+          <button class="chip" data-s="weak">약한 것만</button>
+          <button class="chip" data-s="term">용어 카드</button>
+          <button class="chip" data-s="bad">복기에서 막힌 것</button>
+          <button class="chip" data-s="base">기본 문항 (인성·회사·근무조건)</button>
+          <button class="chip" data-s="near">비슷한 직무 다른 회사<span class="cnt" id="nearN"></span></button>
+          <button class="chip" data-s="ai">AI 즉석 출제</button>
+        </div>
+        <div class="grid" style="margin-bottom:12px">
+          <div><label>문항 수</label><select id="mockN">
+            <option>5</option><option selected>8</option><option>12</option><option>20</option></select></div>
+          <div><label>회차</label><select id="mockR">
+            <option value="0">전체</option><option value="1">1차 실무</option><option value="2">2차 임원</option></select></div>
+          <div><label>제한 시간</label><select id="mockT">
+            <option value="30" selected>30초</option><option value="45">45초</option><option value="60">60초</option></select></div>
+          <div><label>꼬리질문 추격</label><select id="mockChase">
+            <option value="2" selected>2단까지 (권장)</option>
+            <option value="3">3단까지 — 실제 면접 수준</option>
+            <option value="0">안 함 — 한 번만 묻기</option></select></div>
+        </div>
+        <div class="hint" style="margin:-4px 0 12px">
+          추격을 켜면 <b>내 답을 듣고 그 답에서 파고드는 질문</b>이 이어집니다.
+          "그 안에 뭐가 들어갑니까 → 어떤 순서로 했습니까 → 그중 직접 한 게 뭡니까" 식으로요.
+          실제로 이 지원자를 떨어뜨린 게 이 구간입니다.
+        </div>
+        <button id="mockGo">시작</button>
+        <div class="hint" id="micHint"></div>
+      </div>
+
+      <div id="mockRun" class="hide"></div>
+
+      <div class="card" id="mockHistCard">
+        <div class="eyebrow">누적 기록</div>
+        <div class="st8" id="mockStat"></div>
+        <div id="mockHist"></div>
+      </div>
+    </div>
+
+    <!-- ── 용어 ── -->
+    <div class="pane hide" id="pane-term">
+      <div class="card">
+        <div class="eyebrow">20초 안에 답할 용어</div>
+        <div class="chips" id="termChips"></div>
+        <div class="bar" style="margin-bottom:12px">
+
+          <button class="ghost sm" id="tGen">공고에서 용어 뽑기</button>
+          <button class="ghost sm" id="tWipe">골라 지우기</button>
+          <button class="ghost sm" id="tDrill">암기 훈련</button>
+          <button class="ghost sm" id="tAdd">직접 추가</button>
+        </div>
+        <div id="drill" class="hide"></div>
+        <div class="tgrid" id="termList"></div>
+      </div>
+    </div>
+
+    <!-- ── 복기 ── -->
+    <div class="pane hide" id="pane-review">
+      <div class="two">
+        <div class="col">
+          <div class="card">
+            <div class="eyebrow">면접 복기 기록</div>
+            <div class="grid" style="margin-bottom:10px">
+              <div><label>어느 면접</label><select id="rStage"></select></div>
+              <div><label>내 반응</label><select id="rReact">
+                <option value="good">잘 답했다</option><option value="mid" selected>애매했다</option>
+                <option value="bad">막혔다 · 못 답했다</option></select></div>
+            </div>
+            <label>받았던 질문</label><input id="rQ" placeholder="면접관이 실제로 물었던 문장 그대로">
+            <label style="margin-top:10px">그때 내가 한 답변</label>
+            <textarea id="rA" style="min-height:80px" placeholder="기억나는 대로. 말 못 했으면 '못 답함'이라고 적어도 됩니다."></textarea>
+            <div class="bar" style="margin-top:11px"><button class="sm" id="rSave">복기 저장</button>
+              <button class="ghost sm" id="rBad">막힌 질문만 보기</button></div>
+            <div class="hint">저장한 질문은 다음 회차 예상질문·전략을 만들 때 AI가 근거로 씁니다.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">기록</div>
+          <div class="st8" id="rvStat"></div>
+          <div id="rvList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 브리핑 ── -->
+    <div class="pane hide" id="pane-brief">
+      <div class="card">
+        <div class="eyebrow noprint">면접 전날 한 장</div>
+        <div class="lead noprint" style="margin-bottom:12px">전날 밤과 대기실에서 이것만 봅니다.
+          지금까지 쌓인 답변·용어·복기를 근거로 뽑습니다.</div>
+        <div class="bar noprint" style="margin-bottom:14px">
+          <button id="brGen">브리핑 만들기</button>
+          <button class="ghost sm" id="brPrint">인쇄 · PDF</button>
+          <button class="ghost sm" id="brCopy">복사</button>
+        </div>
+        <div class="body" id="brBody"><div class="hint">아직 없습니다.</div></div>
+      </div>
+    </div>
+
+    <!-- ── 자료 ── -->
+    <div class="pane hide" id="pane-docs">
+      <div class="two">
+        <div class="col">
+          <div class="card">
+            <div class="eyebrow">자료 추가</div>
+            <div class="grid">
+              <div><label>자료 종류</label>
+                <select id="dKind">
+                  <option value="posting">채용공고</option>
+                  <option value="cover">자기소개서</option>
+                  <option value="career">경력기술서</option>
+                  <option value="portfolio">포트폴리오</option>
+                  <option value="review">기업 후기 · 현직자 글</option>
+                  <option value="etc">기타 메모</option>
+                </select>
+              </div>
+              <div><label>제목</label><input id="dTitle" placeholder="예: 채용공고 원문"></div>
+            </div>
+            <label style="margin-top:11px">본문 (파일을 올리면 자동으로 채워집니다)</label>
+            <textarea id="dBody" placeholder="PDF·이미지를 올리거나, 공고·자소서 내용을 직접 붙여넣으세요."></textarea>
+            <div class="bar" style="margin-top:10px">
+              <input id="dFile" type="file" accept=".pdf,.txt,.md,.docx,.pptx,.rtf,.csv,image/*" class="hide">
+              <button class="ghost sm" id="pick">파일 선택</button>
+              <button class="ghost sm" id="fromPf">포트폴리오에서 가져오기</button>
+              <span class="hint" style="margin:0" id="fname">선택된 파일 없음</span>
+              <button class="sm" id="dSave" style="margin-left:auto">자료 저장</button>
+              <button class="ghost sm hide" id="dCancel">수정 취소</button>
+            </div>
+            <div class="hint">PDF · 워드(.docx) · 파워포인트(.pptx) · 텍스트에서 글자를 뽑아 본문에 넣고 원본도 같이 보관합니다.
+              글자가 안 뽑히는 스캔본은 직접 붙여넣어 주세요 — AI에는 본문 텍스트만 보냅니다.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">첨부된 자료</div>
+          <div id="docs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+if(typeof window.pdfjsLib !== "undefined")
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const CFG = window.APP_CONFIG || {};
+
+/* 로그인 유지는 사용자가 켤 때만. 기본은 매번 로그인(공용 기기 대비). */
+const KEEP = localStorage.getItem("iv-keep") === "1";
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY,
+  { auth:{ persistSession:KEEP, autoRefreshToken:KEEP, storageKey:"sb-iv-session" } });
+
+/* 알림은 화면 맨 위 상자와 «화면에 붙는 띠» 두 군데에 같이 띄운다.
+   상자만 있으면 스크롤을 내려둔 상태에서 눌렀을 때 아무 반응이 없어 보인다. */
+const say = (t, c) => {
+  const m = $("#m"); m.textContent = t; m.className = "msg " + (c || "on");
+  let f = $("#flash");
+  if(!f){ f = document.createElement("div"); f.id = "flash"; document.body.appendChild(f); }
+  f.textContent = t;
+  f.className = "on " + (c || "run");
+  clearTimeout(say._t);
+  if(c === "ok" || c === "err")
+    say._t = setTimeout(() => { f.className = ""; if(m.textContent === t && c === "ok") m.className = "msg"; },
+      c === "err" ? 9000 : 3500);
+};
+const hideMsg = () => { $("#m").className = "msg"; const f = $("#flash"); if(f) f.className = ""; };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toast = t => say(t, "ok");
+
+/* PC 에서는 Render 만, 모바일은 워커 우선 — 자동 변환 탭과 같은 규칙 */
+/* ★ PC 에서 «만들기» 를 눌러도 아무 일이 없던 이유.
+   예전에는 PC 일 때 Render 한 곳만 불렀는데, 무료 Render 는 안 쓰면 잠들어 있어
+   첫 요청이 1분 가까이 걸리거나 그냥 실패한다. 그동안 화면에는 아무 표시도 없었다.
+   이제는 두 곳을 다 순서대로 시도하고, 진행 상황을 단추 옆에 직접 보여 준다. */
+const ENDPOINTS = [CFG.WORKER_URL, CFG.WORKER_BACKUP_URL]
+  .filter(Boolean)
+  .filter((v, i, a) => a.indexOf(v) === i);
+
+const KIND = { posting:"채용공고", cover:"자기소개서", career:"경력기술서",
+               portfolio:"포트폴리오", review:"기업 후기", etc:"기타 메모" };
+const STATUS = { prep:"준비 중", round1:"1차 진행", round2:"2차 진행", offer:"합격", closed:"종료" };
+const CATS = ["직무","기술","경험","인성","회사","역질문","기타"];
+
+let ME = null, CASES = [], CUR = null, DOCS = [], PREP = {}, ROUND = 1, FILE = null, DOC_EDIT = null;
+let ANS = [], MANS = [], TERMS = [], REV = [], DRL = [], STG = {}, SEL = "doc", EDIT_ID = null;
+let BANK_SCOPE = "case", BANK_CAT = "전체", BANK_ASKED = false, BANK_BLUR = false, BANK_WEAK = false;
+let TERM_F = "전체", REV_BAD = false;
+
+/* 입력 중 내용이 날아가지 않게 임시 저장 */
+const draftKey = k => `iv-draft-${k}-${CUR ? CUR.id : "x"}`;
+function bindDraft(id, key){
+  const el = $(id); if(!el) return;
+  el.addEventListener("input", () => { try{ localStorage.setItem(draftKey(key), el.value); }catch(e){} });
+}
+function loadDraft(id, key){ try{ const v = localStorage.getItem(draftKey(key)); if(v) $(id).value = v; }catch(e){} }
+function clearDraft(key){ try{ localStorage.removeItem(draftKey(key)); }catch(e){} }
+
+/* textarea 를 내용에 맞춰 늘린다 — 모바일에서 스크롤 두 번 하는 걸 막는다 */
+function autoGrow(el){
+  if(!el) return;
+  const fit = () => { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight + 2, 520) + "px"; };
+  el.addEventListener("input", fit); setTimeout(fit, 40);
+}
+
+/* ══ 로그인 ══ */
+async function boot(){
+  const { data } = await sb.auth.getSession();
+  ME = data.session?.user || null;
+  $("#gate").className = ME ? "gate hide" : "gate";
+  $("#authBtn").textContent = ME ? "로그아웃" : "로그인";
+  $("#listView").className = "hide";
+  $("#caseView").className = "hide";
+  $("#keep").checked = KEEP;
+  if(ME) loadCases();
+}
+$("#keep").onchange = e => {
+  localStorage.setItem("iv-keep", e.target.checked ? "1" : "0");
+  say("다음 로그인부터 적용됩니다.", "ok");
+};
+$("#authBtn").onclick = async () => {
+  if(ME){
+    if(!confirm("로그아웃할까요?")) return;
+    await sb.auth.signOut();
+    CASES = []; CUR = null; DOCS = []; PREP = {}; hideMsg();
+    return boot();
+  }
+  $("#em").focus();
+};
+
+/* ══════════════════════════════════════════════════════
+   줄마다 접기 — 손으로 마크업을 열다섯 군데 고치는 대신 여기서 한 번에 감싼다
+   ──────────────────────────────────────────────────────
+   규칙은 둘.
+   · 상자(.card) 안의 «줄 제목(.eyebrow)» 이면 그 상자의 나머지를 감싼다.
+   · 상자 밖에 홀로 있는 줄 제목이면 다음 줄 제목 직전까지를 감싼다.
+   로그인 화면(#gate)은 건드리지 않는다 — 거긴 접을 것이 없다.
+   ══════════════════════════════════════════════════════ */
+function foldify(){
+  const OPEN_BY_DEFAULT = ["지금 당장 할 것"];      /* 이 줄만 펴 둔다 */
+  document.querySelectorAll(".eyebrow").forEach(eb => {
+    if(eb.closest("#gate") || eb.classList.contains("foldh")) return;
+    if(eb.closest(".foldb")) return;                /* 이미 감싼 것 안 */
+    const label = (eb.textContent || "").trim().split("\n")[0].trim();
+    if(!label) return;
+
+    const parent = eb.parentElement;
+    const inCard = parent.classList.contains("card");
+    const host = inCard ? parent : document.createElement("div");
+    const body = document.createElement("div");
+    body.className = "foldb";
+
+    /* 감쌀 것을 모은다 */
+    const take = [];
+    let n = eb.nextElementSibling;
+    while(n){
+      if(!inCard && (n.classList.contains("eyebrow") || n.classList.contains("card"))) break;
+      take.push(n); n = n.nextElementSibling;
+    }
+    if(!take.length) return;
+
+    if(!inCard){
+      parent.insertBefore(host, eb);
+      host.appendChild(eb);
+      host.className = "fold";
+    }
+    take.forEach(x => body.appendChild(x));
+    eb.after(body);
+    host.classList.add("fold");
+
+    /* 줄 제목을 단추로 바꾼다 */
+    eb.classList.add("foldh");
+    eb.insertAdjacentHTML("afterbegin", `<span class="arw">◀</span>`);
+    eb.setAttribute("role", "button");
+    eb.tabIndex = 0;
+
+    const key = "iv:fold:" + label.replace(/\s+/g, "");
+    const saved = localStorage.getItem(key);
+    const def = OPEN_BY_DEFAULT.some(t => label.startsWith(t));
+    host.classList.toggle("open", saved === null ? def : saved === "1");
+
+    const flip = () => {
+      const on = host.classList.toggle("open");
+      localStorage.setItem(key, on ? "1" : "0");
+    };
+    eb.addEventListener("click", flip);
+    eb.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); flip(); } });
+  });
+}
+/* 화면을 바꿔 그릴 때마다 새로 생긴 줄도 감싼다 */
+["listView","caseView"].forEach(id => {
+  const v = document.getElementById(id);
+  if(v) new MutationObserver(() => { clearTimeout(foldify._t); foldify._t = setTimeout(foldify, 60); })
+    .observe(v, { childList:true });
+});
+
+/* 한 번에 펴고 접는 단추 */
+function foldAllBar(where, label){
+  const host = document.getElementById(where); if(!host || host.querySelector(".foldall")) return;
+  const bar = document.createElement("div");
+  bar.className = "foldall noprint";
+  bar.innerHTML = `<button class="ghost sm" data-foldall="1">모두 펼치기</button>
+                   <button class="ghost sm" data-foldall="0">모두 접기</button>`;
+  const first = host.querySelector(".fold");
+  if(first) host.insertBefore(bar, first); else host.appendChild(bar);
+  bar.onclick = e => {
+    const b = e.target.closest("[data-foldall]"); if(!b) return;
+    const on = b.dataset.foldall === "1";
+    host.querySelectorAll(".fold").forEach(f => {
+      f.classList.toggle("open", on);
+      const lb = (f.querySelector(".eyebrow")?.textContent || "").replace("◀","").trim().split("\n")[0].trim();
+      if(lb) localStorage.setItem("iv:fold:" + lb.replace(/\s+/g, ""), on ? "1" : "0");
+    });
+  };
+}
+
+$("#login").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email:$("#em").value.trim(), password:$("#pw").value });
+  if(error) return say("로그인 실패 — " + error.message, "err");
+  $("#pw").value = ""; hideMsg(); boot();
+};
+$("#pw").addEventListener("keydown", e => { if(e.key === "Enter") $("#login").click(); });
+
+/* ══ 목록 ══ */
+const dday = d => {
+  if(!d) return null;
+  const t = new Date(d + "T00:00:00"), n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((t - n) / 86400000);
+};
+const ddText = n => n === null ? "" : n === 0 ? "D-DAY" : n > 0 ? `D-${n}` : `D+${-n}`;
+
+async function loadCases(){
+  const { data, error } = await sb.from("iv_case").select("*").order("created_at", { ascending:false });
+  if(error) return say("불러오지 못했습니다 — " + error.message + "\nSQL을 먼저 실행하셨나요?", "err");
+  CASES = data || [];
+  const { data: sg } = await sb.from("iv_stage").select("*");
+  const byCase = {};
+  (sg || []).forEach(s => { (byCase[s.case_id] = byCase[s.case_id] || []).push(s); });
+  CASES.forEach(c => {
+    const mine = byCase[c.id] || [];
+    const nm = { doc:"서류", r1:"1차", r2:"2차", offer:"처우" };
+    const done = ["offer","r2","r1","doc"].map(k => mine.find(s => s.stage_key === k))
+      .find(s => s && (s.status === "pass" || s.status === "fail"));
+    c._badge = done ? `${nm[done.stage_key]} ${done.status === "pass" ? "합격" : "탈락"}` : "";
+    c._fail  = done?.status === "fail";
+  });
+  $("#listView").className = "";
+  $("#caseView").className = "hide";
+  loadAllRev();
+  setTimeout(() => { foldify(); foldAllBar("listView"); }, 0);
+  $("#cases").innerHTML = CASES.length
+    ? CASES.map(c => {
+        const dd = dday(c.interview_on);
+        const near = dd !== null && dd >= 0 && dd <= 7;
+        return `<button class="cs" data-id="${c.id}">
+        <div class="co">${esc(c.company)}</div>
+        <div class="ro">${esc(c.role)}</div>
+        <div class="meta"><span class="tag st">${STATUS[c.status] || c.status}</span>
+          ${dd !== null ? `<span class="tag${near ? " dd" : ""}">${ddText(dd)}</span>` : ""}
+          ${c._badge ? `<span class="tag${c._fail ? "" : " on"}">${c._badge}</span>` : ""}</div>
+        <div class="rdy"><i style="width:${c.readiness || 0}%"></i></div></button>`;
+      }).join("")
+    : `<div class="hint">아직 없습니다. 위에서 업체명과 직무명을 넣고 추가하세요.</div>`;
+  $$("#cases .cs").forEach(b => b.onclick = () => openCase(b.dataset.id));
+}
+/* ══════════════════════════════════════════════════════
+   받았던 질문 모아보기 — 회사를 가로질러
+   ──────────────────────────────────────────────────────
+   복기는 원래 «그 회사 안» 에만 있었다. 그런데 실제로 도움이 되는 건
+   «지난번에 어디선가 이걸 물었다» 는 기억이다. 회사가 달라도 겹친다.
+   그래서 첫 화면에 전부 모아 둔다.
+   ══════════════════════════════════════════════════════ */
+let ALLREV = [], ALLREV_F = "전체";
+async function loadAllRev(){
+  const { data } = await sb.from("iv_review").select("*").order("created_at", { ascending:false });
+  ALLREV = (data || []).map(r => ({ ...r,
+    _co: CASES.find(c => c.id === r.case_id)?.company || "지난 건" }));
+  drawAllRev();
+}
+function drawAllRev(){
+  const n = $("#allRevN");
+  if(n) n.textContent = ALLREV.length ? `${ALLREV.length}개` : "";
+  const box = $("#allRevList"); if(!box) return;
+
+  const chip = $("#allRevChips");
+  if(chip && !chip.dataset.on){
+    chip.dataset.on = "1";
+    chips(chip, ["전체","막힘","애매","잘 답함"], k => { ALLREV_F = k; drawAllRev(); }, "전체");
+  }
+  const map = { "막힘":"bad", "애매":"mid", "잘 답함":"good" };
+  const q = ($("#allRevQ")?.value || "").trim();
+  const list = ALLREV.filter(r =>
+    (ALLREV_F === "전체" || r.react === map[ALLREV_F]) &&
+    (!q || (r.q + " " + (r.my_a || "") + " " + r._co).includes(q)));
+
+  if(!ALLREV.length){
+    box.innerHTML = `<div class="hint" style="margin:0">아직 없습니다.
+      면접이 끝나면 그 건에 들어가 <b>복기</b> 탭에 질문부터 적어 두세요 — 하루 지나면 절반은 사라집니다.</div>`;
+    return;
+  }
+  box.innerHTML = list.length ? list.map(r => `
+    <div class="rv ${r.react}">
+      <div class="rq">${esc(r.q)}</div>
+      <div class="hint" style="margin-top:4px">
+        <b>${esc(r._co)}</b> · ${r.on_date || (r.created_at || "").slice(0,10)}
+        · ${r.stage_key === "r2" ? "2차" : r.stage_key === "r1" ? "1차" : "기타"}
+        · ${{good:"잘 답함",mid:"애매",bad:"막힘"}[r.react]}</div>
+      ${r.my_a ? `<div class="rm">그때 답: ${esc(r.my_a)}</div>` : ""}
+      ${r.better_md ? `<details class="qa" style="margin-top:8px">
+          <summary><span class="qt">다시 쓴 답 보기</span></summary>
+          <div class="qb">${mdToHtml(r.better_md)}</div></details>` : ""}
+      <div class="bar" style="margin-top:9px">
+        <button class="ghost sm" data-goc="${r.case_id}">그 건으로 가기</button>
+      </div>
+    </div>`).join("")
+    : `<div class="hint" style="margin:0">그 조건에 맞는 질문이 없습니다.</div>`;
+
+  $$("#allRevList [data-goc]").forEach(b => b.onclick = () => openCase(b.dataset.goc));
+}
+$("#allRevQ")?.addEventListener("input", drawAllRev);
+$("#allRevCopy")?.addEventListener("click", () => {
+  if(!ALLREV.length) return say("복사할 것이 없습니다.", "err");
+  const t = ALLREV.map(r =>
+    `[${r._co}] (${{good:"잘 답함",mid:"애매",bad:"막힘"}[r.react]}) ${r.q}`
+    + (r.my_a ? `\n  → 그때 답: ${r.my_a}` : "")).join("\n");
+  copyText(t);
+});
+
+$("#add").onclick = async () => {
+  const company = $("#nCo").value.trim(), role = $("#nRo").value.trim();
+  if(!company || !role) return say("업체명과 직무명을 넣어주세요.", "err");
+  const row = { company, role, user_id:ME.id };
+  if($("#nDt").value) row.interview_on = $("#nDt").value;
+  const { error } = await sb.from("iv_case").insert(row);
+  if(error) return say("추가하지 못했습니다 — " + error.message, "err");
+  $("#nCo").value = $("#nRo").value = $("#nDt").value = ""; hideMsg(); loadCases();
+};
+
+/* ══ 상세 ══ */
+async function openCase(id){
+  CUR = CASES.find(c => c.id === id);
+  if(!CUR) return;
+  $("#listView").className = "hide";
+  $("#caseView").className = "";
+  $("#cTitle").textContent = CUR.company;
+  $("#cSub").textContent = CUR.role + " · " + (STATUS[CUR.status] || CUR.status);
+  const dd = dday(CUR.interview_on);
+  const tg = $("#ddTag");
+  if(dd === null){ tg.style.display = "none"; }
+  else { tg.style.display = ""; tg.textContent = `면접 ${CUR.interview_on} · ${ddText(dd)}`;
+         tg.className = "tag" + (dd >= 0 && dd <= 7 ? " dd" : ""); }
+  window.scrollTo(0, 0);
+  loadDraft("#aQ","aq"); loadDraft("#aA","aa"); loadDraft("#rQ","rq"); loadDraft("#rA","ra");
+  await Promise.all([loadDocs(), loadPrep(), loadStages(), loadAnswers(), loadTerms(), loadReviews(), loadDrills()]);
+  await loadNear();
+  const nn = $("#nearN");
+  if(nn) nn.textContent = NEAR.length || "";
+  drawTL(); drawBrief();
+  setTimeout(() => { foldify(); foldAllBar("caseView"); }, 0);
+}
+$("#back").onclick = loadCases;
+$("#del").onclick = async () => {
+  if(!confirm(`"${CUR.company} · ${CUR.role}" 을(를) 자료·준비까지 통째로 지웁니다.`)) return;
+  await sb.from("iv_case").delete().eq("id", CUR.id);
+  loadCases();
+};
+$("#edit").onclick = async () => {
+  const company = prompt("업체명", CUR.company); if(company === null) return;
+  const role = prompt("직무명", CUR.role); if(role === null) return;
+  const on = prompt("면접 예정일 (YYYY-MM-DD, 비우면 삭제)", CUR.interview_on || "");
+  if(on === null) return;
+  const patch = { company:company.trim() || CUR.company, role:role.trim() || CUR.role,
+                  interview_on: on.trim() ? on.trim() : null };
+  const { error } = await sb.from("iv_case").update(patch).eq("id", CUR.id);
+  if(error) return say("저장 실패 — " + error.message, "err");
+  Object.assign(CUR, patch);
+  $("#cTitle").textContent = CUR.company;
+  $("#cSub").textContent = CUR.role + " · " + (STATUS[CUR.status] || CUR.status);
+  openCase(CUR.id);
+};
+
+/* ══ 자료 ══ */
+async function loadDocs(){
+  const { data } = await sb.from("iv_doc").select("*").eq("case_id", CUR.id).order("created_at");
+  DOCS = data || [];
+  $("#docs").innerHTML = DOCS.length ? DOCS.map(d => `
+    <div class="doc"><div class="t">
+      <b>${esc(d.title || KIND[d.kind] || d.kind)}</b>
+      <span>${KIND[d.kind] || d.kind} · ${(d.body || "").length.toLocaleString()}자${d.file_path ? " · 원본 있음" : ""}</span>
+    </div>
+    ${d.file_path ? `<button class="ghost sm" data-open="${d.id}">원본</button>` : ""}
+    <button class="ghost sm" data-view="${d.id}">고치기</button>
+    <button class="ghost sm" data-del="${d.id}">삭제</button></div>`).join("")
+    : `<div class="hint">아직 자료가 없습니다. 최소한 <b>채용공고</b>는 넣어야 준비를 만들 수 있습니다.</div>`;
+
+  $$("#docs [data-view]").forEach(b => b.onclick = () => {
+    const d = DOCS.find(x => x.id === b.dataset.view);
+    DOC_EDIT = d.id;
+    $("#dKind").value = d.kind; $("#dTitle").value = d.title || ""; $("#dBody").value = d.body || "";
+    $("#dSave").textContent = "수정 저장"; $("#dCancel").className = "ghost sm";
+    $("#dBody").scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+  $$("#docs [data-del]").forEach(b => b.onclick = async () => {
+    if(!confirm("이 자료를 지웁니다.")) return;
+    await sb.from("iv_doc").delete().eq("id", b.dataset.del); loadDocs().then(drawTL);
+  });
+  $$("#docs [data-open]").forEach(b => b.onclick = async () => {
+    const d = DOCS.find(x => x.id === b.dataset.open);
+    const { data, error } = await sb.storage.from("iv-docs").createSignedUrl(d.file_path, 300);
+    if(error) return say("원본을 열지 못했습니다 — " + error.message, "err");
+    window.open(data.signedUrl, "_blank");
+  });
+  counts();
+}
+$("#dCancel").onclick = () => {
+  DOC_EDIT = null; $("#dTitle").value = ""; $("#dBody").value = "";
+  $("#dSave").textContent = "자료 저장"; $("#dCancel").className = "ghost sm hide";
+};
+$("#pick").onclick = () => $("#dFile").click();
+/* ═══════════════════════════════════════════════
+   워드(.docx) · 파워포인트(.pptx) 에서 글자 뽑기
+   ───────────────────────────────────────────────
+   둘 다 속을 열면 XML 이 든 ZIP 파일이다.
+   바깥 라이브러리를 부르지 않고, 브라우저에 내장된 압축 해제기
+   (DecompressionStream)로 직접 푼다 — 인터넷이 느려도 실패하지 않는다.
+   ═══════════════════════════════════════════════ */
+async function unzip(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf);
+  /* 끝에서부터 «중앙 목록» 표시(EOCD)를 찾는다 */
+  let eo = -1;
+  for(let i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--)
+    if(dv.getUint32(i, true) === 0x06054b50){ eo = i; break; }
+  if(eo < 0) throw new Error("압축 파일 구조를 읽지 못했습니다");
+  const n = dv.getUint16(eo + 10, true);
+  let p = dv.getUint32(eo + 16, true);
+  const out = {};
+  for(let i = 0; i < n; i++){
+    if(dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true);
+    const csize  = dv.getUint32(p + 20, true);
+    const nlen   = dv.getUint16(p + 28, true);
+    const elen   = dv.getUint16(p + 30, true);
+    const clen   = dv.getUint16(p + 32, true);
+    const lho    = dv.getUint32(p + 42, true);
+    const name   = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + elen + clen;
+    if(!/\.xml$/i.test(name)) continue;
+    const lnl = dv.getUint16(lho + 26, true), lel = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lnl + lel;
+    const raw = u8.subarray(start, start + csize);
+    if(method === 0){ out[name] = new TextDecoder().decode(raw); continue; }
+    if(method !== 8) continue;                       /* deflate 만 다룬다 — 사실상 전부 이것 */
+    const ds = new DecompressionStream("deflate-raw");
+    const ab = await new Response(new Blob([raw]).stream().pipeThrough(ds)).arrayBuffer();
+    out[name] = new TextDecoder().decode(ab);
+  }
+  return out;
+}
+const xmlText = (x, tag) => {
+  const m = x.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "g")) || [];
+  return m.map(v => v.replace(/<[^>]+>/g, "")).join("");
+};
+const unesc = t => t.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&")
+                    .replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&apos;/g,"'");
+
+async function docxText(file){
+  const z = await unzip(await file.arrayBuffer());
+  const doc = z["word/document.xml"]; if(!doc) throw new Error("워드 본문(word/document.xml)을 못 찾았습니다");
+  /* 문단(<w:p>) 단위로 줄을 나누고, 각 문단 안의 글자 조각(<w:t>)을 잇는다 */
+  return unesc((doc.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [])
+    .map(par => (par.match(/<w:t[^>]*>[\s\S]*?<\/w:t>/g) || [])
+      .map(t => t.replace(/<[^>]+>/g, "")).join(""))
+    .filter(l => l.trim()).join("\n")).trim();
+}
+async function pptxText(file){
+  const z = await unzip(await file.arrayBuffer());
+  const slides = Object.keys(z).filter(k => /^ppt\/slides\/slide\d+\.xml$/.test(k))
+    .sort((a,b) => (+a.match(/\d+/)[0]) - (+b.match(/\d+/)[0]));
+  if(!slides.length) throw new Error("슬라이드를 못 찾았습니다");
+  const notes = k => z[k.replace("slides/slide", "notesSlides/notesSlide")] || "";
+  return slides.map((k, i) => {
+    const body = (z[k].match(/<a:t>[\s\S]*?<\/a:t>/g) || [])
+      .map(t => t.replace(/<[^>]+>/g, "")).filter(x => x.trim()).join("\n");
+    const nt = (notes(k).match(/<a:t>[\s\S]*?<\/a:t>/g) || [])
+      .map(t => t.replace(/<[^>]+>/g, "")).filter(x => x.trim()).join(" ");
+    return unesc(`── ${i+1}쪽 ──\n${body}` + (nt ? `\n[발표자 노트] ${nt}` : ""));
+  }).join("\n\n").trim();
+}
+
+$("#dFile").onchange = async e => {
+  FILE = e.target.files[0]; if(!FILE) return;
+  $("#fname").textContent = FILE.name;
+  const done = txt => {
+    $("#dBody").value = txt;
+    $("#dBody").dispatchEvent(new Event("input"));
+    txt.length < 50
+      ? say("글자가 거의 안 뽑혔습니다. 본문을 직접 붙여넣어 주세요.", "err")
+      : say(`${txt.length.toLocaleString()}자를 뽑았습니다. 확인하고 «자료 저장» 을 누르세요.`, "ok");
+  };
+  try{
+    if(/\.(txt|md|csv)$/i.test(FILE.name)) return done((await FILE.text()).trim());
+    if(/\.rtf$/i.test(FILE.name))
+      return done((await FILE.text()).replace(/\\'[0-9a-f]{2}/gi," ").replace(/\\[a-z]+-?\d* ?/gi,"")
+                  .replace(/[{}]/g,"").replace(/\n{3,}/g,"\n\n").trim());
+    if(/\.docx$/i.test(FILE.name)){ say("워드에서 글자를 뽑는 중…"); return done(await docxText(FILE)); }
+    if(/\.pptx$/i.test(FILE.name)){ say("파워포인트에서 글자를 뽑는 중…"); return done(await pptxText(FILE)); }
+    if(/\.pdf$/i.test(FILE.name)){
+      say("PDF에서 글자를 뽑는 중…");
+      const buf = new Uint8Array(await FILE.arrayBuffer());
+      const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+      let out = "";
+      for(let p = 1; p <= doc.numPages; p++){
+        say(`PDF에서 글자를 뽑는 중… ${p}/${doc.numPages}쪽`);
+        const c = await doc.getPage(p).then(pg => pg.getTextContent());
+        out += c.items.map(i => i.str).join(" ") + "\n\n";
+      }
+      return done(out.trim());
+    }
+    if(/\.(doc|ppt|hwp|hwpx)$/i.test(FILE.name))
+      return say(`${FILE.name.split(".").pop().toUpperCase()} 는 바로 못 읽습니다.\n`
+        + "PDF 로 «다른 이름으로 저장» 한 뒤 올리거나, 내용을 복사해 붙여넣어 주세요.\n"
+        + "(원본 파일 자체는 그대로 보관됩니다)", "err");
+    say("이 파일은 글자를 뽑지 않고 원본만 보관합니다. 필요하면 본문에 직접 붙여넣어 주세요.");
+  }catch(err){
+    say(`${FILE.name} 에서 글자를 뽑지 못했습니다 — ${err.message}\n`
+      + "본문에 직접 붙여넣으시면 그대로 씁니다.", "err");
+  }
+};
+/* 포트폴리오 탭에 쌓아 둔 내용을 그대로 본문에 붓는다 —
+   같은 내용을 두 번 적지 않게. 여기 들어와야 AI 가 근거로 쓴다. */
+$("#fromPf").onclick = async () => {
+  say("포트폴리오를 읽는 중…");
+  const { data, error } = await sb.from("pf_item").select("*")
+    .order("sort_order", { ascending:true }).order("created_at", { ascending:true });
+  if(error) return say("읽지 못했습니다 — " + error.message, "err");
+  const rows = (data || []).map(x => ({ ...x, kind:x.kind || "project", meta:x.meta || {} }));
+  if(!rows.length) return say("포트폴리오 탭이 비어 있습니다.", "err");
+  const g  = (r, k) => k.startsWith("m.") ? (r.meta[k.slice(2)] || "") : (r[k] || "");
+  const of = k => rows.filter(r => r.kind === k);
+  const out = [];
+  const p = of("profile")[0];
+  if(p) out.push(`# ${p.title}`, p.summary || "", p.category || "", p.body_md || "");
+  of("career").forEach(c => {
+    out.push("", `### ${c.title}${c.category ? " — " + c.category : ""} (${c.period || ""})`);
+    if(g(c,"m.about")) out.push(`회사소개: ${g(c,"m.about")}`);
+    if(c.summary)      out.push(`담당업무: ${c.summary}`);
+    rows.filter(k => k.kind === "achieve" && String(k.parent_id) === String(c.id)).forEach(k => {
+      out.push(`■ ${k.title}`, k.body_md || "");
+      if(g(k,"m.numbers")) out.push(`숫자: ${g(k,"m.numbers")}`);
+      if(g(k,"m.mine"))    out.push(`내가 직접 한 것 / 검토만 한 것: ${g(k,"m.mine")}`);
+    });
+    if(g(c,"m.leave")) out.push(`이직사유: ${g(c,"m.leave")}`);
+  });
+  const list = (t, k, fn) => { const r = of(k); if(r.length){ out.push("", `## ${t}`); r.forEach(x => out.push(fn(x))); } };
+  list("학력 · 병역", "edu",  r => `- ${r.title} / ${r.category || ""} / ${r.period || ""}`);
+  list("자격 · 면허", "cert", r => `- ${r.title} (${r.category || ""}) ${r.period || ""} ${g(r,"m.no")}`);
+  list("프로젝트",   "project", r => `### ${r.title} (${[r.category,r.period].filter(Boolean).join(" · ")})\n${r.summary || ""}\n${r.body_md || ""}`);
+  list("스펙 · 수상", "spec", r => `- ${r.title} / ${r.category || ""} / ${r.period || ""}`);
+  list("교내외 활동", "activity", r => `- ${r.title} / ${r.category || ""} / ${r.period || ""} ${r.summary || ""}`);
+  list("경험 아카이빙", "archive", r => `- [${r.category || ""}/${g(r,"m.type")}] ${r.title}${r.summary ? " → " + r.summary : ""}`);
+  const txt = out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  $("#dKind").value = "portfolio";
+  if(!$("#dTitle").value.trim()) $("#dTitle").value = "포트폴리오 (자동 가져오기)";
+  $("#dBody").value = txt;
+  $("#dBody").dispatchEvent(new Event("input"));
+  say(`${txt.length.toLocaleString()}자를 가져왔습니다. 확인하고 «자료 저장» 을 누르세요.`, "ok");
+};
+
+$("#dSave").onclick = async () => {
+  const body = $("#dBody").value.trim();
+  if(!body && !FILE) return say("본문을 넣거나 파일을 선택해 주세요.", "err");
+  say("저장하는 중…");
+  let file_path = null;
+  if(FILE){
+    /* 보관함 키에는 한글·공백·괄호를 넣을 수 없다 (Invalid key 오류의 원인) */
+    const ext  = (FILE.name.match(/\.([A-Za-z0-9]{1,8})$/) || [,"bin"])[1].toLowerCase();
+    const stem = FILE.name.replace(/\.[^.]*$/, "").replace(/[^A-Za-z0-9._-]+/g, "-")
+                          .replace(/-{2,}/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "file";
+    file_path = `${ME.id}/${CUR.id}/${Date.now()}_${stem}.${ext}`;
+    const { error } = await sb.storage.from("iv-docs").upload(file_path, FILE);
+    if(error){ say("원본 업로드 실패 — " + error.message + "\n본문만 저장합니다.", "err"); file_path = null; }
+  }
+  const patch = { kind:$("#dKind").value, title:$("#dTitle").value.trim() || null, body };
+  let error;
+  if(DOC_EDIT){
+    if(file_path) patch.file_path = file_path;
+    ({ error } = await sb.from("iv_doc").update(patch).eq("id", DOC_EDIT));
+  }else{
+    ({ error } = await sb.from("iv_doc").insert({ case_id:CUR.id, user_id:ME.id, file_path, ...patch }));
+  }
+  if(error) return say("저장 실패 — " + error.message, "err");
+  DOC_EDIT = null; FILE = null;
+  $("#dTitle").value = ""; $("#dBody").value = "";
+  $("#dFile").value = ""; $("#fname").textContent = "선택된 파일 없음";
+  $("#dSave").textContent = "자료 저장"; $("#dCancel").className = "ghost sm hide";
+  say("저장했습니다.", "ok"); await loadDocs(); drawTL();
+};
+
+/* ══════════════════════════════════════════════════
+   마크다운 렌더 — 표 · [면접 답변] 블록까지 처리
+   ══════════════════════════════════════════════════ */
+const inline = s => s
+  .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+  .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+const TAGCLS = { "면접 답변":"a", "핵심":"k", "꼬리질문":"f" };
+
+function mdToHtml(md){
+  const lines = esc(md).split("\n");
+  let html = "", inUl = false, inOl = false, i = 0;
+  const closeLists = () => { if(inUl){ html += "</ul>"; inUl = false; } if(inOl){ html += "</ol>"; inOl = false; } };
+  const isRow = t => /^\|.*\|$/.test(t);
+  while(i < lines.length){
+    const t = lines[i].trim();
+    if(!t){ closeLists(); i++; continue; }
+    /* 표 */
+    if(isRow(t) && isRow((lines[i+1] || "").trim()) && /^\|[\s:\-|]+\|$/.test((lines[i+1] || "").trim())){
+      closeLists();
+      const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      const head = cells(lines[i]); i += 2;
+      let rows = [];
+      while(i < lines.length && isRow(lines[i].trim())){ rows.push(cells(lines[i])); i++; }
+      html += `<table><thead><tr>${head.map(h => `<th>${inline(h)}</th>`).join("")}</tr></thead><tbody>` +
+        rows.map(r => `<tr>${r.map(c => `<td>${inline(c)}</td>`).join("")}</tr>`).join("") + "</tbody></table>";
+      continue;
+    }
+    /* [면접 답변] / [핵심] / [꼬리질문] */
+    const tag = t.match(/^\[(면접 답변|핵심|꼬리질문)\]\s*(.*)$/);
+    if(tag){
+      closeLists();
+      let buf = tag[2];
+      i++;
+      while(i < lines.length){
+        const nx = lines[i].trim();
+        if(!nx || /^\[(면접 답변|핵심|꼬리질문|감점)\]/.test(nx) || /^#{1,6}\s/.test(nx)
+          || /^[-*]\s/.test(nx) || /^▸/.test(nx) || isRow(nx)) break;
+        buf += "\n" + nx; i++;
+      }
+      html += `<div class="tl3 ${TAGCLS[tag[1]]}"><b>[${tag[1]}]</b>${inline(buf.trim())}</div>`;
+      continue;
+    }
+    if(/^\[감점\]\s*/.test(t) || /^▸이러면 감점/.test(t)){
+      closeLists(); html += `<div class="pen">⚠ ${inline(t.replace(/^\[감점\]\s*/, ""))}</div>`; i++; continue;
+    }
+    if(/^#{1,2}\s/.test(t)){ closeLists(); html += `<h2>${inline(t.replace(/^#{1,2}\s/, ""))}</h2>`; i++; continue; }
+    if(/^#{3,}\s/.test(t)){ closeLists(); html += `<h3>${inline(t.replace(/^#+\s/, ""))}</h3>`; i++; continue; }
+    if(/^&gt;\s?/.test(t)){ closeLists(); html += `<blockquote>${inline(t.replace(/^&gt;\s?/, ""))}</blockquote>`; i++; continue; }
+    if(/^[-*]\s/.test(t)){ if(inOl){ html += "</ol>"; inOl = false; } if(!inUl){ html += "<ul>"; inUl = true; }
+      html += `<li>${inline(t.replace(/^[-*]\s/, ""))}</li>`; i++; continue; }
+    if(/^\d+[.)]\s/.test(t)){ if(inUl){ html += "</ul>"; inUl = false; } if(!inOl){ html += "<ol>"; inOl = true; }
+      html += `<li>${inline(t.replace(/^\d+[.)]\s/, ""))}</li>`; i++; continue; }
+    closeLists(); html += `<p>${inline(t)}</p>`; i++;
+  }
+  closeLists(); return html;
+}
+
+/* ══ AI 호출 ══ */
+async function ask(prompt, note){
+  /* ★ 여기가 «만들지 못했습니다» 의 원인이었다.
+     워커는 Gemini 형식을 그대로 넘겨 준다. 즉 바깥에 contents 가 있어야 하는데
+     예전에는 parts 만 보내서, 서버가 «contents is not specified» 로 되돌려 보냈다.
+     필기뷰어(askAI)와 같은 모양으로 맞춘다. */
+  const body = {
+    contents: [{ role:"user", parts:[{ text: prompt }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
+  };
+  const tried = [];
+  let last = "";
+  for(let i = 0; i < ENDPOINTS.length; i++){
+    const base = ENDPOINTS[i];
+    const host = base.replace(/^https?:\/\//, "").split("/")[0];
+    if(note) say(`${note}\n서버 ${i+1}/${ENDPOINTS.length} (${host}) 에 묻는 중…`
+      + (i ? "\n첫 서버가 안 되어 다음 서버로 넘어갑니다." : ""));
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 150000);   /* 잠든 서버가 깨는 데 시간이 걸린다 */
+    try{
+      const res = await fetch(base.replace(/\/$/, "") + "/get-data", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body), signal: ac.signal
+      });
+      const raw = await res.text();
+      let d = {};
+      try{ d = JSON.parse(raw); }catch(e){ d = {}; }
+      if(!res.ok){
+        last = `${host} — ${d.detail || d.error?.message || raw.slice(0,160) || "HTTP " + res.status}`;
+        tried.push(last); continue;
+      }
+      const out = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if(!out){
+        /* 안전필터에 걸리거나 빈 응답이 오는 경우가 있다. 조용히 넘어가면 원인을 못 찾는다 */
+        last = `${host} — 빈 응답이 왔습니다 (${d.candidates?.[0]?.finishReason || "이유 미상"})`;
+        tried.push(last); continue;
+      }
+      return out;
+    }catch(e){
+      last = `${host} — ` + (e.name === "AbortError" ? "응답이 너무 오래 걸립니다(2분 반)" : e.message);
+      tried.push(last);
+    }
+    finally{ clearTimeout(timer); }
+  }
+  throw new Error((tried.join("\n") || last || "서버가 응답하지 않습니다")
+    + "\n\n서버가 잠들어 있었다면 한 번 더 눌러 보세요 — 두 번째는 대개 빠릅니다.");
+}
+async function askJSON(prompt, note){
+  const raw = await ask(prompt + "\n\n[출력] 머리말·설명·코드펜스 없이 JSON 배열만 출력해라.", note);
+  const s = raw.replace(/```json|```/g, "").trim();
+  const i = s.indexOf("["), j = s.lastIndexOf("]");
+  if(i < 0 || j < 0) throw new Error("형식이 이상합니다. 다시 눌러주세요");
+  return JSON.parse(s.slice(i, j + 1));
+}
+
+/* ══════════════════════════════════════════════════
+   답변 형식 — 여기 한 곳만 고치면 전부 바뀐다
+   ══════════════════════════════════════════════════ */
+const FORMAT =
+`[답변 형식 — 반드시 지켜라]
+면접에서 말할 답은 아래 네 덩어리로만 써라. 배경 설명·장황한 서술 금지.
+[면접 답변] 실제 면접에서 그대로 입 밖으로 낼 구어체 문장. 20~30초(200~300자). 존댓말. 두괄식.
+[핵심] 키워드 3개를 " · " 로 이어 한 줄.
+[꼬리질문] 실제 면접관은 한 번 묻고 끝내지 않는다. 반드시 «파고드는» 3단으로 써라.
+  1단 — 구성·항목을 되묻는다 ("그 문서 안에 뭐가 들어갑니까?")   → 대응 한 줄
+  2단 — 절차·순서를 되묻는다 ("어떤 단계로 진행했습니까?")        → 대응 한 줄
+  3단 — 본인 경험을 되묻는다 ("그중 직접 해본 게 뭡니까? 기억나는 항목은?") → 대응 한 줄
+  대응 한 줄에는 반드시 «구체적인 이름·개수·수치» 가 들어가야 한다. "잘 챙겼습니다" 같은 말은 금지.
+[감점] 이 질문에서 하면 깎이는 말 한 줄.
+설명을 더 붙이고 싶어도 붙이지 마라. 사용자는 외워서 말할 문장만 필요하다.`;
+
+/* 지원자 포지셔닝 원칙 — 실제 면접 피드백에서 나온 것 */
+const STANCE =
+`[이 지원자의 포지셔닝 원칙 — 모든 답변에 깔고 가라]
+1. "가서 배우겠다 / 흡수력이 좋다 / 들어가면 잘할 자신 있다" 류는 메인 논리로 절대 쓰지 마라.
+   경력직 면접에서 안 먹힌다. 면접관은 "그래서 지금 뭘 아는데?"를 본다. 보조로 한 줄만 허용한다.
+2. 메인 프레임은 이것이다 — "운영을 직접 해봤기 때문에 구축·기획 단계에서 운영 리스크를 미리 잡을 수 있는 사람".
+3. 약점은 "경력 부족"이 아니라 "경력의 방향 차이"로 프레이밍해라.
+4. 답변에는 숫자·설비명·용량·대수·기간을 반드시 넣어라. "큰 냉동기"가 아니라 "350RT 터보 2대".
+5. 실무 면접은 문서(SOP/MOP/EOP)·분해 순서·기준값·이격거리처럼 바로 꺼내야 하는 디테일에서 갈린다.
+   추상적 방법론으로 도망가지 말고 구체적인 절차와 수치로 답해라.
+6. ★ 이 지원자를 떨어뜨린 것은 «두루뭉술한 답» 이 아니라 «파고드는 꼬리질문» 이었다.
+   면접관은 이런 식으로 계속 내려간다:
+     "서류를 만든다고 했는데, 그 안에 구성 항목이 뭡니까?"
+     "커미셔닝을 했다면 어떤 단계로 진행했고, 각 단계에서 무엇을 얻었습니까?"
+     "ISMS 심사 대응했다면 구성 항목 중 기억나는 게 뭡니까?"
+   그러니 어떤 답이든 다음 세 가지를 «이름과 개수로» 댈 수 있게 써라.
+     ① 구성요소 — 그 문서·시스템 안에 실제로 들어가는 항목 이름들 (5~8개, 목록으로)
+     ② 절차 — 어떤 순서로 했고 각 단계의 산출물이 무엇인지
+     ③ 내 몫 — 그중 «내가 직접 손으로 한 것» 과 «지시·검토만 한 것» 의 구분
+   "전반적으로 관리했습니다" 는 이 지원자를 떨어뜨린 문장이다. 절대 쓰지 마라.`;
+
+function docText(kind, cap = 12000){
+  return DOCS.filter(d => d.kind === kind).map(d => (d.body || "").slice(0, cap)).join("\n\n---\n\n");
+}
+function reviewText(){
+  if(!REV.length) return "";
+  return "\n[이 지원자가 실제 면접에서 받았던 질문과 그때의 반응]\n" +
+    REV.slice(0, 40).map(r => `- (${{good:"잘 답함",mid:"애매",bad:"막힘"}[r.react]}) ${r.q}`).join("\n") +
+    "\n※ 막힌 질문 유형은 반드시 다시 다뤄라.\n";
+}
+function weakText(){
+  const t = TERMS.filter(x => x.mastery === 0).slice(0, 20).map(x => x.term);
+  const a = ANS.filter(x => x.score === 1).slice(0, 15).map(x => x.q);
+  if(!t.length && !a.length) return "";
+  return "\n[이 지원자가 아직 약한 것]\n" +
+    (t.length ? "- 못 외운 용어: " + t.join(", ") + "\n" : "") +
+    (a.length ? "- 막힌 질문: " + a.join(" / ") + "\n" : "");
+}
+
+function headPrompt(){
+  const who = ROUND === 1
+    ? "1차 면접 · 실무진(팀장·선임)이 보는 자리다. 실제로 손으로 해봤는지, 원리를 아는지, 현장에서 판단할 수 있는지를 본다."
+    : "2차 면접 · 임원과 인사가 보는 자리다. 태도·동기·조직 적합성·성장 방향, 그리고 회사에 무엇을 남길 사람인지를 본다.";
+  return `너는 한국 기업 채용 면접을 오래 준비시켜 온 코치다.
+지원 회사는 "${CUR ? CUR.company : ""}", 직무는 "${CUR ? CUR.role : ""}" 이다.
+아래 자료를 근거로, ${who}
+답변은 한국어 마크다운으로 쓰고, 지어내지 마라.
+자료에 없는 사실은 절대 사실인 양 쓰지 말고, 필요하면 "자료에 없음 — 확인 필요"라고 표시해라.
+
+${STANCE}
+
+${FORMAT}
+${reviewText()}${weakText()}
+[채용공고]
+${docText("posting") || "(없음)"}
+
+[자기소개서]
+${docText("cover") || "(없음)"}
+
+[경력기술서]
+${docText("career") || "(없음)"}
+
+[포트폴리오]
+${docText("portfolio") || "(없음)"}
+
+[사용자가 모아온 기업 후기·현직자 글]
+${docText("review") || "(없음)"}
+
+[기타 메모]
+${docText("etc", 4000) || "(없음)"}
+`;
+}
+
+/* ══ 전략 블록 ══ */
+const BLOCKS = [
+  { key:"direction", name:"① 내가 가야 할 방향성", sub:"이 공고에 나를 어떤 사람으로 세울 것인가" },
+  { key:"basics",    name:"② 공고 기본 개념 정리", sub:"공고에 나온 설비·용어를 20초 답변으로" },
+  { key:"numbers",   name:"③ 내 숫자·근거 카드",   sub:"입으로 바로 나와야 할 정량 사실" },
+  { key:"audit",     name:"④ 내 서류 검증 질문",   sub:"자소서·경력기술서를 파고드는 질문과 답" },
+  { key:"qa",        name:"⑤ 예상 질문 & 베스트 답변", sub:"이 회차에서 실제로 나올 질문" },
+  { key:"company",   name:"⑥ 기업 조언 · 역질문",  sub:"회사 성격·분위기·조심할 점" },
+  { key:"deep",      name:"⑦ 파고들기 카드",      sub:"구성요소·단계·내가 한 것 — 꼬리질문 방어용" }
+];
+
+const TAILS = {
+direction:
+`[할 일] 이 공고에 나를 "어떤 사람으로 세울 것인가"를 정하는 전략 문서를 써라. 질문·답변이 아니다.
+아래 순서를 그대로 지켜라.
+
+## 한 문장 포지셔닝
+"○○을 직접 해봤기 때문에 ○○ 단계에서 ○○을 잡을 수 있는 사람" 꼴로 한 문장. 두 가지 후보를 제시하고 어느 쪽이 이 공고에 맞는지 골라줘라.
+
+## 이 공고가 진짜로 보려는 것
+공고 문구 뒤에 있는 평가 기준을 3~5개로 추려라. 각 항목에 "면접에서 이렇게 확인할 것이다"를 한 줄씩.
+
+## 공고 요구 vs 내가 가진 것
+반드시 마크다운 표로. 열: 공고 요구 | 내 근거(자료 인용) | 강함/보통/약함 | 약하면 어떻게 메울지.
+자료에 근거가 없는 칸은 "근거 없음 — 만들어 말하지 말 것"이라고 적어라.
+
+## 내 무기 3개
+각각 ▸한 줄 요약 ▸이걸 증명하는 숫자·사례 ▸어느 질문에 끼워 넣을지.
+
+## 내 약점 2~3개와 방어선
+약점은 "경력 부족"이 아니라 "경력의 방향 차이"로 프레이밍해라.
+각 약점마다 [면접 답변] 형식으로 방어 문장을 그대로 써줘라.
+
+## 이번 주 준비 우선순위 5개
+지금 당장 외우거나 만들어야 할 것을 순서대로. 각 항목에 왜 그게 1순위인지 한 줄.`,
+
+basics:
+`[할 일] 공고에 나온 설비·시스템·용어를 뽑아 "면접관이 물으면 20초 안에 답하는 카드"로 만들어라.
+- 12~18개. 공고에 실제로 적힌 것 위주로. 넓게 가지 말고 깊게.
+- 각 항목은 반드시 이 꼴로:
+  ### 용어
+  [면접 답변]
+  [핵심]
+  [꼬리질문]
+  [감점]
+- 마지막에 "모르면 바로 티 나는 기초 구멍" 목록을 따로.`,
+
+numbers:
+`[할 일] 이 지원자가 면접에서 입으로 바로 꺼내야 할 "숫자와 고유명사"를 정리해라.
+경력기술서·포트폴리오·자소서에 실제로 적힌 것만 써라. 없으면 "자료에 없음 — 본인이 채울 것"으로 남겨라.
+
+## 규모를 말하는 숫자
+표로. 열: 항목 | 숫자 | 어디서 나온 근거 | 어느 질문에서 쓸지.
+(예: 담당 용량, 설비 대수, 기간, 인원, 절감률, 사고 건수)
+
+## 내 사례 5개 — STAR 압축
+각 사례를 이 꼴로:
+### 사례 제목
+▸상황 한 줄 ▸내 역할 한 줄 ▸한 일 두 줄(설비명·수치 포함) ▸결과(숫자)
+[면접 답변] 이 사례를 40초 안에 말하는 문장
+[감점]
+
+## 절대 틀리면 안 되는 고유명사·수치 15개
+한 줄씩. 면접 전날 이것만 훑으면 되게.
+
+## 자료에 숫자가 없어서 지금 채워야 하는 것
+목록으로. 각 항목에 "어디서 확인할 수 있는지" 한 줄.`,
+
+audit:
+`[할 일] 자기소개서·경력기술서·포트폴리오를 면접관 눈으로 파고드는 질문을 만들어라. 8~10개.
+핵심은 "진짜로 해봤는가"를 가려내는 질문이다. 다음 축을 골고루 섞어라.
+1) 실제로 손으로 해본 것인가 — 절차·수치·장비명·트러블을 되묻는 질문
+2) 만들어본 적 있는가 — 설비·업무 표준이나 문서를 새로 세운 경험
+3) 숫자로 말할 수 있는가 — 성과를 정량으로 되묻는 질문
+각 항목은 이 꼴로:
+  ### Q. 질문
+  ▸면접관이 확인하려는 것 (한 줄)
+  [면접 답변]
+  [핵심]
+  [꼬리질문]
+  [감점]
+자료에 근거가 약하면 "근거 약함 — 답변 전에 사실 확인 필요"라고 그 항목 맨 앞에 표시해라.`,
+
+qa:
+`[할 일] 이 회차에서 실제로 나올 질문과 답변을 만들어라. 12개.
+- 이 회차 성격에 맞는 것만 (실무진 자리에 임원용 질문을 섞지 마라)
+- 실무 회차라면 절차문서·설비 디테일을 바로 꺼내야 하는 질문을 반드시 4개 이상 넣어라
+  (예: 직접 작성한 절차서, 분해·정비 순서, 이격거리·기준값, 인터록 조건)
+- 각 항목은 이 꼴로:
+  ### Q. 질문
+  [면접 답변]
+  [핵심]
+  [꼬리질문]
+  [감점]
+- 마지막에 "내가 되물을 질문" 5개 — 실무를 아는 티가 나는 것으로.`,
+
+deep:
+`[할 일] 이 지원자가 «꼬리질문에 파고들려 들어올 때» 버틸 수 있게, 주제별 «파고들기 카드» 를 만들어라.
+이 사람은 큰 그림은 말하는데 세부 항목을 못 대서 떨어졌다. 그 구멍을 메우는 문서다.
+
+자료(경력기술서·자소서·포트폴리오)에서 이 사람이 실제로 했다고 적은 주제를 8~10개 뽑아라.
+(예: 통합시험, 절차서 작성, 정보보호 심사 대응, 벤더 작업 통제, 성능점검, 기류 최적화 …)
+자료에 없는 주제는 만들지 마라.
+
+각 주제를 반드시 아래 다섯 칸으로 채워라. 칸을 비우지 말고, 비울 수밖에 없으면
+"자료에 없음 — 본인이 채울 것" 이라고 적어라.
+
+### 주제 이름
+▸**구성요소** — 그 문서·시스템·심사 안에 실제로 들어가는 항목 이름 5~8개를 «목록» 으로.
+   면접관이 "그 안에 뭐가 들어갑니까?" 하면 이 목록을 그대로 읊으면 된다.
+▸**단계와 산출물** — 표로. 열: 단계 | 무엇을 하는가 | 이 단계에서 나오는 문서·결과.
+▸**기준·수치** — 이 주제에서 숫자로 말해야 하는 것 (기준값, 대수, 기간, 합격 판정선).
+   모르면 "확인 필요" 로 남겨라. 지어내지 마라.
+▸**내 몫** — 자료를 근거로, 내가 «직접 손으로 한 것» 과 «지시·검토만 한 것» 을 나눠 적어라.
+   이걸 구분해서 말하는 사람이 신뢰를 얻는다.
+[면접 답변] 이 주제를 처음 물었을 때 할 20~30초 답
+[꼬리질문] 1단(구성) → 2단(절차) → 3단(내 경험) 각각 대응 한 줄
+[감점]
+
+마지막에 반드시 이 절을 붙여라.
+## 지금 당장 외워야 할 «항목 목록» 모음
+위에서 뽑은 구성요소들만 한자리에 모아, 주제별로 한 줄씩. 면접 전날 이것만 훑으면 되게.
+
+## 자료에 근거가 없어서 본인이 채워야 하는 칸
+어느 주제의 어느 칸이 비었는지 목록으로. 각 항목에 "어디를 보면 확인되는지" 한 줄.`,
+
+company:
+`[할 일] 이 회사를 지원자 입장에서 어떻게 봐야 하는지 정리해라.
+- 회사·사업의 성격과 이 직무가 조직에서 차지하는 위치
+- 지원자가 미리 알고 가면 좋은 점, 면접에서 조심할 점
+- 위에 붙여둔 후기·현직자 글이 있으면 그 내용을 근거로 삼되, 어디까지가 후기이고 어디부터가 일반론인지 구분해서 써라
+- 처우·분위기처럼 확인이 필요한 항목은 "면접에서 직접 확인할 질문"으로 바꿔 제시해라
+- 마지막에 "내가 되물을 질문 5개"를 [면접 답변] 없이 질문만.
+[중요] 너는 인터넷을 검색할 수 없다. 확실하지 않은 회사 정보를 사실처럼 단정하지 말고,
+모르는 부분은 "확인 필요"로 남겨라. 추측을 사실로 쓰면 면접에서 그대로 사고가 난다.`
+};
+function buildPrompt(key){ return headPrompt() + "\n" + (TAILS[key] || ""); }
+
+$$(".rd").forEach(el => el.onclick = () => {
+  $$(".rd").forEach(x => x.classList.toggle("on", x === el));
+  ROUND = +el.dataset.r; drawBlocks();
+});
+
+async function loadPrep(){
+  const { data } = await sb.from("iv_prep").select("*").eq("case_id", CUR.id);
+  PREP = {};
+  (data || []).forEach(p => { PREP[`${p.round}:${p.block}`] = p.content_md; });
+  drawBlocks();
+}
+function drawBlocks(){
+  $("#blocks").innerHTML = BLOCKS.map(b => {
+    const md = PREP[`${ROUND}:${b.key}`];
+    return `<details class="blk">
+      <summary><span class="dot${md ? " f" : ""}"></span>${b.name}<span class="sub">${md ? b.sub : b.sub + " · 아직 없음"}</span></summary>
+      <div class="body">
+        <div class="bar" style="margin:4px 0 10px">
+          <button class="ghost sm" data-one="${b.key}">${md ? "다시 만들기" : "이것만 만들기"}</button>
+          ${md ? `<button class="ghost sm" data-cp="${b.key}">복사</button>
+                  <button class="ghost sm" data-mine="${b.key}">여기서 질문만 답변함으로</button>` : ""}
+        </div>
+        ${md ? mdToHtml(md) : `<div class="hint">아직 없습니다.</div>`}
+      </div>
+    </details>`;
+  }).join("");
+  $$("#blocks [data-one]").forEach(b => b.onclick = e => { e.preventDefault(); genBlocks([BLOCKS.find(x => x.key === b.dataset.one)]); });
+  $$("#blocks [data-cp]").forEach(b => b.onclick = e => { e.preventDefault(); copyText(PREP[`${ROUND}:${b.dataset.cp}`]); });
+  $$("#blocks [data-mine]").forEach(b => b.onclick = e => { e.preventDefault(); harvest(PREP[`${ROUND}:${b.dataset.mine}`]); });
+}
+function copyText(t){
+  if(!t) return;
+  navigator.clipboard?.writeText(t).then(() => toast("복사했습니다."), () => say("복사에 실패했습니다.", "err"));
+}
+/* 전략 문서 안의 ### Q. 질문 + [면접 답변] 을 답변함으로 옮긴다 */
+async function harvest(md){
+  if(!md) return;
+  const blocks = md.split(/\n(?=###\s)/).filter(x => /\[면접 답변\]/.test(x));
+  const rows = blocks.map(b => {
+    const q = (b.match(/^###\s*(?:Q\.\s*)?(.+)$/m) || [])[1] || "";
+    const a = (b.match(/\[면접 답변\]([\s\S]*?)(?=\[핵심\]|\[꼬리질문\]|\[감점\]|$)/) || [])[1] || "";
+    const k = (b.match(/\[핵심\]([\s\S]*?)(?=\[꼬리질문\]|\[감점\]|$)/) || [])[1] || "";
+    const f = (b.match(/\[꼬리질문\]([\s\S]*?)(?=\[감점\]|$)/) || [])[1] || "";
+    return { case_id:CUR.id, user_id:ME.id, cat:"직무", round:ROUND,
+      q:q.trim().slice(0,300), a_md:a.trim(), keys:k.trim().slice(0,200), follow:f.trim().slice(0,400) };
+  }).filter(r => r.q && r.a_md);
+  if(!rows.length) return say("옮길 질문을 찾지 못했습니다.", "err");
+  const have = new Set(ANS.map(a => a.q));
+  const fresh = rows.filter(r => !have.has(r.q));
+  if(!fresh.length) return say("이미 다 들어 있습니다.", "ok");
+  const { error } = await sb.from("iv_answer").insert(fresh);
+  if(error) return say("실패 — " + error.message, "err");
+  say(`${fresh.length}개를 답변함으로 옮겼습니다.`, "ok"); await loadAnswers(); drawTL();
+}
+
+async function genBlocks(todo){
+  if(!DOCS.some(d => d.kind === "posting"))
+    return say("채용공고부터 넣어주세요. 공고가 있어야 나머지가 근거를 갖습니다.", "err");
+  if(!todo.length) return say("이 회차는 이미 다 채워져 있습니다.", "ok");
+  $("#gen").disabled = $("#genOne").disabled = true;
+  try{
+    for(const b of todo){
+      const note = `${ROUND}차 · ${b.name} 만드는 중… (${todo.indexOf(b)+1}/${todo.length})`;
+      say(note);
+      const md = await ask(buildPrompt(b.key), note);
+      PREP[`${ROUND}:${b.key}`] = md;
+      const { error } = await sb.from("iv_prep")
+        .upsert({ case_id:CUR.id, user_id:ME.id, round:ROUND, block:b.key, content_md:md },
+                { onConflict:"case_id,round,block" });
+      if(error) say("저장은 실패했습니다(화면에는 남습니다) — " + error.message, "err");
+      drawBlocks();
+    }
+    say("다 만들었습니다.", "ok"); drawTL();
+  }catch(e){ say("만들지 못했습니다 — " + e.message, "err"); }
+  finally{ $("#gen").disabled = $("#genOne").disabled = false; }
+}
+$("#gen").onclick    = () => genBlocks(BLOCKS);
+$("#genOne").onclick = () => genBlocks(BLOCKS.filter(b => !PREP[`${ROUND}:${b.key}`]));
+
+/* ══ 서브탭 ══ */
+const PANES = ["prep","bank","mock","term","review","brief","docs"];
+$$(".stb").forEach(b => b.onclick = () => {
+  $$(".stb").forEach(x => x.classList.toggle("on", x === b));
+  PANES.forEach(t => $("#pane-" + t).className = "pane" + (t === b.dataset.t ? "" : " hide"));
+  window.scrollTo({ top: $("#subtabs").offsetTop - 46, behavior:"smooth" });
+});
+function counts(){
+  $("#cBank").textContent = ANS.length; $("#cTerm").textContent = TERMS.length;
+  $("#cRev").textContent  = REV.length;  $("#cDoc").textContent  = DOCS.length;
+}
+
+/* ══ 전형 타임라인 ══ */
+const TLS = [
+  { key:"doc",   name:"서류",      base:40 },
+  { key:"r1",    name:"1차 실무",  base:45 },
+  { key:"r2",    name:"2차 임원",  base:55 },
+  { key:"offer", name:"처우·최종", base:85 }
+];
+const SNAME = { todo:"대기", doing:"진행 중", pass:"합격", fail:"불합격" };
+
+async function loadStages(){
+  const { data } = await sb.from("iv_stage").select("*").eq("case_id", CUR.id);
+  STG = {}; (data || []).forEach(s => STG[s.stage_key] = s);
+}
+function factorsFor(key){
+  const has = k => DOCS.some(d => d.kind === k && (d.body || "").length > 80);
+  const P = k => PREP[`1:${k}`] || PREP[`2:${k}`];
+  const termOk = TERMS.filter(t => t.mastery >= 2).length;
+  const ansOk  = ANS.filter(a => (a.a_md || "").length > 40).length;
+  const drillOk = DRL.filter(d => (d.score || 0) >= 70).length;
+  const f = (label, got, max, tip) => ({ label, pt: Math.min(Math.round(got), max), max, tip });
+
+  if(key === "doc") return [
+    f("채용공고 첨부", has("posting") ? 10 : 0, 10, "자료 탭에 공고 원문을 넣으세요"),
+    f("경력기술서·자소서", has("career") || has("cover") ? 10 : 0, 10, "내 서류가 있어야 매칭이 나옵니다"),
+    f("방향성 정리", P("direction") ? 8 : 0, 8, "전략 탭 · 방향성 블록을 만드세요"),
+    f("공고 개념 정리", P("basics") ? 5 : 0, 5, "")
+  ];
+  if(key === "r1") return [
+    f("용어 20초 답변", termOk * 0.6, 14, "용어 탭에서 '됨' 을 늘리세요 — 실무 면접은 여기서 갈립니다"),
+    f("답변 은행", ansOk * 0.5, 10, "질문·답변을 쌓을수록 오릅니다"),
+    f("실전 모의면접", drillOk * 1.2, 8, "실전 탭에서 입으로 말하는 연습을 하세요"),
+    f("서류 검증 준비", P("audit") ? 6 : 0, 6, "전략 탭 · 서류 검증 질문"),
+    f("숫자 카드", P("numbers") ? 5 : 0, 5, "숫자를 못 대면 실무진 면접에서 바로 티가 납니다"),
+    f("복기 기록", REV.length * 1.2, 4, "")
+  ];
+  if(key === "r2") return [
+    f("방향성 정리", P("direction") ? 12 : 0, 12, "임원은 '왜 우리회사' 를 봅니다"),
+    f("답변 은행", ansOk * 0.4, 8, ""),
+    f("기업 조사", has("review") ? 8 : 0, 8, "현직자 글·후기를 자료로 넣으세요"),
+    f("역질문 준비", P("company") ? 7 : 0, 7, ""),
+    f("실전 모의면접", drillOk * 1, 5, ""),
+    f("복기 기록", REV.length * 1.5, 5, "1차에서 받은 질문을 복기해두면 임원 면접이 편합니다")
+  ];
+  return [
+    f("처우 기준 정리", P("company") ? 5 : 0, 5, "희망 연봉 범위를 숫자로 정해두세요"),
+    f("복기 기록", REV.length * 1, 4, "")
+  ];
+}
+function prob(key){
+  const st = STG[key];
+  if(st?.status === "pass") return 100;
+  if(st?.status === "fail") return 0;
+  const base = TLS.find(t => t.key === key).base;
+  const add  = factorsFor(key).reduce((a, b) => a + b.pt, 0);
+  return Math.max(8, Math.min(92, Math.round(base + add)));
+}
+function cumProb(){
+  let p = 1;
+  for(const t of TLS){
+    const st = STG[t.key];
+    if(st?.status === "fail") return 0;
+    p *= st?.status === "pass" ? 1 : prob(t.key) / 100;
+  }
+  return Math.round(p * 100);
+}
+/* 준비도 = 모든 단계 요소 합계 대비 채운 비율 */
+function readiness(){
+  let got = 0, max = 0;
+  TLS.forEach(t => factorsFor(t.key).forEach(f => { got += f.pt; max += f.max; }));
+  return max ? Math.round(got / max * 100) : 0;
+}
+function drawTL(){
+  if(!CUR) return;
+  counts();
+  $("#tl").innerHTML = TLS.map(t => {
+    const st = STG[t.key]?.status || "todo", p = prob(t.key);
+    return `<button class="tn ${st} ${st === "pass" ? "done" : ""} ${SEL === t.key ? "on" : ""}" data-k="${t.key}" style="--p:${p}">
+      <span class="ring"><i>${st === "pass" ? "합격" : st === "fail" ? "탈락" : p + "%"}</i></span>
+      <span class="lb">${t.name}</span>
+      <span class="stt">${SNAME[st]}${STG[t.key]?.on_date ? " · " + STG[t.key].on_date.slice(5) : ""}</span>
+    </button>`;
+  }).join("");
+  $$("#tl .tn").forEach(b => b.onclick = () => { SEL = b.dataset.k; drawTL(); });
+  const c = cumProb();
+  $("#cumTxt").textContent = c === 0 ? "이번 건 종료" : `최종 입사까지 누적 ${c}%`;
+  drawPanel(); drawNext();
+  const r = readiness();
+  $("#rdyTxt").textContent = `준비도 ${r}%`;
+  if(CUR.readiness !== r){ CUR.readiness = r; sb.from("iv_case").update({ readiness:r }).eq("id", CUR.id).then(()=>{}); }
+}
+/* 지금 뭘 해야 하는지 — 가장 손해가 큰 빈칸 3개 */
+function drawNext(){
+  const now = STG.r2?.status === "doing" ? "r2" : STG.r1?.status === "pass" ? "r2"
+            : STG.doc?.status === "pass" ? "r1" : "doc";
+  const items = [];
+  [now, ...TLS.map(t => t.key).filter(k => k !== now)].forEach(k => {
+    factorsFor(k).forEach(f => { if(f.pt < f.max && f.tip) items.push({ ...f, gap:f.max - f.pt, stage:k }); });
+  });
+  items.sort((a, b) => b.gap - a.gap);
+  const top = items.slice(0, 3);
+  const goto = { "채용공고 첨부":"docs", "경력기술서·자소서":"docs", "기업 조사":"docs",
+    "방향성 정리":"prep", "공고 개념 정리":"prep", "서류 검증 준비":"prep", "숫자 카드":"prep",
+    "역질문 준비":"prep", "처우 기준 정리":"prep",
+    "용어 20초 답변":"term", "답변 은행":"bank", "실전 모의면접":"mock", "복기 기록":"review" };
+  $("#nextList").innerHTML = top.length ? top.map((t, i) => `
+    <button class="todo" data-go="${goto[t.label] || "prep"}">
+      <span class="num">${i+1}</span>
+      <span>${esc(t.tip)}<span class="why">${esc(t.label)} · 지금 ${t.pt}/${t.max}점</span></span>
+    </button>`).join("")
+    : `<div class="hint">빈 곳이 없습니다. 실전 탭에서 입으로 굴리세요.</div>`;
+  $$("#nextList [data-go]").forEach(b => b.onclick = () => {
+    const t = b.dataset.go;
+    $$(".stb").forEach(x => x.classList.toggle("on", x.dataset.t === t));
+    PANES.forEach(p => $("#pane-" + p).className = "pane" + (p === t ? "" : " hide"));
+    $("#subtabs").scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+}
+function drawPanel(){
+  const t = TLS.find(x => x.key === SEL), st = STG[SEL] || {}, fs = factorsFor(SEL);
+  const md = st.strategy_md;
+  $("#tlPanel").innerHTML = `<div class="pnl">
+    <h4>${t.name} · 합격 확률 ${prob(SEL)}%</h4>
+    <div class="hint" style="margin:0">기본 ${t.base}% 에 아래 준비도를 더해 계산합니다. 확정된 단계는 100%/0% 로 고정됩니다.</div>
+    <div class="sbtn">
+      ${["todo","doing","pass","fail"].map(s =>
+        `<button data-s="${s}" class="${(st.status || "todo") === s ? "on" : ""}">${SNAME[s]}</button>`).join("")}
+      <input type="date" id="sDate" value="${st.on_date || ""}" style="width:auto;padding:8px 9px;font-size:12px">
+    </div>
+    <div class="fac">${fs.map(f => `
+      <div class="fr ${f.pt >= f.max ? "full" : ""}">
+        <span class="fn">${esc(f.label)}</span>
+        <span class="fb"><i style="width:${Math.round(f.pt / f.max * 100)}%"></i></span>
+        <span class="fp">+${f.pt} / ${f.max}</span>
+      </div>${f.pt < f.max && f.tip ? `<div class="ftip">→ ${esc(f.tip)}</div>` : ""}`).join("")}</div>
+    <div class="bar" style="margin-bottom:10px">
+      <button class="sm" id="stGen">이 단계 전략 만들기</button>
+      <button class="ghost sm" id="stEdit">${md ? "직접 고치기" : "직접 쓰기"}</button>
+      ${md ? `<button class="ghost sm" id="stCopy">복사</button>` : ""}
+    </div>
+    <div class="body" id="stBody">${md ? mdToHtml(md) : `<div class="hint">아직 전략이 없습니다.</div>`}</div>
+  </div>`;
+  $$("#tlPanel .sbtn button").forEach(b => b.onclick = () => setStatus(b.dataset.s));
+  $("#sDate").onchange = e => saveStage({ on_date: e.target.value || null });
+  $("#stGen").onclick  = genStrategy;
+  if($("#stCopy")) $("#stCopy").onclick = () => copyText(md);
+  $("#stEdit").onclick = () => {
+    const cur = (STG[SEL] || {}).strategy_md || "";
+    const box = document.createElement("textarea");
+    box.value = cur; box.style.minHeight = "220px";
+    $("#stBody").replaceWith(box);
+    const bar = document.createElement("div"); bar.className = "bar"; bar.style.marginTop = "9px";
+    bar.innerHTML = `<button class="sm">저장</button>`;
+    box.after(bar);
+    bar.firstChild.onclick = async () => { await saveStage({ strategy_md: box.value }); drawTL(); };
+  };
+}
+async function saveStage(patch){
+  const row = { case_id:CUR.id, user_id:ME.id, stage_key:SEL, ...(STG[SEL] || {}), ...patch };
+  delete row.id; delete row.created_at;
+  const { data, error } = await sb.from("iv_stage")
+    .upsert(row, { onConflict:"case_id,stage_key" }).select().single();
+  if(error) return say("저장 실패 — " + error.message, "err");
+  STG[SEL] = data;
+}
+async function setStatus(s){
+  await saveStage({ status:s, on_date:(STG[SEL]||{}).on_date || new Date().toISOString().slice(0,10) });
+  let cs = "prep";
+  if(Object.values(STG).some(x => x.status === "fail")) cs = "closed";
+  else if(STG.r2?.status === "pass" || STG.offer?.status === "pass") cs = "offer";
+  else if(STG.r1?.status === "pass") cs = "round2";
+  else if(STG.doc?.status === "pass") cs = "round1";
+  await sb.from("iv_case").update({ status:cs }).eq("id", CUR.id);
+  CUR.status = cs; $("#cSub").textContent = CUR.role + " · " + (STATUS[cs] || cs);
+  drawTL();
+  if(s === "fail") say("복기 탭에 받았던 질문을 남겨두면 다음 건에서 그대로 씁니다.", "ok");
+}
+async function genStrategy(){
+  const t = TLS.find(x => x.key === SEL);
+  const weak = factorsFor(SEL).filter(f => f.pt < f.max).map(f => f.label).join(", ") || "없음";
+  $("#stGen").disabled = true; say(`${t.name} 전략 만드는 중…`);
+  try{
+    const md = await ask(headPrompt() +
+`[할 일] "${CUR.company} · ${CUR.role}" 의 [${t.name}] 단계 전략만 써라. 다른 단계 이야기는 하지 마라.
+현재 이 지원자가 아직 못 채운 준비 항목: ${weak}
+
+## 이 단계에서 떨어지는 사람의 이유 3개
+## 그래서 나는 이렇게 간다 (한 문장 포지셔닝)
+## 이 단계 필살 질문 5개와 답
+각각 ### Q. 질문 / [면접 답변] / [핵심] / [꼬리질문] / [감점] 형식으로.
+## 당일 체크리스트 6줄
+## 이 단계에서 절대 하면 안 되는 말 3개`);
+    await saveStage({ strategy_md: md }); drawTL(); say("전략을 만들었습니다.", "ok");
+  }catch(e){ say("실패 — " + e.message, "err"); }
+  finally{ const b = $("#stGen"); if(b) b.disabled = false; }
+}
+
+/* ══════════════════════════════════════════════════
+   답변함 — [이 회사] / [공통] 두 개의 서랍
+   공통에 넣어둔 답은 다음 회사에서 그대로 꺼내 쓴다.
+   ══════════════════════════════════════════════════ */
+$("#aCat").innerHTML = CATS.map(c => `<option>${c}</option>`).join("");
+const LIST = () => BANK_SCOPE === "master" ? MANS : ANS;
+
+$$("#bankScope .itb").forEach(b => b.onclick = () => {
+  $$("#bankScope .itb").forEach(x => x.classList.toggle("on", x === b));
+  BANK_SCOPE = b.dataset.s; clearForm();
+  $("#bankFormTitle").textContent = BANK_SCOPE === "master"
+    ? "공통 답변 등록 · 수정 (회사 무관)" : "이 회사 답변 등록 · 수정";
+  ["#aGen","#aPolish"].forEach(s => $(s).classList.toggle("hide", BANK_SCOPE === "master" && s === "#aGen"));
+  drawBank();
+});
+
+async function loadAnswers(){
+  const { data } = await sb.from("iv_answer").select("*")
+    .or(`case_id.eq.${CUR.id},case_id.is.null`).order("created_at", { ascending:false });
+  ANS  = (data || []).filter(a => a.case_id);
+  MANS = (data || []).filter(a => !a.case_id);
+  drawBank();
+}
+function secOf(a){
+  /* 한국어는 대략 초당 6~7자. 20~30초면 130~210자쯤 */
+  const n = (a.a_md || "").replace(/\s/g, "").length;
+  return Math.round(n / 6.5);
+}
+function drawBank(){
+  counts();
+  const q = $("#bankQ").value.trim();
+  let list = LIST().filter(a =>
+    (BANK_CAT === "전체" || a.cat === BANK_CAT) &&
+    (!BANK_ASKED || a.asked) &&
+    (!BANK_WEAK || !a.score || a.score <= 1) &&
+    (!q || (a.q + " " + (a.a_md || "") + " " + (a.keys || "")).includes(q)));
+  $("#bankList").innerHTML = list.length ? list.map(a => {
+    const s = secOf(a), warn = s > 40 ? "over" : "";
+    return `
+    <details class="qa">
+      <summary>
+        <span class="qt">${a.asked ? "🔴 " : ""}${esc(a.q)}</span>
+        <span class="tag">${esc(a.cat)}</span>
+      </summary>
+      <div class="qb">
+        <div class="ansbox ${BANK_BLUR ? "blur" : ""}">${esc(a.a_md || "아직 답변 없음")}</div>
+        <div class="bar" style="margin-bottom:6px">
+          <span class="secs" style="color:${s > 40 ? "var(--stamp)" : s < 12 ? "var(--warn)" : "var(--ok)"}">
+            말하면 약 ${s}초 ${s > 40 ? "· 너무 깁니다" : s < 12 ? "· 너무 짧습니다" : "· 적당합니다"}</span>
+        </div>
+        ${a.keys   ? `<div class="kv"><b>핵심</b><span>${esc(a.keys)}</span></div>` : ""}
+        ${a.follow ? `<div class="kv"><b>꼬리</b><span>${esc(a.follow)}</span></div>` : ""}
+        <div class="bar" style="margin-top:10px">
+          <div class="stars">${[1,2,3].map(n =>
+            `<button data-sc="${a.id}:${n}" class="${a.score >= n ? "on" : ""}">${["","막힘","애매","됨"][n]}</button>`).join("")}</div>
+          <button class="ghost sm" data-cpa="${a.id}">복사</button>
+          <button class="ghost sm" data-ed="${a.id}">수정</button>
+          <button class="ghost sm" data-mv="${a.id}">${BANK_SCOPE === "master" ? "이 회사로 가져오기" : "공통에 올리기"}</button>
+          <button class="ghost sm" data-rm="${a.id}" style="margin-left:auto">삭제</button>
+        </div>
+      </div>
+    </details>`; }).join("")
+    : `<div class="hint">${BANK_SCOPE === "master"
+        ? "공통 답변함이 비어 있습니다. 회사와 무관한 답(지원동기 틀, 강점·약점, 안전 원칙 같은 것)을 여기 모아두면 다음 회사에서 그대로 꺼내 씁니다."
+        : `아직 없습니다. 왼쪽에서 직접 넣거나 "공고 기반 예상질문 뽑기"를 누르세요.`}</div>`;
+
+  $$("#bankList .ansbox.blur").forEach(x => x.onclick = () => x.classList.remove("blur"));
+  $$("#bankList [data-sc]").forEach(b => b.onclick = async () => {
+    const [id, n] = b.dataset.sc.split(":");
+    const a = LIST().find(x => x.id === id); a.score = a.score === +n ? 0 : +n;
+    await sb.from("iv_answer").update({ score:a.score }).eq("id", id); drawBank(); drawTL();
+  });
+  $$("#bankList [data-cpa]").forEach(b => b.onclick = () => {
+    const a = LIST().find(x => x.id === b.dataset.cpa);
+    copyText(`${a.q}\n\n[면접 답변]\n${a.a_md || ""}\n\n[핵심] ${a.keys || ""}\n[꼬리질문] ${a.follow || ""}`);
+  });
+  $$("#bankList [data-rm]").forEach(b => b.onclick = async () => {
+    if(!confirm("이 답변을 지웁니다.")) return;
+    await sb.from("iv_answer").delete().eq("id", b.dataset.rm); await loadAnswers(); drawTL();
+  });
+  $$("#bankList [data-ed]").forEach(b => b.onclick = () => {
+    const a = LIST().find(x => x.id === b.dataset.ed);
+    EDIT_ID = a.id; $("#aCat").value = a.cat; $("#aRound").value = a.round;
+    $("#aQ").value = a.q; $("#aA").value = a.a_md || ""; $("#aK").value = a.keys || "";
+    $("#aF").value = a.follow || ""; $("#aAsked").checked = !!a.asked;
+    $("#aCancel").className = "ghost sm"; $("#aSave").textContent = "수정 저장"; showLen();
+    $("#aQ").scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+  $$("#bankList [data-mv]").forEach(b => b.onclick = async () => {
+    const a = LIST().find(x => x.id === b.dataset.mv);
+    const row = { case_id: BANK_SCOPE === "master" ? CUR.id : null, user_id:ME.id,
+      cat:a.cat, round:a.round, q:a.q, a_md:a.a_md, keys:a.keys, follow:a.follow, asked:false, score:a.score };
+    const target = BANK_SCOPE === "master" ? ANS : MANS;
+    if(target.some(x => x.q === a.q)) return say("이미 같은 질문이 있습니다.", "err");
+    const { error } = await sb.from("iv_answer").insert(row);
+    if(error) return say("실패 — " + error.message + "\n(공통 답변을 쓰려면 아래 SQL 한 줄을 먼저 실행해야 합니다)", "err");
+    say(BANK_SCOPE === "master" ? "이 회사 답변으로 복사했습니다." : "공통 답변함에 올렸습니다.", "ok");
+    await loadAnswers(); drawTL();
+  });
+}
+function showLen(){
+  const n = $("#aA").value.replace(/\s/g, "").length, s = Math.round(n / 6.5);
+  $("#aLen").textContent = n ? `${n}자 · 약 ${s}초` : "";
+  $("#aLen").style.color = s > 40 ? "var(--stamp)" : s >= 12 ? "var(--ok)" : "var(--ink-2)";
+}
+$("#aA").addEventListener("input", showLen);
+function clearForm(){
+  EDIT_ID = null; $("#aQ").value = $("#aA").value = $("#aK").value = $("#aF").value = "";
+  $("#aAsked").checked = false; $("#aCancel").className = "ghost sm hide"; $("#aSave").textContent = "저장";
+  showLen(); clearDraft("aq"); clearDraft("aa");
+}
+$("#aCancel").onclick = clearForm;
+$("#aSave").onclick = async () => {
+  const q = $("#aQ").value.trim();
+  if(!q) return say("질문을 넣어주세요.", "err");
+  const row = { case_id: BANK_SCOPE === "master" ? null : CUR.id, user_id:ME.id,
+    cat:$("#aCat").value, round:+$("#aRound").value,
+    q, a_md:$("#aA").value.trim(), keys:$("#aK").value.trim(), follow:$("#aF").value.trim(),
+    asked:$("#aAsked").checked };
+  const { error } = EDIT_ID
+    ? await sb.from("iv_answer").update(row).eq("id", EDIT_ID)
+    : await sb.from("iv_answer").insert(row);
+  if(error) return say("저장 실패 — " + error.message, "err");
+  clearForm(); say("저장했습니다.", "ok"); await loadAnswers(); drawTL();
+};
+$("#bankQ").oninput = drawBank;
+const toggleBtn = (sel, get, set) => $(sel).onclick = e => {
+  set(!get()); e.target.className = get() ? "sm" : "ghost sm"; drawBank();
+};
+toggleBtn("#bankAsked", () => BANK_ASKED, v => BANK_ASKED = v);
+toggleBtn("#bankWeak",  () => BANK_WEAK,  v => BANK_WEAK  = v);
+toggleBtn("#bankBlur",  () => BANK_BLUR,  v => BANK_BLUR  = v);
+$("#bankOut").onclick = () => {
+  const txt = LIST().map(a => `■ ${a.q}\n[면접 답변] ${a.a_md || ""}\n[핵심] ${a.keys || ""}\n[꼬리질문] ${a.follow || ""}\n`).join("\n");
+  if(!txt) return say("내보낼 게 없습니다.", "err");
+  const blob = new Blob([`${CUR.company} · ${CUR.role}\n\n${txt}`], { type:"text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${CUR.company}_답변_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+function chips(el, keys, onPick, cur){
+  el.innerHTML = keys.map(k => `<button class="chip${k === cur ? " on" : ""}" data-k="${k}">${k}</button>`).join("");
+  el.querySelectorAll(".chip").forEach(b => b.onclick = () => {
+    el.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b));
+    onPick(b.dataset.k);
+  });
+}
+chips($("#bankChips"), ["전체", ...CATS], k => { BANK_CAT = k; drawBank(); }, "전체");
+
+$("#aGen").onclick = async () => {
+  if(!DOCS.some(d => d.kind === "posting")) return say("채용공고부터 넣어주세요.", "err");
+  $("#aGen").disabled = true; say("예상질문 20개 만드는 중…");
+  try{
+    const arr = await askJSON(headPrompt() +
+`[할 일] 이 공고에서 실제로 나올 질문 20개를 만들어 JSON 배열로 내라.
+분류(cat)는 ${CATS.join("/")} 중 하나. 실무 절차·설비 디테일·기준값을 묻는 질문을 8개 이상 섞어라.
+각 원소: {"cat":"...","round":1 또는 2,"q":"질문","a":"20~30초 구어체 답변(200~300자)","keys":"키워드 · 키워드 · 키워드","follow":"꼬리질문 — 대응"}`);
+    const have = new Set(ANS.map(a => a.q));
+    const rows = arr.slice(0, 25).filter(x => x.q && !have.has(String(x.q))).map(x => ({
+      case_id:CUR.id, user_id:ME.id,
+      cat:CATS.includes(x.cat) ? x.cat : "기타", round:+x.round || 1,
+      q:String(x.q).slice(0, 300), a_md:String(x.a || ""),
+      keys:String(x.keys || ""), follow:String(x.follow || "") }));
+    if(!rows.length) return say("새로 넣을 게 없습니다.", "ok");
+    const { error } = await sb.from("iv_answer").insert(rows);
+    if(error) throw new Error(error.message);
+    say(`${rows.length}개를 넣었습니다.`, "ok"); await loadAnswers(); drawTL();
+  }catch(e){ say("실패 — " + e.message, "err"); }
+  finally{ $("#aGen").disabled = false; }
+};
+$("#aPolish").onclick = async () => {
+  const q = $("#aQ").value.trim(), a = $("#aA").value.trim();
+  if(!q) return say("질문을 먼저 넣어주세요.", "err");
+  $("#aPolish").disabled = true; say("20초 답변으로 다듬는 중…");
+  try{
+    const arr = await askJSON(headPrompt() +
+`[할 일] 아래 질문에 대한 답변을 면접에서 그대로 말할 수 있게 다듬어라.
+질문: ${q}
+지원자가 쓴 답: ${a || "(비어 있음 — 자료를 근거로 새로 써라)"}
+JSON 배열에 원소 1개만: [{"a":"20~30초 구어체 답변","keys":"키워드 · 키워드 · 키워드","follow":"꼬리질문 — 대응"}]`);
+    const x = arr[0] || {};
+    $("#aA").value = x.a || a; $("#aK").value = x.keys || ""; $("#aF").value = x.follow || "";
+    showLen(); say("다듬었습니다. 확인하고 저장하세요.", "ok");
+  }catch(e){ say("실패 — " + e.message, "err"); }
+  finally{ $("#aPolish").disabled = false; }
+};
+/* 여러 개 한꺼번에 — 다른 데 정리해 둔 Q/A 를 통째로 옮길 때 */
+$("#aBulk").onclick = async () => {
+  const raw = prompt(
+`질문과 답을 한꺼번에 붙여넣으세요.
+줄 단위로 이렇게 씁니다 (답은 없어도 됩니다):
+
+Q: 자기소개 부탁드립니다
+A: 저는 ...
+Q: 이직 사유가 무엇입니까
+A: ...`);
+  if(!raw) return;
+  const rows = [];
+  let cur = null;
+  raw.split("\n").forEach(l => {
+    const t = l.trim();
+    const mq = t.match(/^(Q[:.]|질문[:.]|■|▶)\s*(.+)$/);
+    const ma = t.match(/^(A[:.]|답[:.]|답변[:.])\s*(.*)$/);
+    if(mq){ if(cur) rows.push(cur); cur = { q:mq[2].trim(), a:"" }; }
+    else if(ma && cur){ cur.a += (cur.a ? "\n" : "") + ma[2]; }
+    else if(cur && t){ cur.a += (cur.a ? "\n" : "") + t; }
+  });
+  if(cur) rows.push(cur);
+  const have = new Set(LIST().map(a => a.q));
+  const ins = rows.filter(r => r.q && !have.has(r.q)).map(r => ({
+    case_id: BANK_SCOPE === "master" ? null : CUR.id, user_id:ME.id,
+    cat:"기타", round:0, q:r.q.slice(0,300), a_md:r.a.trim() }));
+  if(!ins.length) return say("읽어낸 질문이 없습니다. Q: 로 시작하는 줄이 있어야 합니다.", "err");
+  const { error } = await sb.from("iv_answer").insert(ins);
+  if(error) return say("실패 — " + error.message, "err");
+  say(`${ins.length}개를 넣었습니다.`, "ok"); await loadAnswers(); drawTL();
+};
+
+/* ══════════════════════════════════════════════════════
+   ★ 여기부터 아래는 «잘려 나가 있던» 부분을 다시 써 넣은 것이다.
+     올려 주신 파일은 $("#aBulk") 한가운데(`; aw`)에서 뚝 끊겨 있었다.
+     자바스크립트가 통째로 문법 오류가 되니 스크립트가 한 줄도 안 돌았고,
+     #gate·#listView 가 처음부터 class="hide" 라 «로그인 화면조차» 안 나왔다.
+     (화면이 텅 비어 보였던 이유가 이것이다.)
+     끊긴 자리부터 끝까지 — 용어·복기·실전·브리핑·말주머니·서브탭·시작 —
+     을 다시 채운다.
+   ══════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════
+   서브탭 — 전략 / 답변 / 실전 / 용어 / 복기 / 브리핑 / 자료
+   ══════════════════════════════════════════════════ */
+/* 서브탭 자체를 갈아 끼우는 손잡이는 위(«서브탭» 자리)에 이미 있다.
+   여기서는 «마지막에 보던 탭으로 돌아오기» 와 «브리핑을 열면 다시 그리기» 만 얹는다. */
+function showPane(t){
+  if(!PANES.includes(t)) t = "prep";
+  PANES.forEach(k => $("#pane-" + k).className = "pane" + (k === t ? "" : " hide"));
+  $$("#subtabs .stb").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  try{ localStorage.setItem("iv-pane", t); }catch(e){}
+  if(t === "brief") drawBrief();
+}
+$$("#subtabs .stb").forEach(b => b.addEventListener("click", () => {
+  try{ localStorage.setItem("iv-pane", b.dataset.t); }catch(e){}
+  if(b.dataset.t === "brief") drawBrief();
+}));
+
+/* ══════════════════════════════════════════════════
+   용어 카드 — 실무 면접은 «20초 안에 설명되나» 에서 갈린다
+   mastery: 0 모름 · 1 애매 · 2 됨
+   ══════════════════════════════════════════════════ */
+const TERR = e => /iv_term|schema cache|does not exist/i.test(e || "")
+  ? "용어 표(iv_term)가 아직 없습니다 — 같이 드린 SQL 을 먼저 돌려 주세요." : e;
+
+async function loadTerms(){
+  const { data, error } = await sb.from("iv_term").select("*")
+    .eq("case_id", CUR.id).order("created_at", { ascending:true });
+  if(error){ TERMS = []; $("#termList").innerHTML = `<div class="hint">${esc(TERR(error.message))}</div>`; return; }
+  TERMS = data || [];
+  drawTerms();
+}
+function drawTerms(){
+  counts();
+  const box = $("#termList"); if(!box) return;
+  const cats = ["전체", ...[...new Set(TERMS.map(t => t.cat || "기타"))]];
+  const chip = $("#termChips");
+  if(chip) chips(chip, [...cats, "아직 모름"], k => { TERM_F = k; drawTerms(); }, TERM_F);
+
+  const list = TERMS.filter(t =>
+    TERM_F === "전체" ? true
+    : TERM_F === "아직 모름" ? (t.mastery || 0) === 0
+    : (t.cat || "기타") === TERM_F);
+
+  box.innerHTML = list.length ? list.map(t => `
+    <div class="tc m${t.mastery || 0}" data-tc="${t.id}">
+      <div class="tt">${esc(t.term)}</div>
+      <span class="tcat">${esc(t.cat || "기타")} · ${["아직 모름","애매","됨"][t.mastery || 0]}</span>
+      <div class="ta">${mdToHtml(t.mean_md || "")}
+        ${t.keys ? `<span class="tk">${esc(t.keys)}</span>` : ""}</div>
+      <div class="mrow">
+        ${[0,1,2].map(n => `<button data-tm="${t.id}:${n}" class="${(t.mastery||0) === n ? "on" : ""}">${["모름","애매","됨"][n]}</button>`).join("")}
+        <button data-td="${t.id}">지움</button>
+      </div>
+    </div>`).join("")
+    : `<div class="hint">${TERMS.length ? "그 조건에 맞는 용어가 없습니다." :
+        "아직 없습니다. <b>공고에서 용어 뽑기</b>를 누르거나 <b>직접 추가</b>로 넣으세요."}</div>`;
+
+  /* 카드를 누르면 뜻이 열린다. 단추 줄을 누른 것은 뒤집지 않는다. */
+  $$("#termList .tc").forEach(c => c.onclick = e => {
+    if(e.target.closest(".mrow")) return;
+    c.classList.toggle("open");
+  });
+  $$("#termList [data-tm]").forEach(b => b.onclick = async () => {
+    const [id, n] = b.dataset.tm.split(":");
+    const t = TERMS.find(x => String(x.id) === id); if(!t) return;
+    t.mastery = +n;
+    const { error } = await sb.from("iv_term").update({ mastery:+n }).eq("id", id);
+    if(error) return say("저장 실패 — " + TERR(error.message), "err");
+    drawTerms(); drawTL();
+  });
+  $$("#termList [data-td]").forEach(b => b.onclick = async () => {
+    if(!confirm("이 용어를 지웁니다.")) return;
+    await sb.from("iv_term").delete().eq("id", b.dataset.td);
+    await loadTerms(); drawTL();
+  });
+}
+
+$("#tGen").onclick = async () => {
+  if(!DOCS.some(d => (d.body || "").length > 80))
+    return say("자료 탭에 채용공고부터 넣어주세요.", "err");
+  $("#tGen").disabled = true;
+  try{
+    const have = new Set(TERMS.map(t => t.term));
+    const arr = await askJSON(headPrompt() +
+`[할 일] 이 공고·직무에서 면접관이 "그게 뭡니까" 라고 물을 만한 용어 24개를 뽑아라.
+설비·절차·기준값 쪽을 우선한다. 이미 있는 것은 빼라: ${[...have].slice(0,60).join(", ") || "(없음)"}
+각 원소: {"term":"용어","cat":"전기/기계/운영/안전/일반 중 하나","mean":"면접에서 20초 안에 말할 설명 2~3문장","keys":"키워드 · 키워드 · 키워드"}`,
+      "공고에서 용어를 뽑는 중…");
+    const rows = arr.filter(x => x.term && !have.has(String(x.term).trim())).slice(0, 30).map(x => ({
+      case_id:CUR.id, user_id:ME.id,
+      term:String(x.term).trim().slice(0, 80),
+      cat:String(x.cat || "일반").slice(0, 20),
+      mean_md:String(x.mean || ""), keys:String(x.keys || ""), mastery:0 }));
+    if(!rows.length) return say("새로 넣을 용어가 없습니다.", "ok");
+    const { error } = await sb.from("iv_term").insert(rows);
+    if(error) throw new Error(TERR(error.message));
+    say(`${rows.length}개를 넣었습니다.`, "ok");
+    await loadTerms(); drawTL();
+  }catch(e){ say("실패 — " + e.message, "err"); }
+  finally{ $("#tGen").disabled = false; }
+};
+
+$("#tAdd").onclick = async () => {
+  const term = prompt("용어"); if(!term?.trim()) return;
+  const mean = prompt("20초 설명 (비워도 됩니다)") || "";
+  const { error } = await sb.from("iv_term").insert({
+    case_id:CUR.id, user_id:ME.id, term:term.trim().slice(0,80),
+    cat:"직접", mean_md:mean, keys:"", mastery:0 });
+  if(error) return say("실패 — " + TERR(error.message), "err");
+  await loadTerms(); drawTL();
+};
+
+$("#tWipe").onclick = async () => {
+  if(!TERMS.length) return say("지울 것이 없습니다.", "err");
+  const what = prompt(
+`무엇을 지울까요?
+  1 — 다 외운 것(됨)만
+  2 — 아직 모르는 것만
+  9 — 이 건의 용어 전부`, "1");
+  if(!what) return;
+  const pick = what.trim() === "1" ? TERMS.filter(t => (t.mastery||0) === 2)
+             : what.trim() === "2" ? TERMS.filter(t => (t.mastery||0) === 0)
+             : what.trim() === "9" ? TERMS : [];
+  if(!pick.length) return say("해당하는 용어가 없습니다.", "err");
+  if(!confirm(`${pick.length}개를 지웁니다.`)) return;
+  await sb.from("iv_term").delete().in("id", pick.map(t => t.id));
+  await loadTerms(); drawTL(); say("지웠습니다.", "ok");
+};
+
+/* ── 암기 훈련 — 앞면만 보고 소리 내어 말한 뒤 뒤집는다 ── */
+let DRILL_Q = [], DRILL_I = 0;
+$("#tDrill").onclick = () => {
+  const pool = TERMS.filter(t => (t.mastery || 0) < 2);
+  if(!pool.length) return say("다 외웠습니다. 훈련할 것이 없습니다.", "ok");
+  DRILL_Q = pool.slice().sort(() => Math.random() - .5);
+  DRILL_I = 0;
+  $("#drill").className = "";
+  drillDraw();
+  $("#drill").scrollIntoView({ behavior:"smooth", block:"center" });
+};
+function drillDraw(){
+  const box = $("#drill");
+  if(DRILL_I >= DRILL_Q.length){
+    box.innerHTML = `<div class="card"><div class="flip">
+      <div class="fq">한 바퀴 끝났습니다</div>
+      <div class="hint" style="margin:0">아직 «모름·애매» 로 남은 것만 다시 돌리려면 한 번 더 누르세요.</div>
+      <div class="bar" style="justify-content:center;margin-top:14px">
+        <button class="ghost sm" id="drlEnd">닫기</button></div></div></div>`;
+    $("#drlEnd").onclick = () => { $("#drill").className = "hide"; drawTerms(); };
+    return;
+  }
+  const t = DRILL_Q[DRILL_I];
+  box.innerHTML = `<div class="card">
+    <div class="prog"><i style="width:${(DRILL_I / DRILL_Q.length * 100).toFixed(1)}%"></i></div>
+    <div class="flip">
+      <div class="fq">${esc(t.term)}</div>
+      <div class="hint" style="margin:0">소리 내어 20초로 설명해 보고 아래를 누르세요.</div>
+      <div id="drlBack" class="hide" style="margin-top:14px;text-align:left">
+        ${mdToHtml(t.mean_md || "(설명이 비어 있습니다)")}
+        ${t.keys ? `<span class="tk">${esc(t.keys)}</span>` : ""}</div>
+    </div>
+    <div class="bar" style="justify-content:center">
+      <button class="sm" id="drlFlip">뒤집기</button>
+      <button class="ghost sm" id="drlNo">아직 모름</button>
+      <button class="ghost sm" id="drlMid">애매</button>
+      <button class="ghost sm" id="drlOk">됨</button>
+      <button class="ghost sm" id="drlEnd" style="margin-left:auto">그만</button>
+    </div>
+    <div class="hint" style="text-align:center">${DRILL_I + 1} / ${DRILL_Q.length}</div>
+  </div>`;
+  $("#drlFlip").onclick = () => $("#drlBack").className = "";
+  const mark = async n => {
+    t.mastery = n;
+    await sb.from("iv_term").update({ mastery:n }).eq("id", t.id);
+    DRILL_I++; drillDraw();
+  };
+  $("#drlNo").onclick  = () => mark(0);
+  $("#drlMid").onclick = () => mark(1);
+  $("#drlOk").onclick  = () => mark(2);
+  $("#drlEnd").onclick = () => { $("#drill").className = "hide"; drawTerms(); drawTL(); };
+}
+
+/* ══════════════════════════════════════════════════
+   복기 — 실제로 받았던 질문을 남긴다. 하루 지나면 절반이 사라진다.
+   ══════════════════════════════════════════════════ */
+async function loadReviews(){
+  const { data, error } = await sb.from("iv_review").select("*")
+    .eq("case_id", CUR.id).order("created_at", { ascending:false });
+  REV = error ? [] : (data || []);
+  drawRev();
+}
+function drawRev(){
+  counts();
+  const sel = $("#rStage");
+  if(sel && !sel.options.length)
+    sel.innerHTML = TLS.map(t => `<option value="${t.key}">${t.name}</option>`).join("");
+
+  const list = REV_BAD ? REV.filter(r => r.react === "bad") : REV;
+  const n = k => REV.filter(r => r.react === k).length;
+  $("#rvStat").innerHTML = `
+    <div class="n"><b>${REV.length}</b><span>기록</span></div>
+    <div class="n"><b style="color:var(--stamp)">${n("bad")}</b><span>막힘</span></div>
+    <div class="n"><b style="color:var(--warn)">${n("mid")}</b><span>애매</span></div>
+    <div class="n"><b style="color:var(--ok)">${n("good")}</b><span>잘 답함</span></div>`;
+
+  $("#rvList").innerHTML = list.length ? list.map(r => `
+    <div class="rv ${r.react}">
+      <div class="rq">${esc(r.q)}</div>
+      <div class="hint" style="margin-top:4px">${r.on_date || (r.created_at || "").slice(0,10)}
+        · ${(TLS.find(t => t.key === r.stage_key) || {}).name || "기타"}
+        · ${{good:"잘 답함",mid:"애매",bad:"막힘"}[r.react]}</div>
+      ${r.my_a ? `<div class="rm">그때 답: ${esc(r.my_a)}</div>` : ""}
+      ${r.better_md ? `<details class="qa" style="margin-top:8px">
+          <summary><span class="qt">다시 쓴 답 보기</span></summary>
+          <div class="qb">${mdToHtml(r.better_md)}</div></details>` : ""}
+      <div class="bar" style="margin-top:9px">
+        <button class="ghost sm" data-rvb="${r.id}">이 질문 다시 쓰기</button>
+        <button class="ghost sm" data-rvm="${r.id}">답변함으로 보내기</button>
+        <button class="ghost sm" data-rvd="${r.id}" style="margin-left:auto">삭제</button>
+      </div>
+    </div>`).join("")
+    : `<div class="hint">${REV.length ? "막힌 질문이 없습니다." : "아직 없습니다. 면접이 끝나면 바로 여기에 적어 두세요."}</div>`;
+
+  $$("#rvList [data-rvd]").forEach(b => b.onclick = async () => {
+    if(!confirm("이 복기를 지웁니다.")) return;
+    await sb.from("iv_review").delete().eq("id", b.dataset.rvd);
+    await loadReviews(); drawTL();
+  });
+  $$("#rvList [data-rvm]").forEach(b => b.onclick = async () => {
+    const r = REV.find(x => String(x.id) === b.dataset.rvm);
+    if(ANS.some(a => a.q === r.q)) return say("답변함에 이미 같은 질문이 있습니다.", "err");
+    const { error } = await sb.from("iv_answer").insert({
+      case_id:CUR.id, user_id:ME.id, cat:"기타",
+      round:r.stage_key === "r2" ? 2 : 1,
+      q:r.q.slice(0,300), a_md:r.better_md || r.my_a || "", asked:true,
+      score:r.react === "good" ? 3 : r.react === "mid" ? 2 : 1 });
+    if(error) return say("실패 — " + error.message, "err");
+    say("답변함으로 보냈습니다.", "ok"); await loadAnswers(); drawTL();
+  });
+  $$("#rvList [data-rvb]").forEach(b => b.onclick = async () => {
+    const r = REV.find(x => String(x.id) === b.dataset.rvb);
+    b.disabled = true;
+    try{
+      const md = await ask(headPrompt() +
+`[할 일] 아래는 이 지원자가 실제 면접에서 받았고 ${{good:"그럭저럭 답한",mid:"애매하게 답한",bad:"막혀서 못 답한"}[r.react]} 질문이다.
+질문: ${r.q}
+그때 한 답: ${r.my_a || "(못 답함)"}
+
+${FORMAT}
+왜 그때 답이 부족했는지 한 줄로 먼저 짚고, 그 다음 위 형식대로 다시 써라.`, "다시 쓰는 중…");
+      const { error } = await sb.from("iv_review").update({ better_md: md }).eq("id", r.id);
+      if(error) throw new Error(error.message);
+      say("다시 썼습니다.", "ok"); await loadReviews();
+    }catch(e){ say("실패 — " + e.message, "err"); }
+    finally{ b.disabled = false; }
+  });
+}
+$("#rSave").onclick = async () => {
+  const q = $("#rQ").value.trim();
+  if(!q) return say("받았던 질문을 넣어주세요.", "err");
+  const row = { case_id:CUR.id, user_id:ME.id, stage_key:$("#rStage").value,
+    react:$("#rReact").value, q:q.slice(0,300), my_a:$("#rA").value.trim(),
+    on_date:new Date().toISOString().slice(0,10) };
+  const { error } = await sb.from("iv_review").insert(row);
+  if(error) return say("저장 실패 — " + error.message, "err");
+  $("#rQ").value = $("#rA").value = ""; clearDraft("rq"); clearDraft("ra");
+  say("복기를 남겼습니다.", "ok");
+  await loadReviews(); drawTL(); loadAllRev();
+};
+$("#rBad").onclick = e => {
+  REV_BAD = !REV_BAD;
+  e.target.className = REV_BAD ? "sm" : "ghost sm";
+  e.target.textContent = REV_BAD ? "전부 보기" : "막힌 질문만 보기";
+  drawRev();
+};
+
+/* ══════════════════════════════════════════════════
+   실전 모의면접 — 한 문항씩, 시계를 걸고, 그 자리에서 채점
+   ══════════════════════════════════════════════════ */
+async function loadDrills(){
+  const { data, error } = await sb.from("iv_drill").select("*")
+    .eq("case_id", CUR.id).order("created_at", { ascending:false }).limit(200);
+  DRL = error ? [] : (data || []);
+  drawMockHist();
+}
+function drawMockHist(){
+  const box = $("#mockHist"); if(!box) return;
+  if(!DRL.length){
+    $("#mockStat").innerHTML = "";
+    box.innerHTML = `<div class="hint">아직 없습니다. 위에서 <b>시작</b>을 누르세요.</div>`;
+    return;
+  }
+  const avg = Math.round(DRL.reduce((s, d) => s + (d.score || 0), 0) / DRL.length);
+  const ok  = DRL.filter(d => (d.score || 0) >= 70).length;
+  const bad = DRL.filter(d => (d.score || 0) < 50).length;
+  $("#mockStat").innerHTML = `
+    <div class="n"><b>${DRL.length}</b><span>푼 문항</span></div>
+    <div class="n"><b>${avg}</b><span>평균 점수</span></div>
+    <div class="n"><b style="color:var(--ok)">${ok}</b><span>70점 이상</span></div>
+    <div class="n"><b style="color:var(--stamp)">${bad}</b><span>50점 미만</span></div>`;
+  box.innerHTML = DRL.slice(0, 40).map(d => `
+    <details class="qa">
+      <summary>
+        <span class="qt">${esc(d.q)}</span>
+        <span class="tag">${d.score ?? "-"}점</span>
+      </summary>
+      <div class="qb">
+        ${d.my_a ? `<div class="ansbox">${esc(d.my_a)}</div>` : ""}
+        ${d.fb_md ? mdToHtml(d.fb_md) : ""}
+        <div class="bar" style="margin-top:9px">
+          <button class="ghost sm" data-dq="${d.id}">답변함에 넣기</button>
+          <button class="ghost sm" data-dd="${d.id}" style="margin-left:auto">삭제</button>
+        </div>
+      </div>
+    </details>`).join("");
+  $$("#mockHist [data-dd]").forEach(b => b.onclick = async () => {
+    await sb.from("iv_drill").delete().eq("id", b.dataset.dd);
+    await loadDrills();
+  });
+  $$("#mockHist [data-dq]").forEach(b => b.onclick = async () => {
+    const d = DRL.find(x => String(x.id) === b.dataset.dq);
+    if(ANS.some(a => a.q === d.q)) return say("이미 답변함에 있습니다.", "err");
+    const { error } = await sb.from("iv_answer").insert({
+      case_id:CUR.id, user_id:ME.id, cat:"기타", round:0,
+      q:d.q.slice(0,300), a_md:d.my_a || "",
+      score:(d.score || 0) >= 70 ? 3 : (d.score || 0) >= 50 ? 2 : 1 });
+    if(error) return say("실패 — " + error.message, "err");
+    say("답변함에 넣었습니다.", "ok"); await loadAnswers(); drawTL();
+  });
+}
+
+/* 비슷한 직무 · 다른 회사에서 이미 쌓아 둔 질문 — 회사가 달라도 묻는 것은 겹친다 */
+let NEAR = [];
+async function loadNear(){
+  NEAR = [];
+  if(!CUR) return;
+  const key = (CUR.role || "").replace(/\s/g, "").slice(0, 4);
+  const near = CASES.filter(c => c.id !== CUR.id &&
+    (!key || (c.role || "").replace(/\s/g, "").includes(key)));
+  if(!near.length) return;
+  const { data } = await sb.from("iv_answer").select("*")
+    .in("case_id", near.map(c => c.id)).limit(300);
+  NEAR = (data || []).map(a => ({ ...a,
+    _co: (CASES.find(c => c.id === a.case_id) || {}).company || "다른 건" }));
+}
+
+let MOCK_SRC = "all";
+$$("#mockSrc .chip").forEach(b => b.onclick = () => {
+  $$("#mockSrc .chip").forEach(x => x.classList.toggle("on", x === b));
+  MOCK_SRC = b.dataset.s;
+});
+
+const BASEQ = [
+  "간단히 자기소개 부탁드립니다.",
+  "우리 회사에 지원한 이유가 무엇입니까?",
+  "이직(또는 지원) 사유를 말씀해 주세요.",
+  "본인의 강점과 약점을 하나씩 말씀해 주세요.",
+  "가장 어려웠던 문제를 어떻게 해결했는지 말씀해 주세요.",
+  "동료와 의견이 부딪혔을 때 어떻게 하십니까?",
+  "교대·야간 근무나 비상 호출이 가능하십니까?",
+  "희망 연봉과 입사 가능일을 말씀해 주세요.",
+  "5년 뒤 본인의 모습을 어떻게 그리고 계십니까?",
+  "마지막으로 궁금한 점이 있으십니까?"
+];
+
+function mockPool(){
+  const R = +$("#mockR").value;
+  const byRound = a => !R || !a.round || a.round === R;
+  if(MOCK_SRC === "base")
+    return BASEQ.map(q => ({ q, _from:"기본" }));
+  if(MOCK_SRC === "term")
+    return TERMS.filter(t => (t.mastery || 0) < 2)
+      .map(t => ({ q:`${t.term} — 20초 안에 설명해 보세요.`, ref:t.mean_md, _from:"용어" }));
+  if(MOCK_SRC === "bad")
+    return REV.filter(r => r.react !== "good")
+      .map(r => ({ q:r.q, ref:r.better_md || r.my_a, _from:"복기" }));
+  if(MOCK_SRC === "weak")
+    return [...ANS, ...MANS].filter(a => byRound(a) && (!a.score || a.score <= 1))
+      .map(a => ({ q:a.q, ref:a.a_md, _from:"약한 답변" }));
+  if(MOCK_SRC === "near")
+    return NEAR.map(a => ({ q:a.q, ref:a.a_md, _from:a._co }));
+  /* all */
+  return [
+    ...[...ANS, ...MANS].filter(byRound).map(a => ({ q:a.q, ref:a.a_md, _from:"답변함" })),
+    ...REV.filter(r => r.react !== "good").map(r => ({ q:r.q, ref:r.my_a, _from:"복기" })),
+    ...TERMS.filter(t => (t.mastery || 0) < 2).map(t => ({ q:`${t.term} — 20초 안에 설명해 보세요.`, ref:t.mean_md, _from:"용어" })),
+    ...BASEQ.map(q => ({ q, _from:"기본" }))
+  ];
+}
+
+let MQ = [], MI = 0, MTIMER = null, MSEC = 0, MREC = null, MCHASE = 0;
+
+$("#mockGo").onclick = async () => {
+  const n = +$("#mockN").value;
+  let pool = mockPool();
+
+  if(MOCK_SRC === "ai"){
+    $("#mockGo").disabled = true;
+    try{
+      const arr = await askJSON(headPrompt() +
+`[할 일] 지금 이 자리에서 물을 면접 질문 ${n}개를 만들어라.
+이미 준비된 질문은 피하고, 이 지원자가 아직 안 다룬 각도로 물어라.
+각 원소: {"q":"질문 한 문장"}`, "질문을 만드는 중…");
+      pool = arr.filter(x => x.q).map(x => ({ q:String(x.q), _from:"AI" }));
+    }catch(e){ say("실패 — " + e.message, "err"); return; }
+    finally{ $("#mockGo").disabled = false; }
+  }
+
+  /* 같은 질문이 두 번 나오지 않게 */
+  const seen = new Set();
+  pool = pool.filter(x => x.q && !seen.has(x.q) && seen.add(x.q));
+  if(!pool.length) return say("그 범위에 낼 질문이 없습니다. 범위를 바꾸거나 답변·용어를 먼저 쌓으세요.", "err");
+
+  MQ = pool.sort(() => Math.random() - .5).slice(0, n);
+  MI = 0; MCHASE = +$("#mockChase").value;
+  $("#mockSetup").className = "card hide";
+  $("#mockRun").className = "";
+  mockDraw();
+};
+
+function mockDraw(){
+  clearInterval(MTIMER); MTIMER = null;
+  stopRec();
+  const box = $("#mockRun");
+  if(MI >= MQ.length){
+    const done = MQ.filter(x => x._score != null);
+    const avg = done.length ? Math.round(done.reduce((s, x) => s + x._score, 0) / done.length) : 0;
+    box.innerHTML = `<div class="mock">
+      <div class="scoreband ${avg >= 70 ? "hi" : avg >= 50 ? "mid" : "lo"}">
+        <b>${avg}</b><span>${done.length}문항 평균입니다.<br>
+        50점 아래는 «아는데 입에 안 붙은» 것입니다 — 답변함에서 그 답만 소리 내어 세 번 읽으세요.</span></div>
+      <div class="bar"><button id="mkAgain">한 판 더</button>
+        <button class="ghost sm" id="mkOut">끝내기</button></div></div>`;
+    $("#mkAgain").onclick = () => { $("#mockRun").className = "hide"; $("#mockSetup").className = "card"; };
+    $("#mkOut").onclick = () => { $("#mockRun").className = "hide"; $("#mockSetup").className = "card"; loadDrills(); };
+    loadDrills();
+    return;
+  }
+
+  const cur = MQ[MI];
+  const lim = +$("#mockT").value;
+  MSEC = 0;
+  box.innerHTML = `<div class="mock">
+    <div class="prog"><i style="width:${(MI / MQ.length * 100).toFixed(1)}%"></i></div>
+    <div class="mmeta">${MI + 1} / ${MQ.length} · ${esc(cur._from || "")}${cur._chase ? " · 꼬리질문" : ""}</div>
+    <div class="mq">${esc(cur.q)}</div>
+    <div class="clock" id="mkClock">
+      <div class="cring" style="--p:0"><i id="mkSec">0</i></div>
+      <div class="ctxt">제한 ${lim}초. 시계를 보지 말고 <b>소리 내어</b> 답하세요.<br>
+        마이크를 켜면 말한 것이 아래 칸에 그대로 적힙니다.</div>
+    </div>
+    <button class="mic" id="mkMic">🎤 마이크로 답하기</button>
+    <textarea id="mkA" style="min-height:96px;margin-top:10px"
+      placeholder="마이크가 안 되면 여기에 직접 적어도 됩니다."></textarea>
+    <div class="bar" style="margin-top:10px">
+      <button class="sm" id="mkGrade">채점받기</button>
+      <button class="ghost sm" id="mkSkip">모르겠음 · 넘기기</button>
+      <button class="ghost sm" id="mkQuit" style="margin-left:auto">그만</button>
+    </div>
+    <div id="mkFb"></div>
+  </div>`;
+
+  MTIMER = setInterval(() => {
+    MSEC++;
+    const p = Math.min(100, MSEC / lim * 100);
+    const c = $("#mkClock"); if(!c) return clearInterval(MTIMER);
+    c.querySelector(".cring").style.setProperty("--p", p);
+    $("#mkSec").textContent = MSEC;
+    c.className = "clock" + (MSEC > lim ? " over" : MSEC > lim * .75 ? " warn" : "");
+  }, 1000);
+
+  $("#mkMic").onclick = toggleRec;
+  $("#mkSkip").onclick = () => { MI++; mockDraw(); };
+  $("#mkQuit").onclick = () => { MI = MQ.length; mockDraw(); };
+  $("#mkGrade").onclick = () => gradeOne(cur, lim);
+  autoGrow($("#mkA"));
+}
+
+/* ── 마이크 — 되는 기기에서만. 안 되면 조용히 손으로 적게 둔다 ── */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+$("#micHint").textContent = SR
+  ? "이 기기는 마이크 받아쓰기가 됩니다. (크롬 계열에서 가장 잘 됩니다)"
+  : "이 브라우저는 받아쓰기를 지원하지 않습니다 — 소리 내어 답한 뒤 요지만 손으로 적으세요.";
+
+function stopRec(){
+  if(MREC){ try{ MREC.stop(); }catch(e){} MREC = null; }
+  const b = $("#mkMic"); if(b) b.className = "mic";
+}
+function toggleRec(){
+  const btn = $("#mkMic");
+  if(MREC) return stopRec();
+  if(!SR) return say("이 브라우저는 받아쓰기를 지원하지 않습니다. 아래 칸에 적어 주세요.", "err");
+  MREC = new SR();
+  MREC.lang = "ko-KR"; MREC.continuous = true; MREC.interimResults = true;
+  let fixed = $("#mkA").value;
+  MREC.onresult = e => {
+    let live = "";
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) fixed += t; else live += t;
+    }
+    $("#mkA").value = (fixed + live).trim();
+  };
+  MREC.onerror = () => { stopRec(); say("마이크를 쓰지 못했습니다. 아래 칸에 적어 주세요.", "err"); };
+  MREC.onend = () => { if(MREC) stopRec(); };
+  try{ MREC.start(); btn.className = "mic rec"; btn.textContent = "■ 멈추기"; }
+  catch(e){ stopRec(); }
+}
+
+async function gradeOne(cur, lim){
+  const my = $("#mkA").value.trim();
+  if(!my) return say("답을 적거나 마이크로 말한 뒤 눌러 주세요.", "err");
+  clearInterval(MTIMER); stopRec();
+  const took = MSEC;
+  $("#mkGrade").disabled = true;
+  $("#mkFb").innerHTML = `<div class="hint">채점하는 중…</div>`;
+  try{
+    const arr = await askJSON(headPrompt() +
+`[할 일] 아래는 모의면접이다. 면접관의 눈으로 냉정하게 채점하라.
+질문: ${cur.q}
+지원자가 말한 답(받아쓰기라 오탈자가 있을 수 있다): ${my}
+말한 시간: ${took}초 (제한 ${lim}초)
+${cur.ref ? "참고 — 이 지원자가 준비해 둔 답: " + String(cur.ref).slice(0, 600) : ""}
+
+JSON 배열에 원소 1개만:
+[{"score":0~100 정수,
+  "good":"살릴 것 한 줄",
+  "bad":"이대로면 감점되는 것 한 줄",
+  "better":"그대로 입 밖으로 낼 20~30초 고친 답",
+  "chase":"이 답을 들은 면접관이 바로 파고들 꼬리질문 한 문장"}]`, "채점하는 중…");
+    const r = arr[0] || {};
+    const sc = Math.max(0, Math.min(100, Math.round(+r.score || 0)));
+    cur._score = sc;
+
+    $("#mkFb").innerHTML = `
+      <div class="scoreband ${sc >= 70 ? "hi" : sc >= 50 ? "mid" : "lo"}" style="margin-top:12px">
+        <b>${sc}</b><span>${took}초 만에 말했습니다.
+        ${took > lim ? "제한을 넘겼습니다 — 실제 면접에서는 잘립니다." :
+          took < lim * .35 ? "너무 짧습니다 — 근거를 한 겹 더 붙이세요." : "길이는 적당합니다."}</span></div>
+      <div class="kv"><b>살릴 것</b><span>${esc(r.good || "")}</span></div>
+      <div class="kv"><b>감점</b><span>${esc(r.bad || "")}</span></div>
+      <div class="ansbox" style="margin-top:9px">${esc(r.better || "")}</div>
+      <div class="bar" style="margin-top:10px">
+        <button class="sm" id="mkNext">다음 질문</button>
+        ${r.chase && MCHASE ? `<button class="ghost sm" id="mkChase">꼬리질문 받기</button>` : ""}
+        <button class="ghost sm" id="mkKeep">이 고친 답 저장</button>
+      </div>`;
+
+    await sb.from("iv_drill").insert({
+      case_id:CUR.id, user_id:ME.id, q:cur.q.slice(0,300), my_a:my, score:sc,
+      fb_md:`**살릴 것** ${r.good || ""}\n\n**감점** ${r.bad || ""}\n\n**고친 답**\n${r.better || ""}`
+    }).then(({ error }) => { if(error) console.warn(error.message); });
+
+    $("#mkNext").onclick = () => { MI++; mockDraw(); };
+    $("#mkKeep").onclick = async () => {
+      if(ANS.some(a => a.q === cur.q)) return say("답변함에 이미 있습니다.", "err");
+      await sb.from("iv_answer").insert({ case_id:CUR.id, user_id:ME.id, cat:"기타",
+        round:0, q:cur.q.slice(0,300), a_md:r.better || "",
+        score:sc >= 70 ? 3 : sc >= 50 ? 2 : 1 });
+      say("답변함에 넣었습니다.", "ok"); await loadAnswers(); drawTL();
+    };
+    const ch = $("#mkChase");
+    if(ch) ch.onclick = () => {
+      const depth = (cur._depth || 0) + 1;
+      if(depth > MCHASE) return say("추격은 여기까지입니다.", "ok");
+      MQ.splice(MI + 1, 0, { q:r.chase, ref:r.better, _from:cur._from, _chase:true, _depth:depth });
+      MI++; mockDraw();
+    };
+  }catch(e){
+    $("#mkFb").innerHTML = `<div class="hint" style="color:var(--stamp)">채점하지 못했습니다 — ${esc(e.message)}</div>`;
+  }finally{
+    const g = $("#mkGrade"); if(g) g.disabled = false;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   브리핑 — 전날 밤과 대기실에서 이것만 본다
+   ══════════════════════════════════════════════════ */
+const briefKey = () => "iv-brief-" + (CUR ? CUR.id : "x");
+function drawBrief(){
+  const box = $("#brBody"); if(!box || !CUR) return;
+  /* 표에 brief_md 칸이 없어도 브리핑이 사라지지 않게 이 기기에도 남겨 둔다 */
+  let md = (STG[SEL] || {}).brief_md || CUR._brief;
+  if(!md){ try{ md = localStorage.getItem(briefKey()) || ""; }catch(e){} }
+  if(!md){
+    box.innerHTML = `<div class="hint">아직 없습니다. 위의 <b>브리핑 만들기</b>를 누르세요.
+      지금까지 쌓인 답변·용어·복기를 근거로 한 장으로 뽑습니다.</div>`;
+    return;
+  }
+  box.innerHTML = `<h1 class="print-only">${esc(CUR.company)} · ${esc(CUR.role)}</h1>` + mdToHtml(md);
+}
+$("#brGen").onclick = async () => {
+  const strong = ANS.filter(a => a.score >= 3).slice(0, 10).map(a => a.q);
+  $("#brGen").disabled = true;
+  try{
+    const md = await ask(headPrompt() + reviewText() + weakText() +
+`[할 일] "${CUR.company} · ${CUR.role}" 면접 전날 밤에 볼 «한 장» 을 써라.
+이미 잘 되는 것: ${strong.join(" / ") || "아직 없음"}
+길게 쓰지 마라. 대기실에서 3분 안에 훑을 분량이다.
+
+## 한 문장 포지셔닝
+## 반드시 꺼낼 내 무기 3개 (각각 한 줄 근거까지)
+## 나올 질문 7개 — 질문 / 첫 한 문장만
+## 아직 약한 것 — 여기 물으면 이렇게 넘긴다 (3개)
+## 내가 물을 역질문 3개
+## 당일 아침 체크 6줄`, "브리핑을 쓰는 중…");
+    CUR._brief = md;
+    try{ localStorage.setItem(briefKey(), md); }catch(e){}
+    /* iv_stage 에 brief_md 칸이 없는 경우가 있어 저장 실패는 조용히 넘긴다 —
+       화면과 이 기기에는 이미 남아 있다. */
+    try{ await saveStage({ brief_md: md }); }catch(e){}
+    drawBrief(); say("브리핑을 만들었습니다.", "ok");
+  }catch(e){ say("실패 — " + e.message, "err"); }
+  finally{ $("#brGen").disabled = false; }
+};
+$("#brPrint").onclick = () => window.print();
+$("#brCopy").onclick = () => copyText($("#brBody").innerText || "");
+
+/* ══════════════════════════════════════════════════
+   목록 화면 — 말주머니와 단계별로 생각할 것
+   ══════════════════════════════════════════════════ */
+const SELF_LINES = [
+  "떨리는 건 준비가 부족해서가 아니라 그만큼 원해서다.",
+  "면접관도 오늘 처음 보는 사람이다. 내가 아는 것을 말하면 된다.",
+  "모르는 걸 모른다고 말하는 사람이 제일 위험하지 않다.",
+  "여기 떨어져도 내 경력은 하나도 줄지 않는다.",
+  "나는 현장에서 실제로 돌려 본 사람이다. 책으로만 본 사람과 다르다.",
+  "한 문장만 잘 말하자. 나머지는 따라온다.",
+  "지금 긴장한 건 몸이 준비되고 있다는 뜻이다.",
+  "말이 꼬이면 잠깐 멈춰도 된다. 침묵 2초는 아무도 세지 않는다.",
+  "오늘의 나는 어제보다 한 판 더 돌려 본 나다.",
+  "합격은 운이지만, 준비는 내 것이다.",
+  "면접은 심문이 아니라 대화다.",
+  "내 경험은 내가 제일 잘 안다. 그대로 말하면 된다."
+];
+const QUOTE_LINES = [
+  "준비된 자에게 기회가 온다 — 루이 파스퇴르",
+  "실패는 넘어지는 것이 아니라 일어나지 않는 것이다",
+  "가장 어두운 시간은 해 뜨기 직전이다",
+  "천천히 가도 좋다. 멈추지만 않으면 된다 — 공자",
+  "행운은 준비가 기회를 만났을 때 생긴다 — 세네카",
+  "할 수 있다고 믿는 사람이 결국 해낸다",
+  "오늘 걷지 않으면 내일은 뛰어야 한다",
+  "완벽을 기다리면 아무것도 시작하지 못한다",
+  "포기하지 않는 한 실패가 아니라 과정이다",
+  "고요한 바다에서는 좋은 뱃사공이 만들어지지 않는다",
+  "노력은 배신하지 않는다. 다만 시간이 걸릴 뿐이다",
+  "시작이 반이다"
+];
+const TIP_LINES = [
+  "1차 · 실무진은 «이 사람과 같이 당직 설 수 있나» 를 본다. 절차 이름을 정확히 말하라.",
+  "1차 · 숫자를 하나 붙이면 신뢰도가 달라진다. 다만 한 문장에 숫자는 둘까지.",
+  "1차 · 모르는 설비를 물으면 «다뤄 본 적은 없지만 원리는 이렇습니다» 로 이어라.",
+  "1차 · 트러블 사례는 원인 → 조치 → 재발방지 세 토막으로 끊어 말하라.",
+  "2차 · 임원은 기술을 안 본다. 오래 다닐 사람인지를 본다.",
+  "2차 · 이직 사유는 절대 전 직장을 깎아서 말하지 마라. 가고 싶은 방향으로 말하라.",
+  "2차 · 연봉은 먼저 숫자를 던지지 말고 «회사 기준에 따르되 기대는 이렇습니다» 로.",
+  "공통 · 첫 문장이 결론이어야 한다. 배경부터 깔면 중간에 잘린다.",
+  "공통 · 답이 30초를 넘어가면 면접관은 이미 다음 질문을 생각하고 있다.",
+  "공통 · 역질문 «없습니다» 는 관심 없다는 뜻으로 읽힌다. 두 개는 준비하라.",
+  "공통 · 손은 책상 위에, 시선은 질문한 사람에게. 답할 때만 잠깐 다른 면접관도 본다.",
+  "공통 · 압박 질문은 내용이 아니라 태도를 본다. 웃으며 «좋은 지적입니다» 로 받아라."
+];
+function pouch(box, out, lines, n){
+  const pick = lines.slice().sort(() => Math.random() - .5).slice(0, n || 5);
+  $(out).innerHTML = pick.map(t => `<div class="bub">${esc(t)}</div>`).join("");
+}
+let TIP_F = "전체";
+function rollTips(){
+  const src = TIP_F === "전체" ? TIP_LINES
+    : TIP_LINES.filter(t => t.startsWith(TIP_F === "1차" ? "1차" : TIP_F === "2차" ? "2차" : "공통"));
+  pouch(null, "#tipOut", src.length ? src : TIP_LINES);
+}
+$("#selfRoll").onclick  = () => pouch(null, "#selfOut",  SELF_LINES);
+$("#quoteRoll").onclick = () => pouch(null, "#quoteOut", QUOTE_LINES);
+$("#tipRoll").onclick   = rollTips;
+chips($("#selfChips"),  ["다시 뽑기"], () => pouch(null, "#selfOut",  SELF_LINES), "");
+chips($("#quoteChips"), ["다시 뽑기"], () => pouch(null, "#quoteOut", QUOTE_LINES), "");
+chips($("#tipChips"),   ["전체","1차","2차","공통"], k => { TIP_F = k; rollTips(); }, "전체");
+pouch(null, "#selfOut", SELF_LINES);
+pouch(null, "#quoteOut", QUOTE_LINES);
+rollTips();
+
+/* 단계별로 생각할 것 — 회사와 무관하게 늘 같은 이야기라 코드 안에 둔다 */
+const STAGE_TIPS = [
+  { n:1, t:"서류를 넣기 전", li:[
+    "공고의 «자격요건» 을 한 줄씩 뜯어 내 경력에서 대응되는 문장을 붙여 본다.",
+    "대응이 안 되는 항목이 셋을 넘으면 그 회사는 서류에서 걸린다 — 다른 각도가 필요하다.",
+    "경력기술서는 «무엇을 했다» 가 아니라 «무엇을 얼마나 바꿨다» 로 쓴다."]},
+  { n:2, t:"서류가 붙은 직후", li:[
+    "공고 원문·자소서·경력기술서를 이 앱 자료 탭에 넣는다. 이게 있어야 나머지가 다 돈다.",
+    "전략 탭에서 1차용 블록을 먼저 만든다.",
+    "용어 탭에서 공고 용어를 뽑아 «모름» 을 하나씩 지운다."]},
+  { n:3, t:"1차(실무) 전날", li:[
+    "실전 탭에서 «약한 것만» 으로 한 판 돌린다. 아는데 입에 안 붙은 게 드러난다.",
+    "브리핑을 만들어 한 장으로 뽑아 둔다.",
+    "설비 이름·기준값은 소리 내어 세 번 읽는다. 눈으로 읽은 건 입에서 안 나온다."]},
+  { n:4, t:"1차가 끝난 직후", li:[
+    "차 안에서, 늦어도 그날 안에 복기 탭에 받았던 질문을 적는다. 하루 지나면 절반이 사라진다.",
+    "막힌 질문은 «이 질문 다시 쓰기» 로 답을 만들어 답변함에 넣는다.",
+    "2차는 같은 질문을 다시 묻는 일이 잦다."]},
+  { n:5, t:"2차(임원) 전날", li:[
+    "기술 이야기를 줄이고 «오래 다닐 사람» 쪽으로 문장을 바꾼다.",
+    "이직 사유·연봉·근무조건 세 개는 문장으로 통째로 외운다. 여기서 흔들리면 다 무너진다.",
+    "역질문 두 개는 반드시 준비한다."]},
+  { n:6, t:"결과를 기다리며", li:[
+    "다음 건 하나를 더 열어 둔다. 한 곳만 바라보면 협상력이 사라진다.",
+    "떨어져도 복기는 남긴다 — 다음 회사에서 그대로 쓴다.",
+    "받았던 질문 모아보기는 회사를 가리지 않는다. 그게 이 앱의 진짜 자산이다."]}
+];
+function drawStages(){
+  const box = $("#stages"); if(!box) return;
+  box.innerHTML = STAGE_TIPS.map(s => `
+    <div class="stage" data-st="${s.n}">
+      <button class="sh" type="button"><span class="n">${s.n}</span>${esc(s.t)}<span class="cv">⌄</span></button>
+      <ul class="sb">${s.li.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    </div>`).join("");
+  $$("#stages .stage .sh").forEach(b => b.onclick = () => b.parentElement.classList.toggle("open"));
+}
+drawStages();
+
+/* ══════════════════════════════════════════════════
+   마무리 — 임시 저장 · 로그인 상태에 따라 화면 세우기
+   ══════════════════════════════════════════════════ */
+["#aQ","#aA","#rQ","#rA"].forEach((id, i) => bindDraft(id, ["aq","aa","rq","ra"][i]));
+["#aA","#rA","#dBody"].forEach(id => autoGrow($(id)));
+
+/* 서브탭은 마지막에 보던 자리로 돌아온다 */
+try{ showPane(localStorage.getItem("iv-pane") || "prep"); }catch(e){ showPane("prep"); }
+
+/* 다른 탭에서 로그인·로그아웃하면 여기도 따라간다.
+   supabase-js 는 처음 붙을 때도 한 번 알려 주므로, 그 한 번은 흘려보낸다. */
+let AUTH_READY = false;
+sb.auth.onAuthStateChange(() => { if(AUTH_READY) boot(); });
+
+boot().then(() => { AUTH_READY = true; }).catch(e => {
+  /* 여기서 터지면 예전처럼 화면이 텅 빈다. 무슨 일인지 눈에 보이게 적어 둔다. */
+  const g = $("#gate"); if(g) g.className = "gate";
+  say("화면을 세우지 못했습니다 — " + (e.message || e), "err");
+});
+
+</script>
+
+<!-- ══ AI 대화 상자 ══ config.js 의 AI_WORKER_URL 을 채워야 작동합니다 -->
+<script src="./ai-chat.js" defer></script>
+<script src="./ai-viewer.js" defer></script>
+<script src="./music.js" defer></script>
+<!-- DATA ISOLATION CONTRACT: interview data uses iv-/iv: namespace only. Never import practice/written mistakes. -->
+<script src="./app-enhance.js?v=228" defer></script>
+</body>
+</html>

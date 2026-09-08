@@ -1,0 +1,22 @@
+name = "gichul-ai"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# 등급별 모델 id — Anthropic 콘솔에서 지금 쓸 수 있는 id 를 확인해서 넣을 것.
+# 하나만 쓰고 싶으면 셋 다 같은 값을 넣어도 됨.
+# 셋 다 쓰고 싶지 않으면 MODEL 하나만 넣으면 됨.
+MODEL = "claude-opus-5"
+
+# 이 주소에서만 부를 수 있게 막음. 비워 두면 아무데서나 부를 수 있으니 꼭 채울 것.
+ALLOWED_ORIGINS = "https://gichul-viewer.pages.dev,https://sniper.amirbatikunari.workers.dev,http://localhost:8788"
+
+# ── 시크릿은 여기 적지 말고 명령으로 넣을 것 ──
+#   npx wrangler secret put ANTHROPIC_API_KEY     (필수)
+#   npx wrangler secret put APP_KEY               (선택)
+#
+# 배포
+#   npx wrangler deploy
+# 확인
+#   curl https://gichul-ai.<계정>.workers.dev/health
+#   curl https://gichul-ai.<계정>.workers.dev/ai/models

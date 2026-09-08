@@ -1,11 +1,6 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   공용 파일 — 원본은 sniper 저장소의 shared/ai-chat.js 입니다.
+function resolveTier(value){ const v=String(value||'').trim(); const map={fast:'빠름',balanced:'균형',medium:'균형',high:'최고급',quality:'최고급',pro:'최고급','빠름':'빠름','균형':'균형','최고급':'최고급'}; return map[v]||v||'균형'; }
 
-   ⚠ 이 파일을 «직접» 고치지 마세요.
-     shared/ai-chat.js 를 고친 뒤 tools/sync-shared.sh 를 돌리면
-     블로그와 뷰어 양쪽에 같은 내용이 복사됩니다.
-     (예전에 양쪽을 따로 고치다가 기능이 한쪽에만 들어간 적이 있습니다)
-   ═══════════════════════════════════════════════════════════════════════ */
+/* canonical shared AI source — edit shared/ai-chat.js, then run tools/sync-shared.sh */
 /* ═══════════════════════════════════════════════════════════════════════
 
    ai-chat.js — 뷰어와 블로그가 함께 쓰는 AI 대화 상자
@@ -1199,6 +1194,9 @@ const CSS = `
   justify-content:center
 }
 
+@media(max-width:720px){
+  .aic-fab{ bottom:calc(80px + env(safe-area-inset-bottom)) }
+}
 .aic-fab:active{
   transform:scale(.94)
 }
@@ -1388,7 +1386,7 @@ const CSS = `
 }
 
 .aic-bub code{
-  font:500 .9em/1.5 var(--font-m,ui-monospace);
+  font:500 .9em/1.5 var(--font-m,monospace);
   background:rgba(125,140,160,.16);
   padding:1px 5px;
   border-radius:5px
@@ -1429,7 +1427,7 @@ const CSS = `
 }
 
 .aic-meta{
-  font:500 11px/1 var(--font-m,ui-monospace);
+  font:500 11px/1 var(--font-m,monospace);
   color:var(--ink-2,#8894a5);
   padding:0 4px
 }
@@ -1608,7 +1606,7 @@ html[data-theme="dark"] .aic-err{
 }
 
 .aic-who{
-  font:600 11px/1 var(--font-m,ui-monospace);
+  font:600 11px/1 var(--font-m,monospace);
   color:var(--ink-2,#8894a5);
   max-width:120px;
   overflow:hidden;
@@ -2107,13 +2105,11 @@ function renderModelBar() {
 
     [
       "openai",
-      "GPT"
-    ],
-
-    [
-      "gemini",
-      "Gemini"
+      "Claude"
     ]
+
+    /* v202 — Gemini 탭 제거. 중계 워커가 전부 Claude 로 보내므로
+       고를 것이 없고, 이름만 남으면 헷갈린다. */
 
   ];
 
@@ -2921,6 +2917,25 @@ function esc(s) {
 }
 
 
+/* v202 — 수식 렌더.
+   ai-chat 은 여태 KaTeX 를 부르지 않아 $$ … $$ 가 글자 그대로 보였다.
+   화면(practice·index)에 KaTeX 가 이미 올라와 있으므로 그것만 불러 쓴다. */
+function aicTex(node) {
+  if (!node || !window.renderMathInElement) return;
+  try {
+    renderMathInElement(node, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$",  right: "$",  display: false },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "\\(", right: "\\)", display: false }
+      ],
+      throwOnError: false,
+      ignoredTags: ["script", "style", "textarea", "pre", "code"]
+    });
+  } catch (e) {}
+}
+
 function md(
   src
 ) {
@@ -2934,6 +2949,17 @@ function md(
       src ||
       ""
     );
+
+  /*
+    ★ 모델이 백슬래시(\) 대신 원화 기호(₩)를 써서 수식이 깨질 때가 있다
+    (한국어 자판 습관이 학습 데이터에 섞여 든 것으로 보인다). ₩ 바로 뒤에
+    실제 LaTeX 명령 이름이 붙어 있을 때만 \ 로 되돌린다 — "₩10,000"처럼
+    진짜 원화 금액은 이 명령 이름들과 안 겹치니 그대로 둔다.
+  */
+  s = s.replace(
+    /₩(times|frac|dfrac|sqrt|text|approx|cdot|theta|Theta|Omega|omega|Delta|delta|pi|mu|div|pm|le|ge|ne|angle|therefore|because|infty|sum|int|Sigma|Phi|phi|eta|lambda|rho|mathrm|overline|circ|left|right|,)/g,
+    "\\$1"
+  );
 
 
   /*
@@ -3448,9 +3474,11 @@ function bubble(
   scroll();
 
 
-  return row.querySelector(
+  const _bub = row.querySelector(
     ".aic-bub"
   );
+  aicTex(_bub);
+  return _bub;
 
 }
 
@@ -3767,6 +3795,10 @@ function buildSystem() {
 7. 질문이 짧으면 답변도 짧게 합니다.
 8. 복잡한 문제는 단계적으로 정리합니다.
 9. 한국어로 답합니다.
+10. 수식(LaTeX)을 쓸 때는 반드시 실제 백슬래시(\\) 문자로 명령을 시작한다.
+    예: \\times, \\frac, \\sqrt, \\text — 이렇게. 원화 기호(₩)를 백슬래시 대신
+    쓰지 마라 — ₩times, ₩sqrt 처럼 쓰면 수식이 전혀 안 그려진다.
+    문장 안 수식은 $…$, 따로 세우는 수식은 $$…$$ 로 감싼다.
 
 `;
 
@@ -4176,12 +4208,7 @@ async function send(
     AI 응답 자리
   */
   const meta =
-    `${
-      pick.provider ===
-        "openai"
-        ? "GPT"
-        : "Gemini"
-    } · ${pick.model}`;
+    `Claude · ${pick.model}`;
 
 
   const bub =
@@ -4532,6 +4559,11 @@ async function send(
         `;
 
     }
+
+
+    /* v202 — 흘러나오는 도중에는 수식이 반쪽이라 그리지 않고,
+       다 받은 뒤 한 번만 그린다. */
+    aicTex(bub);
 
 
     /*
@@ -5223,12 +5255,7 @@ async function openThread(
             "assistant" &&
           m.model
 
-            ? `${
-                m.provider ===
-                  "openai"
-                  ? "GPT"
-                  : "Gemini"
-              } · ${m.model}`
+            ? `Claude · ${m.model}`
 
             : null
 

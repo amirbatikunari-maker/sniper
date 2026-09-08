@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>검수 · 기출 해설 노트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb; --card:#fff; --ink:#0e1726; --mut:#5c6b84; --faint:#8494ac;
+  --line:#dce3ed; --line2:#c2cddd; --ac:#1f6feb; --acs:#e7f0fe; --sunk:#eef2f8;
+  --ok:#12946b; --draft:#c6851b; --raw:#7c8aa0; --empty:#b8c3d2; --bad:#d2453c;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0b1220; --card:#131d2e; --ink:#e4eaf3; --mut:#8798b2; --faint:#687893;
+  --line:#22304a; --line2:#33445f; --ac:#55a0ff; --acs:#152741; --sunk:#0f1827;
+  --ok:#35be8d; --draft:#e5ac45; --raw:#75849b; --empty:#3b4a63; --bad:#ff6b61;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Pretendard,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6}
+.mono,.stat{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 14px 90px}
+h1{font-size:19px;margin:0 0 3px;font-weight:700}
+.sub{color:var(--mut);font-size:13px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:11px}
+.card h2{font-size:14px;margin:0 0 11px;font-weight:700}
+label{display:block;font-size:11.5px;color:var(--mut);margin:0 0 4px}
+select,input,button,textarea{font:inherit;color:inherit}
+select,input[type=email],input[type=password],input[type=text]{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;
+  background:var(--sunk);color:var(--ink)}
+.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+button{padding:8px 13px;border-radius:7px;border:1px solid var(--line);
+  background:var(--sunk);cursor:pointer;font-weight:600;font-size:13.5px}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.danger{color:var(--bad)}
+button.sm{padding:5px 9px;font-size:12px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.btns>button{flex:none}
+.hide{display:none!important}
+.stat{display:flex;gap:5px 20px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+.stat b{color:var(--ink)}
+
+/* 격자 */
+.cov{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:7px}
+/* 전 회차 모아보기 — 회차 묶음을 세로로 쌓는 바깥 상자. 격자가 아니다. */
+.covwrap{display:block;width:100%}
+.covwrap > div{width:100%}
+.cell{border:1px solid var(--line);border-radius:5px;padding:5px 5px 4px;background:var(--sunk);
+  cursor:pointer;text-align:left}
+.cell:hover{border-color:var(--ac)}
+.cell.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--acs)}
+.cell.hascand{border-style:dashed;border-color:var(--draft)}
+.cell.isdup{opacity:.5}
+.cell.isdup .no i{color:var(--ac);font-weight:600}
+.cell .no{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut);
+  display:flex;justify-content:space-between;margin-bottom:4px}
+.cell .no i{font-style:normal;color:var(--faint);font-size:9.5px}
+.stripes{display:flex;flex-direction:column;gap:2px}
+.st{height:5px;border-radius:1.5px}
+.st.ok{background:var(--ok)}.st.draft{background:var(--draft)}
+.st.raw{background:var(--raw)}.st.empty{background:transparent;border:1px dashed var(--empty)}
+.legend{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:12px;padding-top:10px;
+  border-top:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--mut)}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:2px;flex:none}
+.sw.ok{background:var(--ok)}.sw.draft{background:var(--draft)}
+.sw.raw{background:var(--raw)}.sw.empty{background:transparent;border:1.5px dashed var(--empty)}
+
+/* 상세 */
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:11px;margin-top:4px}
+.slot{border:1px solid var(--line);border-radius:8px;padding:11px;background:var(--sunk)}
+.slot.ok{border-top:3px solid var(--ok)}
+.slot.draft{border-top:3px solid var(--draft)}
+.slot.raw{border-top:3px solid var(--raw)}
+.slot.empty{border-top:3px dashed var(--empty)}
+.slot h4{margin:0 0 8px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.slot h4 em{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--mut)}
+.shot{width:100%;height:150px;object-fit:contain;background:var(--card);
+  border:1px solid var(--line);border-radius:5px;display:block}
+.noshot{height:150px;display:grid;place-items:center;background:var(--card);
+  border:1px dashed var(--line2);border-radius:5px;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--faint)}
+.txt{max-height:150px;overflow:auto;background:var(--card);border:1px solid var(--line);
+  border-radius:5px;padding:8px;font-size:12px;white-space:pre-wrap;word-break:break-word}
+.mini{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.mini select{width:auto;flex:none;padding:4px 7px;font-size:12px}
+
+/* 후보 */
+.cands{margin-top:9px;border-top:1px dashed var(--line2);padding-top:8px}
+.cands .c{display:flex;gap:8px;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  padding:4px 0;color:var(--mut)}
+.cands img{width:52px;height:38px;object-fit:cover;border:1px solid var(--line);border-radius:3px}
+
+/* 절단선 편집기 */
+.modal{position:fixed;inset:0;background:rgba(8,14,24,.72);z-index:900;
+  display:grid;place-items:center;padding:14px}
+.sheet{background:var(--card);border-radius:12px;width:min(1000px,100%);max-height:92vh;
+  display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line2)}
+.sheet header{padding:12px 15px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px}
+.sheet header h3{margin:0;font-size:15px;font-weight:700;flex:1}
+.sheet .body{padding:14px;overflow:auto}
+.sheet footer{padding:11px 15px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.cutwrap{position:relative;background:var(--sunk);border:1px solid var(--line);
+  border-radius:7px;overflow:auto;max-height:52vh}
+.cutwrap canvas{display:block;width:100%;cursor:crosshair}
+.cutline{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--ac);cursor:ns-resize}
+.cutline b{position:absolute;right:4px;top:-9px;background:var(--ac);color:#fff;
+  font:600 10px/1 "IBM Plex Mono",monospace;padding:3px 5px;border-radius:3px}
+.segs{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+.seg{display:grid;grid-template-columns:1fr 92px 96px 62px;gap:7px;align-items:center;
+  border:1px solid var(--line);border-radius:6px;padding:7px 9px;background:var(--sunk);font-size:12.5px}
+.seg .rng{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--mut)}
+.seg select{padding:4px 6px;font-size:12px}
+@media(max-width:640px){.seg{grid-template-columns:1fr 1fr;gap:6px}}
+
+.note{font-size:12px;color:var(--mut);margin-top:9px}
+.warn{border:1px solid var(--draft);border-left:3px solid var(--draft);border-radius:0 7px 7px 0;
+  background:var(--sunk);padding:10px 12px;font-size:12.5px;margin-top:10px}
+.log{max-height:150px;overflow:auto;background:var(--sunk);border:1px solid var(--line);
+  border-radius:6px;padding:8px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.65;margin-top:10px}
+.log .ok{color:var(--ok)}.log .bad{color:var(--bad)}
+</style>
+<style>
+.subnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  max-width:1100px;margin:14px auto 0;padding:8px 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.subnav-t{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  color:var(--faint);margin-right:6px;white-space:nowrap}
+.subnav a{font-size:13px;font-weight:600;text-decoration:none;padding:7px 11px;
+  border-radius:7px;color:var(--mut);white-space:nowrap}
+.subnav a:hover{background:var(--acs);color:var(--ac)}
+.subnav a.on{background:var(--ac);color:#fff}
+</style>
+</head>
+<body>
+<div class="subnav">
+  <span class="subnav-t">자료 만들기</span>
+  <a href="./ingest.html">PDF 자동 변환</a>
+  <a href="./review.html" class="on">검수</a>
+  <a href="./explain-batch.html">해설 배치</a>
+  <a href="./storage-clean.html">저장소 정리</a>
+  <a href="./practice.html" style="margin-left:auto">← 실기뷰어</a>
+</div>
+
+<div class="wrap">
+  <h1>검수</h1>
+  <p class="sub">빈칸을 찾아 채우고, 잘못 잘린 것을 다시 자름. 문제·답·해설 세 칸을 문항마다 따로 관리함.</p>
+
+  <div class="card" id="loginCard">
+    <h2>로그인</h2>
+    <div class="row">
+      <div><label for="em">이메일</label><input id="em" type="email" autocomplete="username"></div>
+      <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="btns"><button class="pri" id="btnLogin">들어가기</button></div>
+    <p class="note" id="loginMsg"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <div class="card">
+      <div class="row">
+        <div><label for="fSub">과목</label><select id="fSub"></select></div>
+        <div><label for="fYear">연도</label><select id="fYear"></select></div>
+        <div><label for="fSess">회차</label><select id="fSess"></select></div>
+        <div style="flex:0 0 auto;min-width:0;display:flex;align-items:flex-end">
+          <button class="pri" id="btnLoad">불러오기</button>
+        </div>
+      </div>
+      <div class="btns">
+        <label style="flex:none;margin:0 4px 0 0;align-self:center">문항수
+          <input id="fUpto" type="number" min="0" max="60" value="18"
+                 style="width:56px;padding:5px 7px;margin-left:4px"></label>
+        <button id="btnFill">빈 번호 채우기</button>
+        <button id="btnFillAll">이 과목 전 회차 채우기</button>
+        <button class="pri" id="btnResync">상태 다시 맞추기</button>
+        <button id="btnCut">페이지 잘라 넣기</button>
+        <button class="pri" id="btnAutoCut">답 빈 문항 자동으로 나누기</button>
+        <button id="btnAutoStop" class="danger hide">중지</button>
+        <button id="btnPts">배점 없는 문항 채우기</button>
+        <button id="btnOrphan">회차 미상 정리</button>
+        <button id="btnOnlyEmpty">빈칸만 보기</button>
+        <button id="btnAllEmpty">전 회차 빈칸 모아보기</button>
+        <button id="btnRealOnly">기출만</button>
+        <button class="pri" id="btnTidy">이 회차 정리 (한 번에)</button>
+        <button id="btnShellDel" class="danger">빈 껍데기 지우기</button>
+        <button id="btnShellAll" class="danger">과목 전체 빈 껍데기 정리</button>
+        <button id="btnRenum" class="danger">번호 다시 매기기</button>
+      </div>
+      <p class="note" id="msg">과목·연도·회차를 고르고 «불러오기»를 누르세요.</p>
+    </div>
+
+    <div class="card hide" id="gridCard">
+      <h2 id="gridTitle">문항</h2>
+      <div class="stat" style="margin-bottom:6px">
+        <span>문제 <b id="sQ">0</b></span><span>답 <b id="sA">0</b></span>
+        <span>해설 <b id="sS">0</b></span>
+        <span>빈 껍데기 <b id="sShell">0</b>문항</span>
+        <span>배점 합 <b id="sPt">0</b></span>
+        <span>후보있음 <b id="sC">0</b></span>
+      </div>
+      <p class="note" id="diag" style="margin:0 0 10px"></p>
+      <!-- ★ v219 — «전 회차 빈칸 모아보기» 는 세 칸 중 하나라도 비면 다 끌어왔다.
+           해설이 1000문항 넘게 비어 있으니 사실상 전 문항이 뜨는 목록이 됐다.
+           어느 칸을 찾을지 고르게 한다. 기본은 문제·답 (해설은 배치로 따로 만듦). -->
+      <div id="wantBar" class="hide" style="display:flex;gap:8px;align-items:center;
+           flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:8px;
+           background:var(--soft,#f1f5f9)">
+        <span class="note" style="margin:0">어느 칸이 빈 것을 찾을까요</span>
+        <button class="sm pri" id="wantQ"   aria-pressed="true">문제 없음</button>
+        <button class="sm pri" id="wantA"   aria-pressed="true">답 없음</button>
+        <button class="sm"     id="wantSol" aria-pressed="false">해설 없음</button>
+        <span class="note" id="wantHint" style="margin:0 0 0 auto"></span>
+      </div>
+      <div class="cov" id="cov"></div>
+      <div class="legend">
+        <span><i class="sw ok"></i>ok 확정</span>
+        <span><i class="sw draft"></i>draft 검수함</span>
+        <span><i class="sw raw"></i>raw 검수 전</span>
+        <span><i class="sw empty"></i>empty 미등록</span>
+        <span>점선 테두리 = 새 후보 있음</span>
+      </div>
+    </div>
+
+    <div class="card hide" id="dupCard">
+      <h2>중복 찾기 · 합치기</h2>
+      <p class="note" style="margin-top:0">
+        오고초려·핵심빈출은 기출에서 뽑아 모은 것이라 <b>원본이 따로 있음</b>.
+        본문 글자로 짝을 찾아, <b>사본에만 있는 답·해설을 원본으로 옮기고</b> 사본에는 표시를 남김.
+        지우지는 않음 — 잘못 골랐으면 되돌릴 수 있어야 하므로.
+      </p>
+      <div class="btns" style="margin-top:0">
+        <button id="btnDupScan">중복 찾기</button>
+        <button class="pri hide" id="btnDupMerge">합치기 실행</button>
+        <button class="hide" id="btnDupUndo">표시 지우기</button>
+      </div>
+      <p class="note" id="dupMsg"></p>
+      <div class="list hide" id="dupList" style="max-height:360px"></div>
+    </div>
+
+    <div class="card hide" id="dumpCard">
+      <h2>텍스트로 뽑기</h2>
+      <p class="note" style="margin-top:0">
+        지금 보고 있는 상태를 글로 정리함. 그대로 복사해 AI 에게 붙여넣으면
+        무엇이 비었고 어디가 막혔는지 바로 읽힘.
+      </p>
+      <div class="btns" style="margin-top:0">
+        <button id="btnDump">이 회차</button>
+        <button id="btnDumpAll">과목 전체</button>
+        <button class="pri" id="btnCopy" disabled>복사</button>
+        <button id="btnDumpSave" disabled>파일로 받기</button>
+      </div>
+      <textarea id="dump" rows="14" spellcheck="false"
+        style="width:100%;margin-top:10px;padding:10px;border:1px solid var(--line);
+               border-radius:7px;background:var(--sunk);color:var(--ink);
+               font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6"
+        placeholder="«이 회차» 나 «과목 전체» 를 누르면 여기에 정리돼 나옵니다."></textarea>
+    </div>
+
+    <div class="card hide" id="detCard">
+      <h2 id="detTitle">문항</h2>
+      <div class="slots" id="slots"></div>
+      <div class="btns">
+        <button id="btnSplit">이 자리에서 쪼개기</button>
+        <button id="btnPrevEmpty">← 이전 빈칸</button>
+        <button id="btnNextEmpty">다음 빈칸 →</button>
+        <button id="btnDrop" class="danger">이 문항 지우기</button>
+      </div>
+      <div class="log hide" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 절단선 편집기 -->
+<div class="modal hide" id="cutModal">
+  <div class="sheet">
+    <header>
+      <h3>페이지 잘라 넣기</h3>
+      <button class="sm" id="cutAsk">AI로 경계 찾기</button>
+      <button class="sm" id="cutAdd">＋ 절단선</button>
+      <button class="sm" id="cutClear">선 지우기</button>
+      <button class="sm" id="cutClose">닫기</button>
+    </header>
+    <div class="body">
+      <details style="margin-bottom:10px">
+        <summary style="cursor:pointer;font-size:13px;color:var(--mut)">
+          다른 그림 파일에서 가져오기</summary>
+        <div class="row" style="margin-top:8px">
+          <div style="flex:2"><label for="cutFile">페이지 사진·스캔 고르기</label>
+            <input id="cutFile" type="file" accept="image/*"></div>
+        </div>
+      </details>
+      <p class="note" style="margin-top:0">
+        그림 위를 <b>클릭</b>하면 그 자리에 절단선이 생김. 선을 <b>끌어서</b> 옮기고,
+        선 오른쪽 <b>×</b>로 지움. 선으로 나뉜 칸마다 몇 번 문항의 어느 슬롯인지 고르면 됨.
+      </p>
+      <div class="cutwrap" id="cutWrap">
+        <canvas id="cutCv"></canvas>
+      </div>
+      <div class="segs" id="segs"></div>
+      <div class="warn">
+        번호를 <b>«앞에 이어붙이기»</b>로 두면 바로 위 칸과 한 문항으로 합쳐짐 —
+        페이지를 넘어간 문항은 이걸로 처리하면 됨.
+      </div>
+    </div>
+    <footer>
+      <button class="pri" id="cutSave">잘라서 넣기</button>
+      <span class="note" id="cutMsg" style="margin:0;align-self:center"></span>
+    </footer>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script>
+(function(){
+"use strict";
+const CFG = window.APP_CONFIG || {};
+const $ = s => document.querySelector(s);
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+const BUCKET = "qfig";
+const STATES = ["empty","raw","draft","ok"];
+const RANK = { empty:0, raw:1, draft:2, ok:3 };
+
+let ROWS = [], CUR = null, ONLY_EMPTY = false;
+let SID = 0, YEAR = 0, SESS = 0;
+/* v211 — 과목 전체를 한 번에 훑어 빈칸만 모아 보는 모드 */
+let ALL = [], MODE = "sheet";
+const isEmpty = r => ["q","a","sol"].some(k => st(r,k) === "empty");
+
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function log(m, cls){
+  const b = $("#log"); b.classList.remove("hide");
+  const d = document.createElement("div"); if(cls) d.className = cls;
+  d.textContent = m; b.appendChild(d); b.scrollTop = b.scrollHeight;
+}
+const say = (m) => { $("#msg").innerHTML = m; };
+
+/* ── 로그인 ─────────────────────────────────────── */
+async function gate(){
+  const { data } = await sb.auth.getSession();
+  if(data?.session){ $("#loginCard").classList.add("hide"); $("#main").classList.remove("hide"); return true; }
+  return false;
+}
+$("#btnLogin").addEventListener("click", async () => {
+  const email = $("#em").value.trim(), password = $("#pw").value;
+  if(!email || !password) return void ($("#loginMsg").textContent = "이메일과 비밀번호를 넣으세요.");
+  $("#btnLogin").disabled = true; $("#loginMsg").textContent = "확인 중…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("#btnLogin").disabled = false;
+  if(error) return void ($("#loginMsg").textContent = "들어가지 못했습니다 — " + error.message);
+  $("#loginMsg").textContent = ""; await gate(); await loadSubjects();
+});
+
+/* ── 회차 이름표 ────────────────────────────────────
+   PDF 한 권을 넣으면서 «회차가 없는 덩어리» 에 가짜 연도를 붙였다.
+   9301·9302·94NN·95NN·90NN 이 그것인데, 연도 목록에 숫자로만 뜨니
+   무엇인지 알 수 없고 개수만 잔뜩 늘어 보인다.
+   데이터는 그대로 두고 «보이는 이름» 만 사람 말로 바꾼다. */
+const REAL_MAX = 3000;                     /* 이보다 크면 진짜 연도가 아니다 */
+const isReal = y => +y > 0 && +y < REAL_MAX;
+
+function yearLabel(y){
+  y = +y;
+  if (isReal(y)) return y + "년";
+  if (y === 9301) return "오고초려";
+  if (y === 9302) return "핵심빈출";
+  if (y >= 9400 && y < 9500) return `단답 · 20${String(y).slice(2)}년`;
+  if (y >= 9500 && y < 9600) return `소방 · 20${String(y).slice(2)}년`;
+  if (y >= 9000 && y < 9100) return `회차 미상 ${y - 9000}`;
+  return "기타 " + y;
+}
+function sheetLabel(y, ss){
+  y = +y;
+  if (isReal(y)) return `${y}년 제${ss}회`;
+  if (y === 9301 || y === 9302) return `${yearLabel(y)} ${ss}묶음`;
+  return `${yearLabel(y)} 제${ss}회`;
+}
+
+/* ── 과목·회차 ──────────────────────────────────── */
+async function loadSubjects(){
+  const { data, error } = await sb.from("practical_subjects").select("*").order("sort_order").order("id");
+  if(error) return void say("과목을 불러오지 못했습니다 — " + esc(error.message));
+  $("#fSub").innerHTML = (data||[]).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")
+    || `<option value="">과목이 없습니다</option>`;
+  const keep = localStorage.getItem("prac:sub");
+  if(keep && (data||[]).some(s => String(s.id) === keep)) $("#fSub").value = keep;
+  await loadSheets();
+}
+$("#fSub").addEventListener("change", loadSheets);
+$("#btnRealOnly").addEventListener("click", () => {
+  ONLY_REAL = !ONLY_REAL;
+  paintYears();
+  if(ALL.length && MODE === "all") drawAll();
+  say(ONLY_REAL
+    ? "실제 기출 회차만 봅니다. 책에서 뽑은 덩어리(오고초려·핵심빈출·단답·소방)는 숨겼습니다."
+    : "책에서 뽑은 덩어리까지 전부 봅니다.");
+});
+
+async function loadSheets(){
+  const sid = +$("#fSub").value; if(!sid) return;
+  localStorage.setItem("prac:sub", String(sid));
+  /* ★ v223 — Supabase 는 한 번에 1000줄만 준다. 그런데 지금 1748문항이다.
+     연도 내림차순이라 앞쪽 1000줄이 9523·94xx·9302·9301(문제집 715) 과
+     2026~2021 로 다 차 버렸고, 2020년 이하는 아예 안 실려 왔다.
+     그래서 연도 칸에 2021년까지만 뜨고 그 아래가 통째로 사라졌다.
+     끝까지 나눠 받는다. */
+  const data = [];
+  for(let from = 0; from < 40000; from += 1000){
+    const r = await sb.from("practicals").select("year,session")
+      .eq("subject_id", sid)
+      .order("year",{ascending:false}).order("session",{ascending:false})
+      .range(from, from + 999);
+    if(r.error) return void say("회차를 불러오지 못했습니다 — " + esc(r.error.message));
+    data.push(...(r.data || []));
+    if(!r.data || r.data.length < 1000) break;
+  }
+  const years = [...new Set(data.map(r => r.year))].sort((a,b)=>b-a);
+  ALLYEARS = years;
+  paintYears();
+  fillSess(data);
+  $("#fYear").onchange = () => fillSess(data);
+}
+let ALLYEARS = [], ONLY_REAL = true;
+
+function paintYears(){
+  const list = ONLY_REAL ? ALLYEARS.filter(isReal) : ALLYEARS;
+  const keep = $("#fYear").value;
+  $("#fYear").innerHTML = list
+    .map(y => `<option value="${y}">${esc(yearLabel(y))}</option>`).join("")
+    || `<option value="">없음</option>`;
+  if(keep && list.some(y => String(y) === keep)) $("#fYear").value = keep;
+  const hidden = ALLYEARS.length - list.length;
+  const b = $("#btnRealOnly");
+  if(b){
+    /* ★ v218 — 켜졌다고 이름을 «전부 보기» 로 바꾸면, 옆의 «빈칸만 보기» 가
+       켜졌을 때 되는 «전체 보기» 와 글자가 거의 같아 뭐가 뭔지 알 수 없었다.
+       이름은 늘 같게 두고, 켜짐만 ✓ 와 색으로 알린다. */
+    b.textContent = ONLY_REAL ? `✓ 기출만 (${hidden}개 숨김)` : "기출만 보기";
+    b.classList.toggle("pri", ONLY_REAL);
+    b.setAttribute("aria-pressed", ONLY_REAL ? "true" : "false");
+    b.title = ONLY_REAL
+      ? "지금은 실제 기출만 — 누르면 오고초려·핵심빈출·단답·소방까지 전부 보임"
+      : "지금은 전부 보임 — 누르면 실제 기출만";
+  }
+}
+
+function fillSess(rows){
+  const y = +$("#fYear").value;
+  const ss = [...new Set(rows.filter(r => r.year === y).map(r => r.session))].sort((a,b)=>a-b);
+  $("#fSess").innerHTML = ss.map(s => `<option value="${s}">제${s}회</option>`).join("") || `<option value="">없음</option>`;
+}
+
+/* ── 불러오기 ───────────────────────────────────── */
+async function load(){
+  SID = +$("#fSub").value; YEAR = +$("#fYear").value; SESS = +$("#fSess").value;
+  if(!SID || !YEAR || !SESS) return void say("과목·연도·회차를 모두 고르세요.");
+  say("불러오는 중…");
+  const { data, error } = await sb.from("practicals").select("*")
+    .eq("subject_id", SID).eq("year", YEAR).eq("session", SESS).order("no");
+  if(error){
+    return void say(/st_q|column|schema cache/i.test(error.message)
+      ? "칸이 아직 없습니다 — <b>supabase-review.sql</b> 을 먼저 한 번 돌려 주세요."
+      : "불러오지 못했습니다 — " + esc(error.message));
+  }
+  ROWS = data || [];
+  say(`${YEAR}년 ${SESS}회 · ${ROWS.length}문항`);
+  $("#gridCard").classList.remove("hide");
+  $("#dumpCard").classList.remove("hide");
+  $("#dupCard").classList.remove("hide");
+  $("#gridTitle").textContent = sheetLabel(YEAR, SESS);
+  MODE = "sheet";
+  $("#wantBar").classList.add("hide");   /* 고르개는 «모아보기» 에서만 쓴다 */
+  draw();
+  if(CUR){ const f = ROWS.find(r => r.no === CUR.no); CUR = f || null; }
+  if(CUR) detail(CUR.no); else $("#detCard").classList.add("hide");
+}
+$("#btnLoad").addEventListener("click", load);
+
+/* 상태 읽기 — SQL 을 아직 안 돌린 자료도 보이게 추정값을 씀 */
+function st(r, k){
+  /* 눈에 보이는 자료가 실제로 있는가 */
+  const has = k === "q" ? !!(r.q_url || r.q_text || r.q_md)
+            : k === "a" ? !!(r.a_url || r.a_text || r.a_md)
+            :             !!r.easy_md;
+  const v = r["st_" + k];
+  if(v && RANK[v] !== undefined){
+    /* ★ v217 — 자료는 들어 있는데 상태 칸만 «empty» 로 남아 있는 경우.
+       PDF 자동변환이 올릴 때 st_q·st_a 를 안 적어서, 칸의 기본값
+       «empty» 가 그대로 남은 것이다. 그래서 1000문항 넘게 그림·글이
+       멀쩡히 있는데도 «빈 껍데기» 로 세어졌다.
+       상태 칸은 사람이 붙이는 꼬리표일 뿐이고, 진짜는 자료다.
+       둘이 어긋나면 자료를 믿는다. */
+    if(v === "empty" && has) return "raw";
+    return v;
+  }
+  return has ? "draft" : "empty";
+}
+const candOf = r => Array.isArray(r.cand) ? r.cand : [];
+
+/* ── 격자 ───────────────────────────────────────── */
+function draw(){
+  if(MODE === "all") return void drawAll();
+  const box = $("#cov");
+  box.classList.add("cov");            /* 한 회차 = #cov 가 곧 격자 */
+  box.classList.remove("covwrap");
+  const list = ONLY_EMPTY
+    ? ROWS.filter(r => ["q","a","sol"].some(k => st(r,k) === "empty"))
+    : ROWS;
+  box.innerHTML = list.map(r => {
+    const S = ["q","a","sol"].map(k => st(r,k));
+    const cand = candOf(r).length ? " hascand" : "";
+    const on = CUR && CUR.no === r.no ? " on" : "";
+    const dup = r.dup_of ? " isdup" : "";
+    return `<button class="cell${cand}${on}${dup}" data-no="${r.no}"${r.dup_of ? ' title="다른 문항의 사본"' : ""}>
+      <div class="no"><span>${String(r.no).padStart(2,"0")}</span><i>${r.dup_of ? "사본" : (r.points ? r.points+"점" : "")}</i></div>
+      <div class="stripes">${S.map(s => `<div class="st ${s}"></div>`).join("")}</div>
+    </button>`;
+  }).join("") || `<p class="note">보여 줄 문항이 없습니다.</p>`;
+  box.querySelectorAll(".cell").forEach(b =>
+    b.addEventListener("click", () => detail(+b.dataset.no)));
+
+  stats(ROWS, `${YEAR}년 제${SESS}회`);
+}
+
+/* 껍데기 = 세 칸이 다 빈 문항. «자료가 없는 자리» 와 «자료가 일부 있는 자리» 는
+   할 일이 완전히 다르므로 따로 센다. */
+const isShell = r => ["q","a","sol"].every(k => st(r,k) === "empty");
+/* «진짜로 아무것도 없는 칸» — 상태 꼬리표가 아니라 실제 자료를 본다.
+   꼬리표가 어긋나 있어도 자료가 있는 문항은 절대 안 지우게 하는 안전줄. */
+const isBare = r => !r.q_url && !r.q_text && !r.q_md
+                 && !r.a_url && !r.a_text && !r.a_md && !r.easy_md;
+
+function stats(rows0, label, whole){
+  /* 사본은 세지 않는다 — 원본에서 한 번만 센다.
+     ★ v221 — 전체 모드에서는 «기출만» 단추도 함께 따른다. 안 그러면
+     기출만 보고 있는데 통계에는 문제집 715문항이 섞여 숫자가 안 맞았다. */
+  const rows = rows0.filter(r => !r.dup_of && (!whole || !ONLY_REAL || isReal(r.year)));
+  let q=0,a=0,so=0,c=0,shell=0,pt=0;
+  rows.forEach(r => {
+    if(st(r,"q")!=="empty") q++;
+    if(st(r,"a")!=="empty") a++;
+    if(st(r,"sol")!=="empty") so++;
+    if(candOf(r).length) c++;
+    if(isShell(r) && isBare(r)) shell++;
+    pt += Number(r.points) || 0;
+  });
+  const n = rows.length;
+  $("#sQ").textContent=q+"/"+n; $("#sA").textContent=a+"/"+n;
+  $("#sS").textContent=so+"/"+n; $("#sShell").textContent=shell;
+  $("#sPt").textContent=pt; $("#sC").textContent=c;
+  $("#diag").innerHTML = whole ? diagnoseAll(rows) : diagnose(n, shell, pt);
+  return { n, q, a, so, c, shell, pt };
+}
+
+/* 배점 합이 100 이면 그 회차는 «다 있는데 번호만 밀린» 것이다.
+   실기는 회차당 배점 총합이 100 점이므로 이게 가장 확실한 잣대다. */
+/* ★ v221 — 전체 모드에서 100점 잣대를 쓰면 안 된다.
+   57회차 배점을 다 더하면 5265점이 나오는데, 여기에 «100점이어야 함» 을 대면
+   «-5165점어치가 없다» 는 말이 안 되는 경고가 뜬다. 실제로 그렇게 떴다.
+   100점은 «한 회차» 의 잣대다. 전체를 볼 때는 회차 단위로 세어 준다. */
+function diagnoseAll(rows){
+  const by = new Map();
+  rows.forEach(r => {
+    if(!isReal(r.year)) return;
+    const k = r.year + "-" + r.session;
+    const o = by.get(k) || { pt:0, shell:0 };
+    o.pt += Number(r.points) || 0;
+    if(isShell(r) && isBare(r)) o.shell++;
+    by.set(k, o);
+  });
+  if(!by.size)
+    return "책에서 뽑은 덩어리만 보고 있습니다 — 배점 잣대를 쓰지 않습니다.";
+  let ok = 0, short = 0, lack = 0, shells = 0;
+  by.forEach(o => {
+    shells += o.shell;
+    if(o.pt >= 96 && o.pt <= 104) ok++;
+    else if(o.pt > 0){ short++; lack += 100 - o.pt; }
+  });
+  return `기출 <b>${by.size}회차</b> · 배점 100점에 맞는 회차 <b style="color:var(--ok)">${ok}개</b>`
+    + (short ? ` · 모자란 회차 <b>${short}개</b> (다 합쳐 ${lack}점어치)` : "")
+    + (shells ? ` · 지울 빈 자리 <b>${shells}문항</b>` : "")
+    + `<br><span class="note" style="margin:0">위 «배점 합»은 회차별 합계를 다 더한 값입니다 — `
+    + `100점 잣대는 회차를 하나 골랐을 때만 씁니다.</span>`;
+}
+
+function diagnose(n, shell, pt){
+  if(!n) return "";
+  /* 배점 100점 잣대는 진짜 기출 회차에만 해당한다.
+     책에서 뽑은 덩어리(오고초려·핵심빈출·단답)는 100점짜리가 아니라
+     그대로 재면 늘 «미달» 로 나와 헷갈린다. */
+  if(!isReal(YEAR))
+    return shell ? `책에서 뽑은 덩어리입니다 — 배점 잣대를 쓰지 않습니다. 빈 껍데기 ${shell}문항.` : "";
+  if(!shell) return `<span style="color:var(--ok)">빈 껍데기 없음 — 이 회차는 다 찼습니다.</span>`;
+  if(pt >= 96 && pt <= 104)
+    return `<b style="color:var(--draft)">배점 합이 ${pt}점입니다.</b> ` +
+      `실기는 회차당 100점이므로 <b>문항은 다 있고 번호만 밀린 것</b>으로 보입니다. ` +
+      `«빈 껍데기 지우기» → «번호 다시 매기기» 를 차례로 누르면 1번부터 붙습니다.`;
+  if(pt > 0)
+    return `배점 합이 <b>${pt}점</b>입니다 (100점이어야 함). ` +
+      `<b>${100-pt}점어치 문항이 실제로 없는 것</b>으로 보입니다 — 자료를 더 넣어야 합니다. ` +
+      `빈 껍데기 ${shell}문항은 그 자리를 표시해 둔 것입니다.`;
+  return `배점이 안 적혀 있어 판단이 어렵습니다. 빈 껍데기 ${shell}문항.`;
+}
+$("#btnOnlyEmpty").addEventListener("click", e => {
+  ONLY_EMPTY = !ONLY_EMPTY;
+  e.target.textContent = ONLY_EMPTY ? "✓ 빈칸만" : "빈칸만 보기";
+  e.target.classList.toggle("pri", ONLY_EMPTY);
+  e.target.setAttribute("aria-pressed", ONLY_EMPTY ? "true" : "false");
+  e.target.title = ONLY_EMPTY
+    ? "지금은 빈칸 있는 문항만 — 누르면 이 회차 전부 보임"
+    : "지금은 이 회차 전부 — 누르면 빈칸 있는 문항만";
+  draw();
+});
+
+/* ── 과목 전체 훑기 ─────────────────────────────── */
+async function fetchAll(sid){
+  const out = [];
+  for(let from = 0; from < 40000; from += 1000){
+    const { data, error } = await sb.from("practicals").select("*")
+      .eq("subject_id", sid)
+      .order("year",{ascending:false}).order("session",{ascending:false}).order("no")
+      .range(from, from + 999);
+    if(error) throw error;
+    out.push(...(data||[]));
+    if(!data || data.length < 1000) break;
+    say(`불러오는 중… ${out.length}문항`);
+  }
+  return out;
+}
+const sheetKey = r => `${r.year}-${r.session}`;
+
+$("#btnAllEmpty").addEventListener("click", async () => {
+  const sid = +$("#fSub").value;
+  if(!sid) return void say("과목을 먼저 고르세요.");
+  SID = sid;
+  $("#btnAllEmpty").disabled = true; say("과목 전체를 훑는 중…");
+  try{
+    ALL = await fetchAll(sid);
+    MODE = "all"; CUR = null;
+    $("#detCard").classList.add("hide");
+    $("#gridCard").classList.remove("hide");
+    $("#dumpCard").classList.remove("hide");
+    $("#dupCard").classList.remove("hide");
+    drawAll();
+  }catch(e){
+    say("훑지 못했습니다 — " + esc(e.message||e));
+  }finally{ $("#btnAllEmpty").disabled = false; }
+});
+
+/* ★ v219 — 어느 칸이 빈 것을 찾을지. 해설은 기본으로 끈다.
+   해설은 문항마다 하나씩 손보는 게 아니라 «해설 배치» 로 한 번에 만드는 것이라,
+   여기 목록에 섞이면 진짜 손볼 것(문제·답)이 파묻힌다. */
+const WANT = { q:true, a:true, sol:false };
+const wantBtn = { q:"#wantQ", a:"#wantA", sol:"#wantSol" };
+Object.keys(wantBtn).forEach(k => {
+  const b = $(wantBtn[k]);
+  if(!b) return;
+  b.addEventListener("click", () => {
+    if(WANT[k] && Object.values(WANT).filter(Boolean).length === 1)
+      return void say("적어도 한 칸은 골라 두어야 합니다.");
+    WANT[k] = !WANT[k];
+    b.classList.toggle("pri", WANT[k]);
+    b.setAttribute("aria-pressed", WANT[k] ? "true" : "false");
+    if(MODE === "all" && ALL.length) drawAll();
+  });
+});
+const wantEmpty = r => ["q","a","sol"].some(k => WANT[k] && st(r,k) === "empty");
+
+/* 회차별로 묶어서, 빈칸 있는 문항만 격자에 뿌린다 */
+function drawAll(){
+  $("#wantBar").classList.remove("hide");
+    /* 사본으로 표시된 문항은 «채울 거리» 가 아니다 — 원본을 채우면 되는 것이라 뺀다 */
+  const holes = ALL.filter(r => wantEmpty(r) && !r.dup_of && (!ONLY_REAL || isReal(r.year)));
+
+  /* 칸마다 몇 개가 비었는지 미리 세어 보여 준다 — 규모를 알아야 판단이 선다 */
+  const pool = ALL.filter(r => !r.dup_of && (!ONLY_REAL || isReal(r.year)));
+  const miss = k => pool.filter(r => st(r,k) === "empty").length;
+  $("#wantHint").innerHTML =
+    `문제 없음 <b>${miss("q")}</b> · 답 없음 <b>${miss("a")}</b> · 해설 없음 <b>${miss("sol")}</b>`;
+  const by = {};
+  holes.forEach(r => (by[sheetKey(r)] ||= []).push(r));
+  const keys = Object.keys(by).sort((a,b) => {
+    const [ay,as] = a.split("-").map(Number), [by_,bs] = b.split("-").map(Number);
+    return by_ - ay || bs - as;
+  });
+
+  $("#gridTitle").textContent = `${SUBNAME()} · 전 회차 빈칸`;
+  stats(ALL, "전 회차", true);
+  const n = ALL.length;
+
+  /* ★ 세로로 길게 늘어지던 자리.
+       #cov 는 62px 짜리 칸으로 나뉜 격자다. 거기에 «회차 제목 + 격자» 묶음을
+       통째로 집어넣으니, 그 묶음이 62px 칸 하나에 끼여 글자까지 한 자씩 꺾였다.
+       모아보기일 때는 #cov 를 격자에서 풀어 그냥 세로로 쌓는 상자로 쓴다. */
+  $("#cov").classList.remove("cov");
+  $("#cov").classList.add("covwrap");
+  $("#cov").innerHTML = "";
+  if(!keys.length){
+    const pick = ["q","a","sol"].filter(k => WANT[k])
+      .map(k => ({q:"문제",a:"답",sol:"해설"})[k]).join("·");
+    $("#cov").innerHTML = `<p class="note">${esc(pick)} 칸은 다 찼습니다.</p>`;
+    say(`전 회차 ${n}문항 · ${esc(pick)} 빈칸 없음`);
+    return;
+  }
+  const wrap = document.createElement("div");
+  keys.forEach(k => {
+    const [y,ss] = k.split("-");
+    const head = document.createElement("div");
+    head.className = "mono";
+    head.style.cssText = "font-size:12px;color:var(--mut);margin:16px 0 7px;font-weight:600;"
+      + "white-space:nowrap;position:sticky;top:0;background:var(--card);padding:4px 0;z-index:1";
+    head.textContent = `${sheetLabel(y, ss)} — 빈칸 ${by[k].length}문항`;
+    wrap.appendChild(head);
+    const g = document.createElement("div");
+    g.className = "cov";
+    g.innerHTML = by[k].map(r => {
+      const S = ["q","a","sol"].map(x => st(r,x));
+      return `<button class="cell${candOf(r).length?" hascand":""}"
+        data-go="${r.year}|${r.session}|${r.no}">
+        <div class="no"><span>${String(r.no).padStart(2,"0")}</span><i>${r.points?r.points+"점":""}</i></div>
+        <div class="stripes">${S.map(x=>`<div class="st ${x}"></div>`).join("")}</div>
+      </button>`;
+    }).join("");
+    wrap.appendChild(g);
+  });
+  $("#cov").appendChild(wrap);
+  $("#cov").querySelectorAll("[data-go]").forEach(b =>
+    b.addEventListener("click", async () => {
+      const [y,ss,no] = b.dataset.go.split("|").map(Number);
+      $("#fYear").value = String(y);
+      $("#fSess").innerHTML = `<option value="${ss}">제${ss}회</option>`;
+      $("#fSess").value = String(ss);
+      MODE = "sheet";
+      await load();
+      detail(no);
+      $("#detCard").scrollIntoView({ behavior:"smooth", block:"start" });
+    }));
+  const pick2 = ["q","a","sol"].filter(k => WANT[k])
+    .map(k => ({q:"문제",a:"답",sol:"해설"})[k]).join("·");
+  say(`전 회차 ${n}문항 · <b>${esc(pick2)}</b> 가 빈 문항 <b>${holes.length}개</b> · 회차 ${keys.length}개`);
+}
+const SUBNAME = () => $("#fSub").selectedOptions[0]?.textContent || "과목";
+
+/* ═══════════════════════════════════════════════════
+   중복 찾기 · 합치기
+
+   오고초려·핵심빈출은 «기출에서 골라 모은 것» 이다.
+   같은 문제가 두 군데 앉아 있으면 격자에서 두 번 세어지고,
+   한쪽에만 해설이 붙는 일도 생긴다.
+
+   짝을 찾는 잣대는 «문제 본문 글자» 다. 띄어쓰기·문장부호를 걷어내고
+   앞 120 글자를 견줘 본다. 그림만 있는 문항은 견줄 글이 없어 건너뛴다.
+   ═══════════════════════════════════════════════════ */
+let DUPS = [];
+
+/* 견주기 좋게 다듬는다 — 띄어쓰기·부호·괄호 안 번호를 걷어낸다 */
+function normQ(t){
+  return String(t || "")
+    .replace(/\[\[[\s\S]*?\]\]/g, " ")        /* [[그림]] 같은 자리표 */
+    .replace(/[^0-9A-Za-z가-힣]/g, "")            /* 글자와 숫자만 남김 */
+    .slice(0, 120);
+}
+/* 원본으로 삼을 것 — 실제 기출 회차를 먼저, 그중 이른 해를 */
+function pickOrigin(rows){
+  const real = rows.filter(r => isReal(r.year));
+  const pool = real.length ? real : rows;
+  return pool.slice().sort((a,b) =>
+    (a.year - b.year) || (a.session - b.session) || (a.no - b.no))[0];
+}
+/* 사본에만 있는 것 = 원본으로 옮길 거리 */
+function gains(origin, copies){
+  const g = [];
+  const need = k => st(origin, k) === "empty";
+  for(const c of copies){
+    if(need("a")   && (c.a_url || c.a_text))  g.push({ from:c, slot:"a" });
+    if(need("sol") && c.easy_md)              g.push({ from:c, slot:"sol" });
+    if(need("q")   && (c.q_url || c.q_text))  g.push({ from:c, slot:"q" });
+  }
+  /* 슬롯마다 하나만 — 먼저 찾은 것을 쓴다 */
+  const seen = new Set();
+  return g.filter(x => !seen.has(x.slot) && seen.add(x.slot));
+}
+
+$("#btnDupScan").addEventListener("click", async () => {
+  const sid = +$("#fSub").value;
+  if(!sid) return void say("과목을 먼저 고르세요.");
+  $("#btnDupScan").disabled = true;
+  $("#dupMsg").textContent = "과목 전체를 훑는 중…";
+  try{
+    if(!ALL.length || SID !== sid){ SID = sid; ALL = await fetchAll(sid); }
+
+    const by = new Map();
+    let noText = 0;
+    for(const r of ALL){
+      if(r.dup_of) continue;                       /* 이미 사본으로 표시된 것 */
+      const k = normQ(r.q_text || r.q_md);
+      if(k.length < 30){ noText++; continue; }     /* 견줄 글이 모자람 */
+      (by.get(k) || by.set(k, []).get(k)).push(r);
+    }
+    DUPS = [];
+    for(const rows of by.values()){
+      if(rows.length < 2) continue;
+      const origin = pickOrigin(rows);
+      const others = rows.filter(r => r.id !== origin.id);
+
+      /* ★ v217 — 사본 표시를 달 것과 안 달 것을 가른다.
+         · 오고초려·핵심빈출·단답(가짜 연도)  → 기출에서 뽑아 모은 것이므로 사본이 맞다
+         · 실제 기출 회차끼리 겹치는 것        → 사본이 아니라 «되풀이 출제» 다.
+           2019년 3회에도 나오고 2023년 1회에도 나온 문제를 사본으로 가려 버리면,
+           2023년 1회를 푸는 사람 눈앞에서 그 문항이 사라진다. 그러면 안 된다.
+         답·해설을 원본으로 옮기는 것은 어느 쪽에서 가져와도 되지만,
+         «가리는» 표시는 문제집 자료에만 단다. */
+      const copies = others.filter(c => !isReal(c.year));   /* 표시를 달 것 */
+      const echoes = others.filter(c =>  isReal(c.year));   /* 되풀이 출제 — 안 가림 */
+      if(!copies.length && !echoes.length) continue;
+      DUPS.push({ origin, copies, echoes, gain: gains(origin, others) });
+    }
+    DUPS.sort((a,b) => b.gain.length - a.gain.length || b.copies.length - a.copies.length);
+
+    const cop = DUPS.reduce((n,d) => n + d.copies.length, 0);
+    const ech = DUPS.reduce((n,d) => n + d.echoes.length, 0);
+    const gn  = DUPS.reduce((n,d) => n + d.gain.length, 0);
+    drawDups();
+    $("#dupMsg").innerHTML = DUPS.length
+      ? `같은 문제 <b>${DUPS.length}무리</b> · 가릴 사본(문제집) <b>${cop}문항</b>` +
+        (ech ? ` · <span style="color:var(--faint)">기출끼리 되풀이 출제 ${ech}문항은 안 가림</span>` : "") +
+        (gn ? ` · <b style="color:var(--ok)">사본에만 있어 원본으로 옮길 칸 ${gn}개</b>` : " · 옮길 칸은 없음") +
+        (noText ? ` <span style="color:var(--faint)">(글이 없어 못 견준 문항 ${noText}개는 건너뜀)</span>` : "")
+      : `같은 문제를 못 찾았습니다.` +
+        (noText ? ` 글이 없어 못 견준 문항이 ${noText}개 있습니다 — 그림만 있는 문항은 견줄 수 없습니다.` : "");
+    $("#btnDupMerge").classList.toggle("hide", !DUPS.length);
+    $("#btnDupUndo").classList.toggle("hide", !ALL.some(r => r.dup_of));
+  }catch(e){
+    $("#dupMsg").textContent = /dup_of|column|schema cache/i.test(e.message || "")
+      ? "dup_of 칸이 아직 없습니다 — supabase-review.sql 아래쪽 «추가분 (v216)» 을 한 번 돌려 주세요."
+      : "훑지 못했습니다 — " + (e.message || e);
+  }finally{ $("#btnDupScan").disabled = false; }
+});
+
+function drawDups(){
+  const box = $("#dupList");
+  box.classList.toggle("hide", !DUPS.length);
+  box.innerHTML = DUPS.slice(0, 400).map(d => {
+    const o = d.origin;
+    const gain = d.gain.map(g => ({q:"문제",a:"답",sol:"해설"})[g.slot]).join("·");
+    const nm = rs => esc(rs.slice(0,3).map(c => sheetLabel(c.year, c.session) + " " + c.no + "번").join(", "))
+                   + (rs.length > 3 ? " 외 " + (rs.length - 3) : "");
+    return `<div class="it" style="grid-template-columns:1fr auto">
+      <span class="p">
+        <b>${esc(sheetLabel(o.year, o.session))} ${o.no}번</b>
+        ${d.copies.length ? `<em> ← 사본 ${d.copies.length}: ${nm(d.copies)}</em>` : ""}
+        ${d.echoes.length ? `<em style="color:var(--faint)"> · 되풀이 ${d.echoes.length}: ${nm(d.echoes)}</em>` : ""}
+      </span>
+      <span class="s" style="color:${gain ? "var(--ok)" : "var(--faint)"}">${gain ? "＋" + gain : "—"}</span>
+    </div>`;
+  }).join("") + (DUPS.length > 400 ? `<div class="it"><span class="p">…앞 400무리만 표시</span></div>` : "");
+}
+
+$("#btnDupMerge").addEventListener("click", async () => {
+  if(!DUPS.length) return;
+  const cop = DUPS.reduce((n,d) => n + d.copies.length, 0);
+  const gn  = DUPS.reduce((n,d) => n + d.gain.length, 0);
+  if(!confirm(`문제집 사본 ${cop}문항에만 «원본의 사본» 표시를 답니다.\n`
+    + `실제 기출끼리 겹치는 것(되풀이 출제)은 가리지 않습니다.\n`
+    + `그중 ${gn}개 칸(답·해설)은 원본이 비어 있어 원본으로 옮깁니다.\n`
+    + `사본을 지우지는 않습니다. 계속할까요?`)) return;
+
+  $("#btnDupMerge").disabled = true;
+  let moved = 0, marked = 0, bad = 0;
+  for(const d of DUPS){
+    try{
+      /* ① 사본에만 있는 칸을 원본으로 옮긴다 */
+      if(d.gain.length){
+        const patch = {};
+        for(const g of d.gain){
+          const c = g.from;
+          if(g.slot === "a"){   patch.a_url = c.a_url; patch.a_text = c.a_text; patch.st_a = "draft"; }
+          if(g.slot === "q"){   patch.q_url = c.q_url; patch.q_text = c.q_text; patch.st_q = "draft"; }
+          if(g.slot === "sol"){ patch.easy_md = c.easy_md; patch.st_sol = "draft"; }
+        }
+        const up = await sb.from("practicals").update(patch).eq("id", d.origin.id);
+        if(up.error) throw up.error;
+        Object.assign(d.origin, patch);
+        moved += d.gain.length;
+      }
+      /* ② 사본에 표시를 남긴다 (지우지 않는다).
+         되풀이 출제(d.echoes)에는 표시를 달지 않는다 — 가리면 안 되기 때문. */
+      const ids = d.copies.map(c => c.id);
+      if(ids.length){
+        const mk = await sb.from("practicals").update({ dup_of: d.origin.id }).in("id", ids);
+        if(mk.error) throw mk.error;
+        d.copies.forEach(c => { c.dup_of = d.origin.id; });
+        marked += ids.length;
+      }
+    }catch(e){
+      bad++;
+      $("#dupMsg").textContent = "일부 실패 — " + (e.message || e);
+    }
+  }
+  $("#btnDupMerge").disabled = false;
+  $("#dupMsg").innerHTML = `끝 — 원본으로 옮긴 칸 <b>${moved}개</b> · 사본 표시 <b>${marked}문항</b>`
+    + (bad ? ` · <span style="color:var(--bad)">실패 ${bad}무리</span>` : "");
+  DUPS = []; drawDups();
+  $("#btnDupMerge").classList.add("hide");
+  $("#btnDupUndo").classList.remove("hide");
+  if(MODE === "all") drawAll(); else if(ROWS.length) load();
+});
+
+$("#btnDupUndo").addEventListener("click", async () => {
+  if(!confirm("사본 표시를 전부 지웁니다. 옮겨 간 답·해설은 그대로 둡니다.\n계속할까요?")) return;
+  const ids = ALL.filter(r => r.dup_of).map(r => r.id);
+  if(!ids.length) return void ($("#dupMsg").textContent = "표시된 사본이 없습니다.");
+  const { error } = await sb.from("practicals").update({ dup_of: null }).in("id", ids);
+  if(error) return void ($("#dupMsg").textContent = "지우지 못했습니다 — " + error.message);
+  ALL.forEach(r => { r.dup_of = null; });
+  $("#dupMsg").textContent = `사본 표시 ${ids.length}개를 지웠습니다.`;
+  $("#btnDupUndo").classList.add("hide");
+});
+
+/* ── 텍스트로 뽑기 ──────────────────────────────── */
+function slotWord(r,k){
+  const v = st(r,k);
+  return { empty:"없음", raw:"검수 전", draft:"검수함", ok:"확정" }[v] || v;
+}
+function dumpSheet(rows0, y, ss){
+  const rows = rows0.filter(r => !r.dup_of);
+  const L = [];
+  let q=0,a=0,so=0;
+  rows.forEach(r => { if(st(r,"q")!=="empty")q++; if(st(r,"a")!=="empty")a++; if(st(r,"sol")!=="empty")so++; });
+  const n = rows.length;
+  const shell = rows.filter(r => isShell(r) && isBare(r)).length;
+  const pt = rows.reduce((x,r) => x + (Number(r.points)||0), 0);
+  L.push(`## ${sheetLabel(y, ss)} — ${n}문항 · 배점 합 ${pt}점`);
+  L.push(`문제 ${q}/${n} · 답 ${a}/${n} · 해설 ${so}/${n} · 빈 껍데기 ${shell}문항`);
+  if(shell){
+    if(pt >= 96 && pt <= 104) L.push(`※ 배점이 100점에 맞음 — 문항은 다 있고 번호만 밀린 것으로 보임`);
+    else if(pt > 0)           L.push(`※ 배점이 ${pt}점 — ${100-pt}점어치가 실제로 없음`);
+  }
+  const holes = rows.filter(isEmpty);
+  if(!holes.length){ L.push("빈칸 없음"); return L.join("\n"); }
+  L.push("");
+  L.push(`빈칸 ${holes.length}문항`);
+  holes.forEach(r => {
+    const miss = ["q","a","sol"].filter(k => st(r,k)==="empty")
+      .map(k => ({q:"문제",a:"답",sol:"해설"})[k]);
+    const has = [];
+    if(r.q_url) has.push("문제그림"); if(r.q_text) has.push("문제글");
+    if(r.a_url) has.push("답그림");  if(r.a_text) has.push("답글");
+    if(r.easy_md) has.push("해설");
+    L.push(`- ${r.no}번 — 없는 것: ${miss.join("·")}` + (has.length ? ` / 있는 것: ${has.join("·")}` : ""));
+  });
+  return L.join("\n");
+}
+function head(){
+  const now = new Date().toLocaleString("ko-KR", { hour12:false });
+  return [
+    `# 기출뷰어 검수 상태 — ${now}`,
+    `과목: ${SUBNAME()}`,
+    `앱: ${CFG.CONFIG_VERSION || "?"} · 워커: ${WORKER || "(없음)"}`,
+    ""
+  ].join("\n");
+}
+function setDump(text){
+  $("#dump").value = text;
+  $("#btnCopy").disabled = !text;
+  $("#btnDumpSave").disabled = !text;
+  $("#btnCopy").textContent = "복사";
+}
+$("#btnDump").addEventListener("click", () => {
+  if(!ROWS.length) return void say("회차를 먼저 불러오세요.");
+  setDump(head() + dumpSheet(ROWS, YEAR, SESS));
+});
+$("#btnDumpAll").addEventListener("click", async () => {
+  const sid = +$("#fSub").value;
+  if(!sid) return void say("과목을 먼저 고르세요.");
+  if(!ALL.length || SID !== sid){
+    SID = sid; say("과목 전체를 훑는 중…");
+    try{ ALL = await fetchAll(sid); }
+    catch(e){ return void say("훑지 못했습니다 — " + esc(e.message||e)); }
+  }
+  const by = {};
+  ALL.forEach(r => (by[sheetKey(r)] ||= []).push(r));
+  const keys = Object.keys(by).sort((x,z) => {
+    const [xy,xs]=x.split("-").map(Number), [zy,zs]=z.split("-").map(Number);
+    return zy-xy || zs-xs;
+  });
+  let q=0,a=0,so=0;
+  ALL.forEach(r => { if(st(r,"q")!=="empty")q++; if(st(r,"a")!=="empty")a++; if(st(r,"sol")!=="empty")so++; });
+  const shells = ALL.filter(r => isShell(r) && isBare(r)).length;
+  const top = [`전체 ${ALL.length}문항 · 회차 ${keys.length}개`,
+               `문제 ${q} · 답 ${a} · 해설 ${so}`,
+               `빈칸 있는 문항 ${ALL.filter(isEmpty).length}개 (그중 세 칸 다 빈 껍데기 ${shells}개)`, ""].join("\n");
+  setDump(head() + top + keys.map(k => {
+    const [y,ss] = k.split("-");
+    return dumpSheet(by[k], y, ss);
+  }).join("\n\n"));
+  say(`전 회차 ${ALL.length}문항 정리함`);
+});
+$("#btnCopy").addEventListener("click", async () => {
+  const t = $("#dump").value; if(!t) return;
+  try{ await navigator.clipboard.writeText(t); }
+  catch(e){ $("#dump").select(); document.execCommand("copy"); }
+  $("#btnCopy").textContent = "복사됨 ✓";
+  setTimeout(() => { $("#btnCopy").textContent = "복사"; }, 1500);
+});
+$("#btnDumpSave").addEventListener("click", () => {
+  const t = $("#dump").value; if(!t) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff"+t], { type:"text/markdown;charset=utf-8" }));
+  a.download = `검수상태-${new Date().toISOString().slice(0,10)}.md`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+});
+
+/* ── 상세 ───────────────────────────────────────── */
+const SLOT = { q:{name:"문제", url:"q_url", text:"q_text"},
+               a:{name:"답",   url:"a_url", text:"a_text"},
+               sol:{name:"해설", url:null,  text:"easy_md"} };
+
+function detail(no){
+  CUR = ROWS.find(r => r.no === no); if(!CUR) return;
+  $("#detCard").classList.remove("hide");
+  $("#detTitle").textContent = `${YEAR}년 제${SESS}회 · ${no}번`;
+  draw();
+
+  $("#slots").innerHTML = ["q","a","sol"].map(k => {
+    const S = SLOT[k], s = st(CUR,k);
+    const url = S.url ? CUR[S.url] : null;
+    const txt = CUR[S.text];
+    const body = url
+      ? `<img class="shot" src="${esc(url)}" alt="${S.name}" loading="lazy">`
+      : (txt ? `<div class="txt">${esc(String(txt).slice(0,1200))}</div>`
+             : `<div class="noshot">비어 있음</div>`);
+    const cands = candOf(CUR).filter(c => c.slot === k);
+    return `<div class="slot ${s}">
+      <h4>${S.name} <em>${s}</em></h4>
+      ${body}
+      <div class="mini">
+        <select data-st="${k}">${STATES.map(v =>
+          `<option value="${v}"${v===s?" selected":""}>${v}</option>`).join("")}</select>
+        ${S.url ? `<button class="sm" data-up="${k}">그림 올리기</button>` : ""}
+        ${k === "sol" ? `<button class="sm" data-gen="1">해설 뽑기</button>` : ""}
+        ${(k === "q" || k === "a") && url ? `<button class="sm" data-cutthis="${k}">이 그림 자르기</button>` : ""}
+        ${k === "q" && url && !CUR.a_url ? `<button class="sm pri" data-autocut="1">문제·답 자동으로 나눠 넣기</button>` : ""}
+        ${url||txt ? `<button class="sm danger" data-clr="${k}">비우기</button>` : ""}
+        ${url ? `<button class="sm" data-open="${esc(url)}">원본</button>` : ""}
+      </div>
+      ${cands.length ? `<div class="cands">
+        <div class="rng mono" style="font-size:11px;color:var(--draft);margin-bottom:4px">새 후보 ${cands.length}</div>
+        ${cands.map((c,i) => `<div class="c">
+          ${c.url ? `<img src="${esc(c.url)}" alt="">` : "<span>글</span>"}
+          <span style="flex:1">${esc((c.at||"").slice(0,10))}</span>
+          <button class="sm" data-usecand="${k}|${i}">이걸로</button>
+          <button class="sm danger" data-delcand="${k}|${i}">버림</button>
+        </div>`).join("")}
+      </div>` : ""}
+    </div>`;
+  }).join("");
+
+  $("#slots").querySelectorAll("[data-st]").forEach(sel =>
+    sel.addEventListener("change", () => setState(sel.dataset.st, sel.value)));
+  $("#slots").querySelectorAll("[data-up]").forEach(b =>
+    b.addEventListener("click", () => pickImage(b.dataset.up)));
+  $("#slots").querySelectorAll("[data-gen]").forEach(b =>
+    b.addEventListener("click", () => genSol(b)));
+  $("#slots").querySelectorAll("[data-cutthis]").forEach(b =>
+    b.addEventListener("click", () => cutExisting(b.dataset.cutthis)));
+  $("#slots").querySelectorAll("[data-autocut]").forEach(b =>
+    b.addEventListener("click", () => autoCutOne(CUR, b)));
+  $("#slots").querySelectorAll("[data-clr]").forEach(b =>
+    b.addEventListener("click", () => clearSlot(b.dataset.clr)));
+  $("#slots").querySelectorAll("[data-open]").forEach(b =>
+    b.addEventListener("click", () => window.open(b.dataset.open, "_blank", "noopener")));
+  $("#slots").querySelectorAll("[data-usecand]").forEach(b =>
+    b.addEventListener("click", () => useCand(...b.dataset.usecand.split("|"))));
+  $("#slots").querySelectorAll("[data-delcand]").forEach(b =>
+    b.addEventListener("click", () => delCand(...b.dataset.delcand.split("|"))));
+}
+
+async function patch(obj, tag){
+  const { error } = await sb.from("practicals").update(obj).eq("id", CUR.id);
+  if(error){ log(`${tag} 실패 — ${error.message}`, "bad"); return false; }
+  Object.assign(CUR, obj);
+  log(`${tag} 완료`, "ok");
+  draw(); detail(CUR.no);
+  return true;
+}
+const setState = (k, v) => patch({ ["st_"+k]: v }, `${SLOT[k].name} 상태 → ${v}`);
+
+async function clearSlot(k){
+  if(!confirm(`${SLOT[k].name} 슬롯을 비웁니다. 계속할까요?`)) return;
+  const o = { ["st_"+k]: "empty" };
+  if(SLOT[k].url) o[SLOT[k].url] = null;
+  o[SLOT[k].text] = null;
+  await patch(o, `${SLOT[k].name} 비우기`);
+}
+
+/* ── 그림 올리기 ────────────────────────────────── */
+function pickImage(k){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = async () => {
+    const f = inp.files?.[0]; if(!f) return;
+    log(`${SLOT[k].name} 그림 올리는 중…`);
+    try{
+      const blob = await shrink(f, 1600, 0.82);
+      const url = await put(pathOf(CUR.no, k), blob);
+      await assign(k, url);
+    }catch(e){ log("실패 — " + (e.message||e), "bad"); }
+  };
+  inp.click();
+}
+
+/* 경로에 _v스탬프를 안 붙임 — 다시 올려도 옛 판이 안 쌓이게 */
+const pathOf = (no, k) =>
+  `prac/${SID}/${YEAR}_${SESS}_${String(no).padStart(2,"0")}_${k}.jpg`;
+
+async function put(path, blob){
+  const up = await sb.storage.from(BUCKET).upload(path, blob,
+    { contentType:"image/jpeg", upsert:true });
+  if(up.error) throw up.error;
+  return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl + "?t=" + Date.now();
+}
+
+/* 이미 검수한 슬롯은 덮지 않고 후보로 쌓음 */
+async function assign(k, url, row, force){
+  const R = row || CUR;
+  const cur = st(R, k), col = SLOT[k].url;
+  const old = R[col];
+  const o = {};
+  /* force — 내가 그 그림을 «일부러 다시 자른» 경우.
+     이때까지 후보로 밀면 정작 고친 그림이 화면에 안 나타나 헷갈린다. */
+  if(!force && RANK[cur] >= RANK.draft && old){
+    const cand = (Array.isArray(R.cand) ? R.cand : []).concat([{
+      slot:k, url, at:new Date().toISOString()
+    }]);
+    o.cand = cand;
+    if(R === CUR){ await patch(o, `${SLOT[k].name} — 검수된 칸이라 후보로 쌓음`); return; }
+    await sb.from("practicals").update(o).eq("id", R.id);
+    return;
+  }
+  o[col] = url; o["st_"+k] = "draft";
+  if(R === CUR) await patch(o, `${SLOT[k].name} 넣음`);
+  else await sb.from("practicals").update(o).eq("id", R.id);
+}
+
+async function useCand(k, i){
+  const cands = candOf(CUR); const c = cands[+i]; if(!c) return;
+  const rest = cands.filter((_, j) => j !== +i);
+  await patch({ [SLOT[k].url]: c.url, ["st_"+k]: "draft", cand: rest }, `${SLOT[k].name} 후보로 교체`);
+}
+async function delCand(k, i){
+  const rest = candOf(CUR).filter((_, j) => j !== +i);
+  await patch({ cand: rest }, "후보 버림");
+}
+
+/* ── 해설 한 문항만 뽑기 ──────────────────────────
+   배치(explain-batch)를 통째로 돌리지 않고 이 문항만.
+   답이 없는 문항은 워커가 되돌려 보낸다 — 근거 없는 해설이 제일 위험함. */
+const WORKER = (CFG.CLAUDE_WORKER_URL || CFG.WORKER_URL || "").replace(/\/$/,"");
+async function genSol(btn){
+  if(!CUR) return;
+  if(!WORKER) return void log("config.js 에 CLAUDE_WORKER_URL 이 없습니다", "bad");
+  if(st(CUR,"a") === "empty" && !CUR.a_url && !CUR.a_text)
+    return void log("답이 없는 문항입니다. 답 슬롯을 먼저 채우세요.", "bad");
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "뽑는 중…";
+  try{
+    const res = await fetch(WORKER + "/explain", {
+      method:"POST",
+      headers:Object.assign({"Content-Type":"application/json"},
+        CFG.CLAUDE_APP_KEY ? {"x-app-key":CFG.CLAUDE_APP_KEY} : {}),
+      body:JSON.stringify({
+        q_url:CUR.q_url, q_text:CUR.q_text, a_url:CUR.a_url, a_text:CUR.a_text,
+        year:YEAR, session:SESS, no:CUR.no, points:CUR.points, effort:"low"
+      })
+    });
+    const d = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+    const md = solToMd(d.sol || {});
+    if(!md || md.length < 20) throw new Error("해설이 비어서 왔습니다");
+    await patch({ easy_md:md, st_sol:"raw", sol_by:d.model || null,
+                  sol_ver:(CUR.sol_ver || 0) + 1 }, "해설 뽑기");
+  }catch(e){
+    log("해설 실패 — " + (e.message||e), "bad");
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+function solToMd(sol){
+  const L = [];
+  if(sol.gist) L.push(`**${sol.gist}**`, "");
+  if(sol.given?.length){ L.push("**주어진 값**",""); sol.given.forEach(g => L.push(`- ${g}`)); L.push(""); }
+  if(sol.formula?.length){ L.push("**쓰는 식**",""); sol.formula.forEach(f => L.push(`$$${f}$$`,"")); }
+  if(sol.steps?.length){
+    L.push("**풀이**","");
+    sol.steps.forEach((s,i) => { L.push(`${i+1}. ${s.say||""}`); if(s.math) L.push("",`$$${s.math}$$`,""); });
+    L.push("");
+  }
+  L.push("**답**","",`> ${sol.answer||""}${sol.unit ? " "+sol.unit : ""}`,"");
+  if(sol.trap) L.push("**흔한 실수**","",sol.trap,"");
+  return L.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+
+/* 그림 줄이기 — 폭 상한 + jpeg. 저장소가 덜 참 */
+function shrink(file, maxW, q){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, maxW / img.naturalWidth);
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.naturalWidth * sc);
+      cv.height = Math.round(img.naturalHeight * sc);
+      const g = cv.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0,0,cv.width,cv.height);
+      g.drawImage(img, 0, 0, cv.width, cv.height);
+      cv.toBlob(b => b ? res(b) : rej(new Error("그림을 만들지 못했습니다")), "image/jpeg", q);
+    };
+    img.onerror = () => rej(new Error("그림을 읽지 못했습니다"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* ── 빈 번호 채우기 · 쪼개기 · 번호 다시 ─────────── */
+async function rpc(fn, args, tag){
+  const { data, error } = await sb.rpc(fn, args);
+  if(error){
+    say(/function|does not exist|schema cache/i.test(error.message)
+      ? "함수가 없습니다 — <b>supabase-review.sql</b> 을 (아래쪽 «추가분» 까지) 돌려 주세요."
+      : `${tag} 실패 — ${esc(error.message)}`);
+    return null;
+  }
+  return data;
+}
+const upto = () => { const v = +$("#fUpto").value; return v > 0 ? v : null; };
+
+/* 세 칸이 다 빈 문항만 골라 지운다. 자료가 한 톨이라도 있으면 안 건드린다.
+   ★ v217 — 상태 꼬리표만 보고 지우면 큰일 난다. 꼬리표가 어긋나 있던 적이
+   실제로 있었다(자동변환이 st_q 를 안 적어 1000문항 넘게 «빈 껍데기» 로 잡힘).
+   그래서 여기서는 꼬리표와 «진짜 칸» 을 둘 다 보고, 둘 다 비었을 때만 지운다. */
+$("#btnShellDel").addEventListener("click", async () => {
+  /* ★ v218 — 순서가 거꾸로였다. 전체 모드에서 껍데기가 0개면
+     «지울 빈 껍데기가 없습니다» 가 먼저 떠서, 회차를 안 골랐다는 사실이 안 보였다.
+     모드 확인이 먼저다. 그리고 무엇을 누르면 되는지까지 적는다. */
+  if(MODE === "all")
+    return void say("이건 회차 하나씩만 지웁니다 — 위에서 <b>연도·회차</b>를 고른 다음 "
+      + "<b>«이 회차 정리 (한 번에)»</b> 를 누르면 불러오기·지우기·번호 붙이기가 한 번에 됩니다.<br>"
+      + "«회차 미상»(9000번대) 쪽 껍데기는 <b>«회차 미상 정리»</b> 를 누르면 "
+      + "그 아래에 전용 단추가 나옵니다.");
+  const rows = ROWS.filter(r => isShell(r) && isBare(r));
+  if(!rows.length) return void say("이 회차에는 지울 빈 껍데기가 없습니다.");
+  if(!confirm(`세 칸이 모두 빈 ${rows.length}문항을 지웁니다.\n`
+    + `자료가 한 줄이라도 있는 문항은 건드리지 않습니다.\n계속할까요?`)) return;
+  let ok = 0;
+  for(const r of rows){
+    const { error } = await sb.from("practicals").delete().eq("id", r.id);
+    if(error){ log(`${r.no}번 지우기 실패 — ${error.message}`, "bad"); }
+    else ok++;
+  }
+  say(`빈 껍데기 <b>${ok}문항</b>을 지웠습니다. 이어서 «번호 다시 매기기» 를 누르면 1번부터 붙습니다.`);
+  CUR = null; $("#detCard").classList.add("hide");
+  load();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   과목 전체 빈 껍데기 정리
+   ───────────────────────────────────────────────────────────
+   실기는 회차마다 문항 수가 다르다. 14개짜리도 있고 20개짜리도 있다.
+   그런데 예전에 «문항수 채우기» 로 18까지 자리를 만들어 둬서,
+   그 회차에 «원래 없는» 문항이 빈칸으로 남아 있다.
+
+   지우기 전에 두 갈래로 가른다 — 이게 핵심이다.
+
+     꼬리 껍데기 : 그 회차 마지막 자료보다 «뒤» 번호
+                   → 원래 없는 문항이다. 지우면 된다.
+     가운데 껍데기 : 자료와 자료 «사이» 에 낀 빈칸
+                   → 진짜로 빠진 것일 수 있다. 지우지 않고 알려만 준다.
+
+   예: 2018년 1회는 책에 15문항인데 16·17·18 이 비어 있다 → 꼬리, 지운다.
+       2023년 3회는 18문항인데 2번이 비어 있다 → 가운데, 남긴다. 다시 넣어야 한다.
+   ═══════════════════════════════════════════════════════════ */
+$("#btnShellAll").addEventListener("click", async () => {
+  if(!SID) return void say("과목을 먼저 고르세요.");
+  say("과목 전체를 훑는 중…");
+  const { data, error } = await sb.from("practicals").select("*")
+    .eq("subject_id", SID).order("year").order("session").order("no");
+  if(error) return void say("불러오지 못했습니다 — " + esc(error.message));
+  const all = data || [];
+
+  const 회차 = new Map();
+  all.forEach(r => {
+    const k = `${r.year}-${r.session}`;
+    if(!회차.has(k)) 회차.set(k, []);
+    회차.get(k).push(r);
+  });
+
+  const 꼬리 = [], 가운데 = [];
+  회차.forEach((g, k) => {
+    g.sort((a,b) => a.no - b.no);
+    /* 자료가 든 마지막 번호 */
+    let lastReal = 0;
+    g.forEach(r => { if(!(isShell(r) && isBare(r))) lastReal = Math.max(lastReal, r.no); });
+    g.forEach(r => {
+      if(!(isShell(r) && isBare(r))) return;
+      (r.no > lastReal ? 꼬리 : 가운데).push({ k, r });
+    });
+  });
+
+  const 묶음 = list => {
+    const m = new Map();
+    list.forEach(({k, r}) => {
+      if(!m.has(k)) m.set(k, []);
+      m.get(k).push(r.no);
+    });
+    return [...m.entries()].map(([k, ns]) =>
+      `| ${k.replace("-", "년 ")}회 | ${ns.length} | ${ns.join(", ")} |`).join("\n");
+  };
+
+  const L = [`## 과목 전체 빈 껍데기 정리\n`];
+  L.push(`전체 ${all.length}문항 · 회차 ${회차.size}개\n`);
+  L.push(`### ① 꼬리 껍데기 — ${꼬리.length}문항\n`);
+  L.push(`그 회차 마지막 자료보다 뒤 번호입니다. **원래 없는 문항**이라 지우면 됩니다.`);
+  L.push(`실기는 회차마다 문항 수가 다릅니다 — 14개짜리도 20개짜리도 있습니다.\n`);
+  L.push(꼬리.length ? `| 회차 | 개수 | 번호 |\n|---|---|---|\n${묶음(꼬리)}` : `없습니다.`);
+  L.push(``);
+  L.push(`### ② 가운데 껍데기 — ${가운데.length}문항\n`);
+  L.push(`자료와 자료 **사이**에 낀 빈칸입니다. **진짜로 빠진 것일 수 있습니다.**`);
+  L.push(`지우지 않습니다. 원본 PDF 에서 그 회차만 다시 넣어 보세요.\n`);
+  L.push(가운데.length ? `| 회차 | 개수 | 번호 |\n|---|---|---|\n${묶음(가운데)}` : `없습니다. 다 채워져 있습니다.`);
+  setDumpVisible();
+  setDump(head() + L.join("\n") + "\n");
+
+  say(`꼬리 껍데기 <b>${꼬리.length}</b>문항 · 가운데 껍데기 <b>${가운데.length}</b>문항. `
+    + (꼬리.length ? "아래 표를 보고 지울지 정하세요." : "지울 것이 없습니다."));
+
+  const bar = $("#dumpCard").querySelector(".btns");
+  let del = $("#btnShellAllDel");
+  if(!del){
+    del = document.createElement("button");
+    del.id = "btnShellAllDel"; del.className = "danger";
+    bar.appendChild(del);
+    del.addEventListener("click", async () => {
+      const ids = 꼬리.map(x => x.r.id);
+      if(!ids.length) return void say("지울 꼬리 껍데기가 없습니다.");
+      if(!confirm(`회차 ${new Set(꼬리.map(x => x.k)).size}개에 걸친 꼬리 껍데기 ${ids.length}문항을 지웁니다.\n\n`
+        + `자료가 한 줄이라도 든 문항은 건드리지 않습니다.\n`
+        + `가운데 껍데기 ${가운데.length}문항도 건드리지 않습니다 — 진짜 빠진 것일 수 있어서입니다.\n\n`
+        + `계속할까요?`)) return;
+      del.disabled = true;
+      let done = 0;
+      for(let i = 0; i < ids.length; i += 100){
+        const 조각 = ids.slice(i, i + 100);
+        const { error } = await sb.from("practicals").delete().in("id", 조각);
+        if(error){ del.disabled = false; return void say("지우지 못했습니다 — " + esc(error.message)); }
+        done += 조각.length;
+        del.textContent = `지우는 중 ${done}/${ids.length}`;
+      }
+      del.disabled = false;
+      say(`꼬리 껍데기 <b>${done}문항</b>을 지웠습니다.`
+        + (가운데.length ? ` 가운데 껍데기 ${가운데.length}문항은 그대로 뒀습니다 — 표를 보고 다시 넣으세요.` : ""));
+      if(typeof ALL !== "undefined") ALL.length = 0;
+      $("#btnShellAll").click();
+    });
+  }
+  del.textContent = `꼬리 껍데기 ${꼬리.length}문항 지우기`;
+  del.classList.toggle("hide", !꼬리.length);
+});
+
+$("#btnFill").addEventListener("click", async () => {
+  if(!SID||!YEAR||!SESS) return void say("회차를 먼저 고르세요.");
+  const n = await rpc("fill_missing_items",
+    { p_subject:SID, p_year:YEAR, p_session:SESS, p_upto:upto() }, "빈 번호 채우기");
+  if(n === null) return;
+  say(n ? `빈 번호 <b>${n}개</b>를 만들었습니다.` : "빠진 번호가 없습니다.");
+  if(n) load();
+});
+$("#btnFillAll").addEventListener("click", async () => {
+  if(!SID) return void say("과목을 먼저 고르세요.");
+  if(!confirm(`이 과목의 모든 회차를 ${upto() || "지금 있는 가장 큰 번호"}번까지 채웁니다.\n계속할까요?`)) return;
+  const n = await rpc("fill_missing_all", { p_subject:SID, p_upto:upto() }, "전 회차 채우기");
+  if(n === null) return;
+  say(`전 회차에서 <b>${n}개</b>를 만들었습니다.`);
+  load();
+});
+/* ★ v217 — 상태 칸(st_q·st_a·st_sol)을 실제 자료에 맞춰 다시 붙인다.
+   PDF 자동변환이 올릴 때 이 칸을 안 적어서, 그림·글이 멀쩡히 있는
+   문항까지 «빈 껍데기» 로 세어지던 것을 바로잡는다.
+   자료를 건드리지 않고 꼬리표만 고치므로 몇 번 눌러도 안전하다. */
+$("#btnResync").addEventListener("click", async () => {
+  if(!SID) return void say("과목을 먼저 고르세요.");
+  if(!confirm("문항의 상태 꼬리표를 실제 자료에 맞춰 다시 붙입니다.\n" +
+              "· 자료가 있는데 «없음» 이던 것 → «검수 전»\n" +
+              "· 자료가 없는데 «있음» 이던 것 → «없음»\n" +
+              "사람이 «검수함·확정» 으로 올려 둔 것은 그대로 둡니다.\n\n계속할까요?")) return;
+  const n = await rpc("resync_status", { p_subject:SID }, "상태 다시 맞추기");
+  if(n === null) return;
+  say(`<b>${n}문항</b>의 상태를 다시 맞췄습니다.`);
+  load();
+});
+$("#btnSplit").addEventListener("click", async () => {
+  if(!CUR) return;
+  if(!confirm(`${CUR.no}번 뒤에 빈 문항을 끼워 넣고, 뒤 번호를 한 칸씩 밉니다.\n계속할까요?`)) return;
+  const n = await rpc("split_item",
+    { p_subject:SID, p_year:YEAR, p_session:SESS, p_no:CUR.no }, "쪼개기");
+  if(n === null) return;
+  log(`${n}번 자리를 만들었습니다`, "ok");
+  await load(); detail(n);
+});
+$("#btnDrop").addEventListener("click", async () => {
+  if(!CUR) return;
+  const filled = ["q","a","sol"].filter(k => st(CUR,k) !== "empty");
+  if(filled.length && !confirm(`${CUR.no}번에는 아직 자료가 있습니다 (${filled.join("·")}).\n정말 지울까요?`)) return;
+  if(!filled.length && !confirm(`${CUR.no}번을 지웁니다.`)) return;
+  const n = await rpc("drop_item",
+    { p_subject:SID, p_year:YEAR, p_session:SESS, p_no:CUR.no }, "문항 지우기");
+  if(n === null) return;
+  CUR = null; $("#detCard").classList.add("hide"); load();
+});
+/* ★ v222 — 회차 하나를 치우는 데 네 번을 눌러야 했다.
+   «연도·회차 고르기 → 불러오기 → 빈 껍데기 지우기 → 번호 다시 매기기».
+   그런데 지울 회차가 24개다. 96번을 누르게 둘 일이 아니다.
+   게다가 «불러오기» 를 빠뜨리면 전체 모드라 아무 일도 안 일어나서,
+   눌렀는데 안 된다고 느끼기 딱 좋았다. 그래서 한 단추로 묶는다.
+
+   지우는 잣대는 그대로다 — 꼬리표와 실제 칸이 «둘 다» 빈 것만 지운다. */
+$("#btnTidy").addEventListener("click", async () => {
+  const sid = +$("#fSub").value, y = +$("#fYear").value, ss = +$("#fSess").value;
+  if(!sid || !y || !ss) return void say("과목·연도·회차를 모두 고르세요.");
+
+  const b = $("#btnTidy"); const old = b.textContent; b.disabled = true;
+  try{
+    b.textContent = "불러오는 중…";
+    await load();                                  /* 늘 최신을 보고 판단한다 */
+    const gone = ROWS.filter(r => isShell(r) && isBare(r));
+    if(!gone.length)
+      return void say(`<b>${sheetLabel(y, ss)}</b> — 지울 빈 자리가 없습니다. `
+        + `이 회차는 이미 정리됐습니다.`);
+
+    if(!confirm(`${sheetLabel(y, ss)}\n\n`
+      + `지울 빈 자리 ${gone.length}문항 — ${gone.map(r => r.no).join("·")}번\n`
+      + `자료가 한 줄이라도 있는 문항은 건드리지 않습니다.\n\n`
+      + `지운 뒤 번호를 1번부터 다시 붙입니다. 계속할까요?`)) return;
+
+    b.textContent = "지우는 중…";
+    let ok = 0;
+    for(const r of gone){
+      const { error } = await sb.from("practicals").delete().eq("id", r.id);
+      if(error) log(`${r.no}번 지우기 실패 — ${error.message}`, "bad");
+      else ok++;
+    }
+    b.textContent = "번호 붙이는 중…";
+    const moved = await rpc("renumber_items",
+      { p_subject:sid, p_year:y, p_session:ss }, "번호 다시 매기기");
+
+    CUR = null; $("#detCard").classList.add("hide");
+    await load();
+    say(`<b>${sheetLabel(y, ss)}</b> 정리 끝 — 빈 자리 <b>${ok}문항</b>을 지우고 `
+      + (moved === null ? "" : `<b>${moved}문항</b>의 `) + `번호를 1번부터 다시 붙였습니다. `
+      + `지금 <b>${ROWS.length}문항</b>입니다.`);
+  }finally{ b.disabled = false; b.textContent = old; }
+});
+
+$("#btnRenum").addEventListener("click", async () => {
+  if(!SID||!YEAR||!SESS) return;
+  if(!confirm("번호가 띄엄띄엄해진 것을 1,2,3… 으로 다시 붙입니다.\n지금 순서는 그대로 지킵니다. 계속할까요?")) return;
+  const n = await rpc("renumber_items",
+    { p_subject:SID, p_year:YEAR, p_session:SESS }, "번호 다시 매기기");
+  if(n === null) return;
+  say(`<b>${n}개</b> 문항의 번호를 다시 매겼습니다.`);
+  load();
+});
+
+/* 빈칸으로만 건너뛰기 */
+function jumpEmpty(dir){
+  if(!ROWS.length) return;
+  const idx = CUR ? ROWS.findIndex(r => r.no === CUR.no) : -1;
+  const isEmpty = r => ["q","a","sol"].some(k => st(r,k) === "empty");
+  for(let i = 1; i <= ROWS.length; i++){
+    const j = ((idx + dir*i) % ROWS.length + ROWS.length) % ROWS.length;
+    if(isEmpty(ROWS[j])) return void detail(ROWS[j].no);
+  }
+  log("빈칸이 없습니다");
+}
+$("#btnNextEmpty").addEventListener("click", () => jumpEmpty(1));
+$("#btnPrevEmpty").addEventListener("click", () => jumpEmpty(-1));
+
+addEventListener("keydown", e => {
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if(!$("#cutModal").classList.contains("hide")) return;
+  if(e.key === "n" || e.key === "N") jumpEmpty(1);
+  if(e.key === "c" || e.key === "C") openCut();
+});
+
+/* ═══════════════════════════════════════════════════
+   절단선 편집기
+   원본 페이지 그림을 캔버스에 띄우고 가로선으로 나눔.
+   나뉜 칸마다 «몇 번 문항의 어느 슬롯인지» 를 고르면
+   그 부분만 잘라 올린다.
+   ═══════════════════════════════════════════════════ */
+let IMG = null, LINES = [], SCALE = 1;
+
+function openCut(){
+  if(!ROWS.length) return void say("회차를 먼저 불러오세요.");
+  $("#cutModal").classList.remove("hide");
+  $("#cutMsg").textContent = "";
+}
+function closeCut(){ $("#cutModal").classList.add("hide"); }
+$("#btnCut").addEventListener("click", openCut);
+$("#btnAutoCut").addEventListener("click", autoCutRound);
+$("#btnAutoStop").addEventListener("click", () => { AUTOSTOP = true; });
+$("#btnOrphan").addEventListener("click", showOrphans);
+$("#btnPts").addEventListener("click", fillPoints);
+$("#cutClose").addEventListener("click", closeCut);
+$("#cutModal").addEventListener("click", e => { if(e.target.id === "cutModal") closeCut(); });
+
+/* ── 이미 올라간 문제 그림을 그 자리에서 자르기 ──────────
+   복원본은 문제 바로 아래에 답이 같이 찍혀 있는 경우가 많다.
+   자동 분할이 못 가른 것을 여기서 손으로 가른다.
+   원본 주소를 그대로 캔버스에 올리므로 파일을 다시 고를 필요가 없다. */
+let CUTROW = null, CUTSLOT = "q";
+
+async function cutExisting(slot){
+  CUTSLOT = (slot === "a") ? "a" : "q";
+  const src = CUTSLOT === "a" ? CUR?.a_url : CUR?.q_url;
+  if(!CUR || !src) return;
+  CUTROW = CUR;
+  openCut();
+  $("#cutMsg").textContent = "그림 불러오는 중…";
+  try{
+    /* 주소를 img.src 로 바로 쓰면 캔버스가 «오염» 돼 잘라내지 못한다.
+       파일로 받아서 넣으면 그 문제가 없다. */
+    const res = await fetch(src, { mode:"cors" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const blob = await res.blob();
+    await new Promise((ok, no) => {
+      const im = new Image();
+      im.onload = () => { IMG = im; LINES = []; paintCut(); ok(); };
+      im.onerror = () => no(new Error("그림을 읽지 못했습니다"));
+      im.src = URL.createObjectURL(blob);
+    });
+    $("#cutMsg").textContent = CUTSLOT === "a"
+      ? `${CUR.no}번 답 그림 — 위쪽에 문제가 섞여 있으면 그 경계에 선을 그으세요`
+      : `${CUR.no}번 문제 그림 — 답이 시작되는 자리에 선을 그으세요`;
+    presetSegs();
+  }catch(e){
+    $("#cutMsg").textContent = "불러오지 못했습니다 — " + (e.message||e)
+      + " · 아래에서 파일을 직접 고르셔도 됩니다";
+  }
+}
+
+/* 이 문항을 자르는 경우, 칸 배정을 미리 «위=문제 / 아래=답» 으로 채워 둔다 */
+function presetSegs(){
+  if(!CUTROW) return;
+  const segs = segments();
+  if(segs.length !== 2) return;
+  const a = $('#segs [data-no="0"]'), b = $('#segs [data-no="1"]');
+  const sa = $('#segs [data-slot="0"]'), sb = $('#segs [data-slot="1"]');
+  if(a){ a.value = String(CUTROW.no); } if(sa){ sa.value = "q"; }
+  if(b){ b.value = String(CUTROW.no); } if(sb){ sb.value = "a"; }
+  hints();
+}
+
+/* 잘랐을 때 어느 슬롯을 «덮어쓸지». 문제 그림을 자르면 문제를, 답 그림을 자르면 답을 갈아 끼운다 */
+function ownSlot(){ return CUTSLOT === "a" ? "a" : "q"; }
+
+/* AI 에게 «답이 시작되는 높이» 를 물어 선을 미리 그어 준다 */
+async function askCut(){
+  if(!IMG) return void ($("#cutMsg").textContent = "그림을 먼저 고르세요.");
+  const srcUrl = CUTSLOT === "a" ? CUTROW?.a_url : CUTROW?.q_url;
+  if(!CUTROW || !srcUrl)
+    return void ($("#cutMsg").textContent = "이미 올라간 그림에서만 쓸 수 있습니다.");
+  if(!WORKER) return void ($("#cutMsg").textContent = "config.js 에 CLAUDE_WORKER_URL 이 없습니다.");
+  const btn = $("#cutAsk"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "보는 중…";
+  try{
+    const r = await fetch(WORKER + "/split-hint", {
+      method:"POST",
+      headers:Object.assign({"Content-Type":"application/json"},
+        CFG.CLAUDE_APP_KEY ? {"x-app-key":CFG.CLAUDE_APP_KEY} : {}),
+      body:JSON.stringify({ url: srcUrl, slot: CUTSLOT })
+    });
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(d.error || ("HTTP " + r.status));
+    if(!d.ok){
+      $("#cutMsg").textContent = d.found
+        ? "답 자리를 찾긴 했는데 미덥지 않아 긋지 않았습니다 — 직접 그어 주세요"
+        : "이 그림에는 답이 같이 있지 않은 것 같습니다";
+      return;
+    }
+    LINES = [ $("#cutCv").height * d.y ];
+    paintCut(); presetSegs();
+    $("#cutMsg").textContent = "선을 그었습니다 — " + (d.why || "확인하고 필요하면 끌어서 옮기세요");
+  }catch(e){
+    $("#cutMsg").textContent = "실패 — " + (e.message||e);
+  }finally{ btn.disabled = false; btn.textContent = old; }
+}
+$("#cutAsk").addEventListener("click", askCut);
+
+$("#cutFile").addEventListener("change", () => {
+  CUTROW = null;
+  const f = $("#cutFile").files?.[0]; if(!f) return;
+  const img = new Image();
+  img.onload = () => { IMG = img; LINES = []; paintCut(); };
+  img.onerror = () => { $("#cutMsg").textContent = "그림을 읽지 못했습니다."; };
+  img.src = URL.createObjectURL(f);
+});
+
+function paintCut(){
+  if(!IMG) return;
+  const cv = $("#cutCv"), wrap = $("#cutWrap");
+  const w = Math.min(IMG.naturalWidth, 1400);
+  SCALE = w / IMG.naturalWidth;
+  cv.width = w; cv.height = Math.round(IMG.naturalHeight * SCALE);
+  const g = cv.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(IMG, 0, 0, cv.width, cv.height);
+
+  wrap.querySelectorAll(".cutline").forEach(el => el.remove());
+  const shown = cv.getBoundingClientRect().height || cv.height;
+  LINES.sort((a,b)=>a-b).forEach((y, i) => {
+    const d = document.createElement("div");
+    d.className = "cutline";
+    d.style.top = (y / cv.height * shown) + "px";
+    d.innerHTML = `<b data-del="${i}">×</b>`;
+    d.addEventListener("pointerdown", ev => {
+      if(ev.target.dataset.del !== undefined){
+        LINES.splice(+ev.target.dataset.del, 1); paintCut(); return;
+      }
+      ev.preventDefault();
+      const rect = cv.getBoundingClientRect();
+      const move = m => {
+        const ny = Math.max(4, Math.min(cv.height - 4,
+          (m.clientY - rect.top) / rect.height * cv.height));
+        LINES[i] = ny; paintCut();
+      };
+      const up = () => { removeEventListener("pointermove", move); removeEventListener("pointerup", up); };
+      addEventListener("pointermove", move); addEventListener("pointerup", up);
+    });
+    wrap.appendChild(d);
+  });
+  drawSegs();
+}
+
+$("#cutCv").addEventListener("click", e => {
+  if(!IMG) return;
+  const cv = $("#cutCv"), rect = cv.getBoundingClientRect();
+  const y = (e.clientY - rect.top) / rect.height * cv.height;
+  if(LINES.some(v => Math.abs(v - y) < 8)) return;
+  LINES.push(y); paintCut();
+});
+$("#cutAdd").addEventListener("click", () => {
+  if(!IMG) return;
+  const cv = $("#cutCv");
+  LINES.push(cv.height * (LINES.length + 1) / (LINES.length + 2));
+  paintCut();
+});
+$("#cutClear").addEventListener("click", () => { LINES = []; paintCut(); });
+
+/* 선으로 나뉜 칸 목록 */
+function segments(){
+  const cv = $("#cutCv");
+  const ys = [0, ...LINES.slice().sort((a,b)=>a-b), cv.height];
+  const out = [];
+  for(let i = 0; i < ys.length - 1; i++)
+    if(ys[i+1] - ys[i] > 12) out.push([ys[i], ys[i+1]]);
+  return out;
+}
+function drawSegs(){
+  const segs = segments();
+  const opts = ROWS.map(r => `<option value="${r.no}">${r.no}번</option>`).join("");
+  $("#segs").innerHTML = segs.map(([a,b], i) => `
+    <div class="seg" data-i="${i}">
+      <span class="rng">칸 ${i+1} · 세로 ${Math.round(a)}~${Math.round(b)}px</span>
+      <select data-no="${i}">
+        <option value="">— 안 씀 —</option>
+        ${i > 0 ? `<option value="join">앞에 이어붙이기</option>` : ""}
+        ${opts}
+      </select>
+      <select data-slot="${i}">
+        <option value="q">문제</option>
+        <option value="a">답</option>
+      </select>
+      <span class="rng" data-hint="${i}"></span>
+    </div>`).join("") || `<p class="note">그림을 먼저 고르세요.</p>`;
+
+  $("#segs").querySelectorAll("select").forEach(s =>
+    s.addEventListener("change", hints));
+  hints();
+}
+function hints(){
+  segments().forEach((_, i) => {
+    const no = $(`#segs [data-no="${i}"]`)?.value;
+    const slot = $(`#segs [data-slot="${i}"]`)?.value;
+    const h = $(`#segs [data-hint="${i}"]`); if(!h) return;
+    if(!no){ h.textContent = ""; return; }
+    if(no === "join"){ h.textContent = "↑ 합침"; h.style.color = "var(--ac)"; return; }
+    const r = ROWS.find(x => x.no === +no);
+    const cur = r ? st(r, slot) : "empty";
+    h.textContent = cur === "empty" ? "빈칸 →" : `${cur} · 후보로`;
+    h.style.color = cur === "empty" ? "var(--ok)" : "var(--draft)";
+  });
+}
+
+/* 자른 조각을 잘라 올림 */
+$("#cutSave").addEventListener("click", async () => {
+  if(!IMG) return void ($("#cutMsg").textContent = "그림을 먼저 고르세요.");
+  const segs = segments();
+  const plan = [];
+  segs.forEach(([a,b], i) => {
+    const v = $(`#segs [data-no="${i}"]`)?.value;
+    const slot = $(`#segs [data-slot="${i}"]`)?.value || "q";
+    if(!v) return;
+    if(v === "join"){
+      const prev = plan[plan.length - 1];
+      if(prev){ prev.parts.push([a,b]); return; }
+      return;
+    }
+    plan.push({ no:+v, slot, parts:[[a,b]] });
+  });
+  if(!plan.length) return void ($("#cutMsg").textContent = "넣을 칸을 하나도 안 골랐습니다.");
+
+  $("#cutSave").disabled = true;
+  let ok = 0, bad = 0;
+  for(const p of plan){
+    try{
+      const blob = await cropParts(p.parts);
+      const url = await put(pathOf(p.no, p.slot), blob);
+      const row = ROWS.find(r => r.no === p.no);
+      if(!row) throw new Error(p.no + "번 문항이 없습니다");
+      /* frags 에 어디서 잘랐는지 남겨 둠 — 나중에 다시 자를 때 참고 */
+      const frags = (Array.isArray(row.frags) ? row.frags : []).concat(
+        p.parts.map((pt, i) => ({ slot:p.slot, y0:Math.round(pt[0]), y1:Math.round(pt[1]), ord:i+1 })));
+      await sb.from("practicals").update({ frags }).eq("id", row.id);
+      row.frags = frags;
+      /* 이 문항 자신의 그림을 다시 자른 것이면 덮어쓴다 */
+      /* 내가 지금 자르고 있는 그 그림의 자리면 덮어쓰고, 다른 자리면 후보로 넣는다 */
+      const mine = !!(CUTROW && row.no === CUTROW.no && p.slot === ownSlot());
+      await assign(p.slot, url, row, mine);
+      ok++;
+      $("#cutMsg").textContent = `${ok}/${plan.length} 넣는 중…`;
+    }catch(e){ bad++; $("#cutMsg").textContent = "실패 — " + (e.message||e); }
+  }
+  $("#cutSave").disabled = false;
+  $("#cutMsg").textContent = `끝 — ${ok}개 넣음${bad ? ` · ${bad}개 실패` : ""}`;
+  const back = CUTROW ? CUTROW.no : null;
+  await load();
+  if(ok && !bad){
+    setTimeout(() => { closeCut(); if(back) detail(back); }, 600);
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   회차 미상 정리
+   ───────────────────────────────────────────────────
+   PDF 에서 회차를 못 읽으면 «연도 9001 · 9002 …» 같은 없는 연도에 넣어 둔다.
+   자동 변환이 회차를 못 찾던 시절에 이쪽으로 잔뜩 쌓였다.
+   지금은 v213 에서 회차를 제대로 읽으므로, 여기 남은 것은
+   ① 다시 넣으면 제자리로 갈 것 이거나  ② 원래 회차가 없는 자료(단답 정리본)다.
+   그 둘을 갈라 보여 준다. 지우는 것은 사람이 정한다.
+   ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   배점 없는 문항 채우기
+   ───────────────────────────────────────────────────────────
+   원본 스캔에서 오른쪽 끝에 작게 찍힌 «►점수 : 5점» 은 OCR 이 곧잘 흘린다.
+   글자 층에 아예 없으니 코드로는 못 만든다 — 눈으로 보고 넣는 수밖에 없다.
+
+   그래서 «그림 + 숫자칸» 을 한 줄씩 세로로 늘어놓는다.
+   숫자를 치고 Enter 를 누르면 바로 저장되고 다음 칸으로 내려간다.
+   회차 총점이 100 이 되면 그 회차 줄이 초록으로 바뀐다 — 다 채웠다는 뜻이다.
+   ═══════════════════════════════════════════════════════════ */
+async function fillPoints(){
+  if(!SID) return void say("과목을 먼저 고르세요.");
+  say("배점 없는 문항을 찾는 중…");
+  const { data, error } = await sb.from("practicals")
+    .select("id,year,session,no,points,q_url,q_text")
+    .eq("subject_id", SID).lt("year", 9000)
+    .order("year", { ascending:false }).order("session").order("no");
+  if(error) return void say("불러오지 못했습니다 — " + esc(error.message));
+  const all = data || [];
+  const 빈칸 = all.filter(r => !Number(r.points));
+  const 합 = new Map();
+  all.forEach(r => {
+    const k = `${r.year}-${r.session}`;
+    합.set(k, (합.get(k) || 0) + (Number(r.points) || 0));
+  });
+
+  $("#detCard").classList.remove("hide");
+  const box = $("#slots");
+  const ttl = $("#detTitle"); if(ttl) ttl.textContent = `배점 없는 문항 ${빈칸.length}개`;
+  if(!빈칸.length){
+    box.innerHTML = `<p class="note">배점이 빈 문항이 없습니다. 다 채우셨습니다.</p>`;
+    return void say("배점 빈 곳 없음.");
+  }
+  box.innerHTML = `
+    <p class="note" style="margin-bottom:10px">
+      숫자를 치고 <b>Enter</b> 를 누르면 저장되고 다음 칸으로 내려갑니다.
+      배점은 그림 오른쪽 위에 «►점수 : N점» 으로 찍혀 있습니다.<br>
+      회차 총점이 100 이 되면 초록으로 바뀝니다 — 그 회차는 다 채운 것입니다.
+    </p>
+    <div id="ptList"></div>`;
+  const list = $("#ptList");
+  list.innerHTML = 빈칸.map((r, i) => {
+    const k = `${r.year}-${r.session}`;
+    return `<div class="ptrow" data-k="${k}" style="display:flex;gap:10px;align-items:flex-start;
+              padding:9px 0;border-bottom:1px solid var(--rule)">
+      <div style="flex:0 0 118px">
+        <b>${r.year}년 ${r.session}회</b><br>
+        <span style="color:var(--mut)">${r.no}번</span><br>
+        <span class="ptsum" style="font-size:12px;color:var(--mut)">합 ${합.get(k) || 0}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        ${r.q_url
+          ? `<img src="${esc(r.q_url)}" loading="lazy" style="max-width:100%;max-height:190px;
+               border:1px solid var(--rule);border-radius:6px;background:#fff">`
+          : `<span class="note">${esc((r.q_text || "").slice(0, 120)) || "그림 없음"}</span>`}
+      </div>
+      <div style="flex:0 0 90px">
+        <input class="ptin" type="number" inputmode="numeric" min="1" max="20"
+               data-id="${r.id}" data-i="${i}" data-no="${r.no}" placeholder="점수"
+               style="width:100%;padding:7px;text-align:center">
+      </div>
+    </div>`;
+  }).join("");
+
+  const ins = [...list.querySelectorAll(".ptin")];
+  const 저장 = async (el) => {
+    const v = parseInt(el.value, 10);
+    if(!(v >= 1 && v <= 20)) return;
+    el.disabled = true;
+    const { error } = await sb.from("practicals").update({ points:v }).eq("id", +el.dataset.id);
+    if(error){ el.disabled = false; return void say("저장 실패 — " + esc(error.message)); }
+    const row = el.closest(".ptrow"), k = row.dataset.k;
+    합.set(k, (합.get(k) || 0) + v);
+    /* 같은 회차 줄의 «합» 을 다 같이 고쳐 준다 */
+    list.querySelectorAll(`.ptrow[data-k="${k}"] .ptsum`).forEach(sp => {
+      const t = 합.get(k);
+      sp.textContent = `합 ${t}`;
+      const done = (t >= 98 && t <= 102);
+      sp.style.color = done ? "var(--ok)" : "var(--mut)";
+      sp.style.fontWeight = done ? "700" : "400";
+    });
+    row.style.opacity = ".45";
+    const left = ins.filter(x => !x.disabled).length;
+    say(`${k.replace("-", "년 ")}회 ${el.dataset.no}번 — ${v}점 저장. 남은 ${left}개`);
+    const nxt = ins.find(x => !x.disabled && +x.dataset.i > +el.dataset.i);
+    if(nxt){ nxt.focus(); nxt.scrollIntoView({ block:"center", behavior:"smooth" }); }
+  };
+  ins.forEach(el => {
+    el.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); 저장(el); } });
+    el.addEventListener("blur", () => { if(el.value) 저장(el); });
+  });
+  if(ins[0]) ins[0].focus();
+  say(`배점 없는 문항 <b>${빈칸.length}개</b> — 숫자 치고 Enter.`);
+}
+
+/* 이름표 갈래
+     9001~9299  예전 판이 «회차를 못 찾아» 임시로 던져 둔 자리 — 이제 쓸모없다
+     9301·9302  오고초려 · 핵심빈출
+     9400~9599  단답 · 소방설비
+   앞엣것만 지우고 뒤엣것은 절대 안 건드린다. */
+const OLD_LO = 9000, OLD_HI = 9299;
+const 이름표 = y =>
+  y === 9301 ? "오고초려" :
+  y === 9302 ? "핵심 빈출" :
+  (y >= 9400 && y <= 9499) ? `${2000 + (y - 9400)}년 단답` :
+  (y >= 9500 && y <= 9599) ? `소방설비 ${2000 + (y - 9500)}년` :
+  (y >= OLD_LO && y <= OLD_HI) ? "옛 임시 자리" : "";
+
+async function showOrphans(){
+  if(!SID) return void say("과목을 먼저 고르세요.");
+  say("회차 미상 자료를 세는 중…");
+  const { data, error } = await sb.from("practicals")
+    .select("id,year,session,no,q_url,a_url,easy_md,q_text")
+    .eq("subject_id", SID).gte("year", 9000).order("year").order("session").order("no");
+  if(error) return void say("불러오지 못했습니다 — " + esc(error.message));
+  const rows = data || [];
+  const { data: real } = await sb.from("practicals")
+    .select("year,session").eq("subject_id", SID).lt("year", 9000);
+  const realKeys = new Set((real || []).map(r => `${r.year}-${r.session}`));
+
+  const 옛것 = rows.filter(r => r.year >= OLD_LO && r.year <= OLD_HI);
+  const 새것 = rows.filter(r => r.year > OLD_HI);
+
+  const bar = $("#dumpCard").querySelector(".btns");
+  let del = $("#btnOrphanDel");
+  if(!del){
+    del = document.createElement("button");
+    del.id = "btnOrphanDel"; del.className = "danger";
+    bar.appendChild(del);
+    del.addEventListener("click", () => wipeOld());
+  }
+
+  if(!rows.length){
+    setDumpVisible();
+    setDump(head() + `## 회차 미상 정리\n\n연도 9000 이상으로 들어간 자료가 **하나도 없습니다.**\n`
+      + `이 과목은 전부 실제 회차에 들어가 있습니다. (실제 회차 ${realKeys.size}개)\n`);
+    del.classList.add("hide");
+    return void say("회차 미상 자료 없음 — 다 정리돼 있습니다.");
+  }
+
+  const 표 = list => {
+    const by = {};
+    list.forEach(r => (by[`${r.year}-${r.session}`] ||= []).push(r));
+    const L = [`| 자리 | 무엇 | 문항 | 문제 | 답 | 해설 | 세 칸 다 빔 |`, `|---|---|---|---|---|---|---|`];
+    Object.entries(by).forEach(([k, g]) => {
+      const [y, ss] = k.split("-");
+      L.push(`| ${y}년 ${ss}회 | ${이름표(+y) || "—"} | ${g.length} `
+        + `| ${g.filter(r => r.q_url || r.q_text).length} `
+        + `| ${g.filter(r => r.a_url).length} `
+        + `| ${g.filter(r => r.easy_md).length} `
+        + `| ${g.filter(r => !r.q_url && !r.q_text && !r.a_url && !r.easy_md).length} |`);
+    });
+    return L.join("\n");
+  };
+
+  const L = [`## 회차 미상 정리\n`];
+  L.push(`실제 회차 ${realKeys.size}개 · 회차 없는 자료 ${rows.length}문항\n`);
+  if(옛것.length){
+    L.push(`### ① 옛 임시 자리 (9001~9299) — **${옛것.length}문항**\n`);
+    L.push(`예전 판이 회차를 못 읽어 임시로 던져 둔 것입니다.`);
+    L.push(`지금은 자동 변환이 회차를 제대로 읽으므로 **같은 자료가 제자리에 다시 들어가 있습니다.**`);
+    L.push(`여기 남은 건 옛 껍데기라 지워도 됩니다.\n`);
+    L.push(표(옛것));
+    L.push(``);
+  }
+  if(새것.length){
+    L.push(`### ② 이번 판이 붙인 이름표 — ${새것.length}문항\n`);
+    L.push(`**이건 지우면 안 됩니다.** 회차가 없는 자료(오고초려·핵심빈출·단답·소방)에`);
+    L.push(`제자리를 만들어 준 것입니다.\n`);
+    L.push(표(새것));
+    L.push(``);
+  }
+  L.push(`### 무엇을 하면 되나\n`);
+  L.push(옛것.length
+    ? `아래 «옛 임시 자리 ${옛것.length}문항 통째로 지우기» 를 누르세요. ②는 건드리지 않습니다.`
+    : `지울 옛 자료가 없습니다. 남은 건 전부 이번 판이 제자리를 만들어 준 것입니다.`);
+  setDumpVisible();
+  setDump(head() + L.join("\n") + "\n");
+  say(`회차 없는 자료 <b>${rows.length}문항</b> — 옛것 ${옛것.length} · 이번 판 이름표 ${새것.length}. `
+    + (옛것.length ? "아래 단추로 옛것만 지울 수 있습니다." : "지울 옛것이 없습니다."));
+
+  del.textContent = `옛 임시 자리 ${옛것.length}문항 통째로 지우기`;
+  del.classList.toggle("hide", !옛것.length);
+
+  async function wipeOld(){
+    const ids = 옛것.map(r => r.id);
+    if(!ids.length) return void say("지울 옛 자료가 없습니다.");
+    const 알맹이 = 옛것.filter(r => r.q_url || r.q_text || r.a_url || r.easy_md).length;
+    if(!confirm(`연도 9001~9299 의 ${ids.length}문항을 지웁니다.\n`
+      + `그중 ${알맹이}문항에는 자료(그림·글·해설)가 들어 있습니다.\n\n`
+      + `9301(오고초려) · 9302(핵심빈출) · 94NN(단답) · 95NN(소방)은 건드리지 않습니다.\n`
+      + `실제 회차(2008~2026)도 건드리지 않습니다.\n\n지울까요? 되돌릴 수 없습니다.`)) return;
+    del.disabled = true;
+    let done = 0;
+    for(let i = 0; i < ids.length; i += 100){
+      const 조각 = ids.slice(i, i + 100);
+      const { error } = await sb.from("practicals").delete().in("id", 조각);
+      if(error){ del.disabled = false; return void say("지우지 못했습니다 — " + esc(error.message)); }
+      done += 조각.length;
+      del.textContent = `지우는 중 ${done}/${ids.length}`;
+      say(`지우는 중… ${done}/${ids.length}`);
+    }
+    del.disabled = false;
+    say(`옛 임시 자리 <b>${done}문항</b>을 지웠습니다.`);
+    if(typeof ALL !== "undefined") ALL.length = 0;
+    showOrphans();
+  }
+}
+function setDumpVisible(){ $("#dumpCard").classList.remove("hide"); }
+
+/* ═══════════════════════════════════════════════════
+   문제·답 한 번에 나눠 넣기
+   ───────────────────────────────────────────────────
+   복원본은 답이 문제 그림 안에 같이 찍혀 있는 경우가 많다.
+   편집기를 열고 → 선 긋고 → 칸 배정하고 → 저장하는 네 걸음을
+   단추 하나로 줄인다. 사람이 하는 일은 «결과를 보는 것» 뿐이다.
+
+   확신이 없으면 자르지 않는다. 억지로 자른 그림을 되돌리는 것보다
+   안 자르고 넘어가는 쪽이 훨씬 싸다.
+   ═══════════════════════════════════════════════════ */
+
+/* 주소 → Image. 캔버스 오염을 피하려고 blob 으로 받는다 */
+function loadImg(url){
+  return fetch(url, { mode:"cors" })
+    .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+    .then(b => new Promise((ok, no) => {
+      const im = new Image();
+      im.onload = () => ok(im);
+      im.onerror = () => no(new Error("그림을 읽지 못했습니다"));
+      im.src = URL.createObjectURL(b);
+    }));
+}
+
+/* 그림 하나를 y 비율에서 둘로 잘라 [위, 아래] blob 을 돌려준다 */
+function sliceAt(img, ratio){
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cut = Math.round(H * ratio);
+  const maxW = 1600, sc = Math.min(1, maxW / W);
+  const make = (y0, y1) => new Promise((res, rej) => {
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(W * sc); cv.height = Math.round((y1 - y0) * sc);
+    const g = cv.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height);
+    g.drawImage(img, 0, y0, W, y1 - y0, 0, 0, cv.width, cv.height);
+    cv.toBlob(b => b ? res(b) : rej(new Error("자르지 못했습니다")), "image/jpeg", 0.82);
+  });
+  return Promise.all([make(0, cut), make(cut, H)]);
+}
+
+/* 워커에게 «답이 시작되는 높이» 를 묻는다. 못 찾으면 null */
+async function askSplitY(url, slot){
+  if(!WORKER) throw new Error("config.js 에 CLAUDE_WORKER_URL 이 없습니다");
+  const r = await fetch(WORKER + "/split-hint", {
+    method:"POST",
+    headers:Object.assign({"Content-Type":"application/json"},
+      CFG.CLAUDE_APP_KEY ? {"x-app-key":CFG.CLAUDE_APP_KEY} : {}),
+    /* v214 — slot 을 빠뜨리면 답 그림도 «문제» 기준으로 물어보게 된다 */
+    body:JSON.stringify({ url, slot })
+  });
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(d.error || ("HTTP " + r.status));
+  if(!d.ok || !(d.y > 0.05 && d.y < 0.95)) return { y:null, why:d.why || "", found:!!d.found };
+  return { y:d.y, why:d.why || "", found:true };
+}
+
+/* 문항 하나 — 경계 찾고, 자르고, 등록까지 */
+async function autoCutOne(row, btn, quiet){
+  if(!row || !row.q_url) return { ok:false, why:"문제 그림이 없습니다" };
+  const old = btn ? btn.textContent : null;
+  if(btn){ btn.disabled = true; btn.textContent = "나누는 중…"; }
+  try{
+    const hint = await askSplitY(row.q_url, "q");
+    if(!hint.y){
+      if(btn) log(`${row.no}번 — 답이 같이 있지 않은 것 같습니다${hint.why ? " ("+hint.why+")" : ""}`, "bad");
+      return { ok:false, why:"경계를 못 찾음" };
+    }
+    const img = await loadImg(row.q_url);
+    const [top, bot] = await sliceAt(img, hint.y);
+    const qUrl = await put(pathOf(row.no, "q"), top);
+    const aUrl = await put(pathOf(row.no, "a"), bot);
+    /* 어디서 잘랐는지 남겨 둔다 — 나중에 다시 볼 때 근거가 된다 */
+    const frags = (Array.isArray(row.frags) ? row.frags : []).concat([
+      { slot:"q", y0:0, y1:Math.round(img.naturalHeight * hint.y), ord:1, by:"auto" },
+      { slot:"a", y0:Math.round(img.naturalHeight * hint.y), y1:img.naturalHeight, ord:1, by:"auto" }
+    ]);
+    await sb.from("practicals").update({ frags }).eq("id", row.id);
+    row.frags = frags;
+    await assign("q", qUrl, row, true);
+    await assign("a", aUrl, row, true);
+    if(!quiet) log(`${row.no}번 — 나눠 넣었습니다 (${hint.why || "경계 " + Math.round(hint.y*100) + "%"})`, "ok");
+    return { ok:true };
+  }catch(e){
+    log(`${row.no}번 실패 — ${e.message || e}`, "bad");
+    return { ok:false, why:String(e.message || e) };
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = old; }
+    if(!quiet){ await load(); if(CUR) detail(CUR.no); }
+  }
+}
+
+/* 이 회차에서 «문제는 있는데 답이 빈» 문항을 몰아서 나눈다 */
+let AUTOSTOP = false;
+async function autoCutRound(){
+  const targets = ROWS.filter(r => r.q_url && !r.a_url && !r.a_text);
+  if(!targets.length) return void say("이 회차에는 답이 빈 문항이 없습니다.");
+  if(!confirm(`답이 빈 ${targets.length}문항을 하나씩 보고 문제·답으로 나눕니다.\n`
+    + `경계를 못 찾은 문항은 건드리지 않습니다.\n\n계속할까요?`)) return;
+  AUTOSTOP = false;
+  $("#detCard").classList.remove("hide");
+  $("#log").classList.remove("hide");
+  $("#btnAutoStop").classList.remove("hide");
+  const b = $("#btnAutoCut"); const old = b.textContent;
+  b.disabled = true;
+  let ok = 0, skip = 0;
+  for(let i = 0; i < targets.length; i++){
+    if(AUTOSTOP){ log("중지했습니다.", "bad"); break; }
+    b.textContent = `나누는 중 ${i+1}/${targets.length}`;
+    const r = await autoCutOne(targets[i], null, true);
+    if(r.ok){ ok++; log(`${targets[i].no}번 — 나눔`, "ok"); }
+    else { skip++; log(`${targets[i].no}번 — 건너뜀 (${r.why})`, "bad"); }
+    await new Promise(z => setTimeout(z, 400));   /* 워커 한도를 넘지 않게 */
+  }
+  b.disabled = false; b.textContent = old;
+  $("#btnAutoStop").classList.add("hide");
+  say(`끝 — ${ok}문항 나눠 넣음 · ${skip}문항은 그대로 뒀습니다.`
+    + (skip ? " 건너뛴 것은 답이 정말 없거나, 경계가 뚜렷하지 않은 문항입니다." : ""));
+  await load();
+}
+
+/* 여러 조각을 세로로 이어 붙여 한 장으로 만듦 (페이지 넘김 처리) */
+function cropParts(parts){
+  return new Promise((res, rej) => {
+    const cv = $("#cutCv");
+    const sx = IMG.naturalWidth / cv.width;
+    const W = IMG.naturalWidth;
+    const H = parts.reduce((s,[a,b]) => s + Math.round((b-a) * sx), 0);
+    const out = document.createElement("canvas");
+    const maxW = 1600, sc = Math.min(1, maxW / W);
+    out.width = Math.round(W * sc); out.height = Math.round(H * sc);
+    const g = out.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0,0,out.width,out.height);
+    let y = 0;
+    parts.forEach(([a,b]) => {
+      const sy = Math.round(a * sx), sh = Math.round((b-a) * sx);
+      g.drawImage(IMG, 0, sy, W, sh, 0, Math.round(y*sc), out.width, Math.round(sh*sc));
+      y += sh;
+    });
+    out.toBlob(b => b ? res(b) : rej(new Error("자르지 못했습니다")), "image/jpeg", 0.82);
+  });
+}
+
+/* ── 시작 ───────────────────────────────────────── */
+(async function boot(){
+  if(!CFG.SUPABASE_URL){ $("#loginMsg").textContent = "config.js 를 찾지 못했습니다."; return; }
+  if(await gate()) await loadSubjects();
+})();
+})();
+</script>
+</body>
+</html>

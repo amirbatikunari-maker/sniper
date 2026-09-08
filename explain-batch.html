@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>해설 배치 · 기출 해설 노트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb; --card:#fff; --ink:#0e1726; --mut:#5c6b84; --line:#dce3ed;
+  --ac:#1f6feb; --ok:#12946b; --bad:#d2453c; --warn:#c6851b; --sunk:#eef2f8;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0b1220; --card:#131d2e; --ink:#e4eaf3; --mut:#8798b2; --line:#22304a;
+  --ac:#55a0ff; --ok:#35be8d; --bad:#ff6b61; --warn:#e5ac45; --sunk:#0f1827;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Pretendard,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:20px;margin:0 0 4px;font-weight:700}
+.sub{color:var(--mut);font-size:13.5px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:700}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+select,input,button,textarea{font:inherit;color:inherit}
+select,input[type=text],input[type=password],input[type=email],input[type=number]{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+  background:var(--sunk);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:130px}
+button{padding:10px 16px;border-radius:7px;border:1px solid var(--line);
+  background:var(--sunk);cursor:pointer;font-weight:600;font-size:14px}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btns>button{flex:none}
+.stat{display:flex;gap:6px 22px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.stat b{color:var(--ink)}
+.bar{height:7px;background:var(--sunk);border-radius:4px;overflow:hidden;margin:12px 0 10px}
+.bar>i{display:block;height:100%;background:var(--ac);width:0;transition:width .25s}
+.log{max-height:340px;overflow:auto;background:var(--sunk);border:1px solid var(--line);
+  border-radius:7px;padding:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.7}
+.log div{white-space:pre-wrap;word-break:break-all}
+.log .ok{color:var(--ok)} .log .bad{color:var(--bad)} .log .skip{color:var(--warn)}
+.note{font-size:12.5px;color:var(--mut);margin-top:10px}
+.hide{display:none!important}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+</style>
+<style>
+.subnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  max-width:1100px;margin:14px auto 0;padding:8px 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.subnav-t{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  color:var(--faint);margin-right:6px;white-space:nowrap}
+.subnav a{font-size:13px;font-weight:600;text-decoration:none;padding:7px 11px;
+  border-radius:7px;color:var(--mut);white-space:nowrap}
+.subnav a:hover{background:var(--acs);color:var(--ac)}
+.subnav a.on{background:var(--ac);color:#fff}
+</style>
+</head>
+<body>
+<div class="subnav">
+  <span class="subnav-t">자료 만들기</span>
+  <a href="./ingest.html">PDF 자동 변환</a>
+  <a href="./review.html">검수</a>
+  <a href="./explain-batch.html" class="on">해설 배치</a>
+  <a href="./storage-clean.html">저장소 정리</a>
+  <a href="./practice.html" style="margin-left:auto">← 실기뷰어</a>
+</div>
+
+<div class="wrap">
+  <h1>해설 배치</h1>
+  <p class="sub">답이 있는 문항만 골라서 해설을 한 번에 돌림. 중간에 멈춰도 이어서 할 수 있음.</p>
+
+  <!-- 로그인 -->
+  <div class="card" id="loginCard">
+    <h2>로그인</h2>
+    <div class="row">
+      <div><label for="em">이메일</label><input id="em" type="email" autocomplete="username"></div>
+      <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="btns"><button class="pri" id="btnLogin">들어가기</button></div>
+    <p class="note" id="loginMsg"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <!-- 대상 -->
+    <div class="card">
+      <h2>어느 것을 돌릴까</h2>
+      <div class="row">
+        <div><label for="fSub">과목</label><select id="fSub"></select></div>
+        <div><label for="fYear">연도</label><select id="fYear"><option value="">전체</option></select></div>
+        <div><label for="fSess">회차</label><select id="fSess"><option value="">전체</option></select></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label for="fMode">범위</label><select id="fMode">
+          <option value="missing">해설 없는 것만 (권장)</option>
+          <option value="all">전부 다시 (있는 해설도 덮어씀)</option>
+        </select></div>
+        <div><label for="fEffort">사고량</label><select id="fEffort">
+          <option value="low">낮음 (권장 · 가장 쌈)</option>
+          <option value="mid">보통</option>
+          <option value="high">높음</option>
+        </select></div>
+        <div><label for="fConc">동시 처리</label><select id="fConc">
+          <option>2</option><option selected>3</option><option>4</option><option>6</option>
+        </select></div>
+      </div>
+      <div class="btns">
+        <button id="btnScan">대상 세어보기</button>
+      </div>
+      <p class="note" id="scanMsg">과목을 고르고 «대상 세어보기»를 누르세요.</p>
+    </div>
+
+    <!-- 실행 -->
+    <div class="card">
+      <h2>진행</h2>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="stat">
+        <span>대상 <b id="sTotal">0</b></span>
+        <span>완료 <b id="sDone">0</b></span>
+        <span>실패 <b id="sBad">0</b></span>
+        <span>건너뜀 <b id="sSkip">0</b></span>
+        <span>입력토큰 <b id="sIn">0</b></span>
+        <span>출력토큰 <b id="sOut">0</b></span>
+      </div>
+      <div class="btns">
+        <button class="pri" id="btnRun" disabled>돌리기</button>
+        <button id="btnStop" disabled>멈추기</button>
+        <button id="btnRetry" disabled>실패한 것만 다시</button>
+      </div>
+      <p class="note">브라우저를 닫으면 멈춤. 다시 열고 «해설 없는 것만»으로 돌리면 남은 것부터 이어짐.</p>
+    </div>
+
+    <div class="card">
+      <h2>기록</h2>
+      <div class="log" id="log"><div class="mut">아직 없음</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script>
+(function(){
+"use strict";
+const CFG = window.APP_CONFIG || {};
+const $ = s => document.querySelector(s);
+
+/* 워커 주소 — config.js 에 CLAUDE_WORKER_URL 을 넣어 두면 그걸 씀.
+   없으면 아래 기본값. 배포한 gichul-ai 주소로 바꿔 주세요. */
+const WORKER = (CFG.CLAUDE_WORKER_URL || "https://gichul-ai.amirbatikunari.workers.dev").replace(/\/$/,"");
+const APPKEY = CFG.CLAUDE_APP_KEY || "";
+
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+
+let ROWS = [], TARGET = [], FAILED = [], RUNNING = false, STOP = false;
+/* v209 — 열쇠·설정이 잘못되면 1257개가 «전부» 같은 오류로 순식간에 탄다.
+   실제로 581개가 1초 만에 실패했다. 그래서 처음 5개가 연달아 같은 이유로
+   실패하면 스스로 멈추고 그 이유를 한 번만 크게 보여 준다. */
+let RUNBAD = 0, LASTWHY = "";
+const N = { total:0, done:0, bad:0, skip:0, tin:0, tout:0 };
+
+/* ── 기록 ─────────────────────────────────────────── */
+function log(msg, cls){
+  const box = $("#log");
+  if(box.dataset.clean !== "1"){ box.innerHTML = ""; box.dataset.clean = "1"; }
+  const d = document.createElement("div");
+  if(cls) d.className = cls;
+  d.textContent = new Date().toLocaleTimeString("ko-KR",{hour12:false}) + "  " + msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+/* 오류 문구를 보고 «무엇을 고쳐야 하는지» 를 짚어 준다 */
+function hint(why){
+  const box = $("#scanMsg");
+  let tip = "";
+  if(/403|forbidden|not allowed/i.test(why))
+    tip = `<b>Anthropic 이 요청 자체를 막았습니다.</b> 워커의
+           <code>/selftest</code> 를 브라우저로 열어 보세요 —
+           <code>https://gichul-ai.amirbatikunari.workers.dev/selftest</code><br>
+           거기 나오는 <code>upstream</code> 이 진짜 이유입니다.
+           보통 ① API 키가 잘못 붙여넣어졌거나 ② 결제·크레딧이 없거나
+           ③ 키가 해지된 경우입니다.`;
+  else if(/401|authentication/i.test(why))
+    tip = "API 키가 맞지 않습니다. 워커 설정에서 <b>ANTHROPIC_API_KEY</b> 를 다시 넣어 주세요.";
+  else if(/credit|balance/i.test(why))
+    tip = "Anthropic 계정에 잔액이 없습니다. 콘솔에서 결제 수단·크레딧을 확인해 주세요.";
+  else if(/model/i.test(why))
+    tip = "모델 이름이 맞지 않습니다. 워커 변수 <b>MODEL</b> 을 <code>claude-opus-5</code> 로 맞춰 주세요.";
+  else if(/CLAUDE_WORKER_URL|Failed to fetch|NetworkError/i.test(why))
+    tip = "워커에 닿지 못했습니다. <code>config.js</code> 의 <b>CLAUDE_WORKER_URL</b> 주소를 확인해 주세요.";
+  else tip = "위 기록의 첫 줄이 실제 이유입니다.";
+  box.innerHTML = `<span style="color:var(--bad)">멈췄습니다.</span> ${tip}`;
+}
+
+function paint(){
+  $("#sTotal").textContent = N.total;
+  $("#sDone").textContent  = N.done;
+  $("#sBad").textContent   = N.bad;
+  $("#sSkip").textContent  = N.skip;
+  $("#sIn").textContent    = N.tin.toLocaleString();
+  $("#sOut").textContent   = N.tout.toLocaleString();
+  const seen = N.done + N.bad + N.skip;
+  $("#barFill").style.width = N.total ? Math.round(seen / N.total * 100) + "%" : "0%";
+}
+
+/* ── 로그인 ───────────────────────────────────────── */
+async function gate(){
+  const { data } = await sb.auth.getSession();
+  if(data?.session){ $("#loginCard").classList.add("hide"); $("#main").classList.remove("hide"); return true; }
+  return false;
+}
+$("#btnLogin").addEventListener("click", async () => {
+  const email = $("#em").value.trim(), password = $("#pw").value;
+  if(!email || !password) return void ($("#loginMsg").textContent = "이메일과 비밀번호를 넣으세요.");
+  $("#btnLogin").disabled = true; $("#loginMsg").textContent = "확인 중…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("#btnLogin").disabled = false;
+  if(error) return void ($("#loginMsg").textContent = "들어가지 못했습니다 — " + error.message);
+  $("#loginMsg").textContent = "";
+  await gate(); await loadSubjects();
+});
+
+/* ── 과목·회차 ────────────────────────────────────── */
+async function loadSubjects(){
+  const { data, error } = await sb.from("practical_subjects").select("*").order("sort_order").order("id");
+  if(error){ $("#scanMsg").textContent = "과목을 불러오지 못했습니다 — " + error.message; return; }
+  $("#fSub").innerHTML = (data||[]).map(s => `<option value="${s.id}">${s.name}</option>`).join("")
+    || `<option value="">과목이 없습니다</option>`;
+  const keep = localStorage.getItem("prac:sub");
+  if(keep && (data||[]).some(s => String(s.id) === keep)) $("#fSub").value = keep;
+}
+
+async function fetchRows(sid){
+  const out = [];
+  for(let from = 0; from < 20000; from += 1000){
+    const { data, error } = await sb.from("practicals")
+      .select("*")
+      .eq("subject_id", sid)
+      .order("year",{ascending:false}).order("session",{ascending:false}).order("no")
+      .range(from, from + 999);
+    if(error) throw error;
+    out.push(...(data||[]));
+    if(!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+function applyFilters(){
+  const y = $("#fYear").value, s = $("#fSess").value, mode = $("#fMode").value;
+  return ROWS.filter(r => {
+    if(y && String(r.year) !== y) return false;
+    if(s && String(r.session) !== s) return false;
+    if(!r.a_url && !r.a_text) return false;                 // 답 없는 문항은 대상 아님
+    if(mode === "missing" && r.easy_md) return false;
+    return true;
+  });
+}
+
+$("#btnScan").addEventListener("click", async () => {
+  const sid = +$("#fSub").value;
+  if(!sid) return void ($("#scanMsg").textContent = "과목을 먼저 고르세요.");
+  localStorage.setItem("prac:sub", String(sid));
+  $("#btnScan").disabled = true; $("#scanMsg").textContent = "불러오는 중…";
+  try{
+    ROWS = await fetchRows(sid);
+    const years = [...new Set(ROWS.map(r => r.year))].sort((a,b)=>b-a);
+    const sess  = [...new Set(ROWS.map(r => r.session))].sort();
+    const ky = $("#fYear").value, ks = $("#fSess").value;
+    $("#fYear").innerHTML = `<option value="">전체</option>` + years.map(v=>`<option>${v}</option>`).join("");
+    $("#fSess").innerHTML = `<option value="">전체</option>` + sess.map(v=>`<option value="${v}">제${v}회</option>`).join("");
+    if(ky) $("#fYear").value = ky;
+    if(ks) $("#fSess").value = ks;
+
+    TARGET = applyFilters();
+    const noAns = ROWS.filter(r => !r.a_url && !r.a_text).length;
+    N.total = TARGET.length; N.done = N.bad = N.skip = N.tin = N.tout = 0;
+    FAILED = []; paint();
+    $("#btnRun").disabled = TARGET.length === 0;
+    $("#scanMsg").innerHTML =
+      `전체 <b>${ROWS.length}</b>문항 · 이번에 돌릴 대상 <b>${TARGET.length}</b>문항` +
+      (noAns ? ` · <span class="pill">답 없어서 제외 ${noAns}</span>` : "");
+  }catch(e){
+    $("#scanMsg").textContent = "불러오지 못했습니다 — " + (e.message || e);
+  }finally{ $("#btnScan").disabled = false; }
+});
+
+["#fYear","#fSess","#fMode"].forEach(sel => $(sel).addEventListener("change", () => {
+  if(!ROWS.length) return;
+  TARGET = applyFilters(); N.total = TARGET.length;
+  N.done = N.bad = N.skip = 0; FAILED = []; paint();
+  $("#btnRun").disabled = TARGET.length === 0;
+  $("#scanMsg").innerHTML = `이번에 돌릴 대상 <b>${TARGET.length}</b>문항`;
+}));
+
+/* ── 해설 JSON → 마크다운 ─────────────────────────── */
+function toMd(sol){
+  const L = [];
+  if(sol.gist) L.push(`**${sol.gist}**`, "");
+  if(sol.given?.length){
+    L.push("**주어진 값**", "");
+    sol.given.forEach(g => L.push(`- ${g}`));
+    L.push("");
+  }
+  if(sol.formula?.length){
+    L.push("**쓰는 식**", "");
+    sol.formula.forEach(f => L.push(`$$${f}$$`, ""));
+  }
+  if(sol.steps?.length){
+    L.push("**풀이**", "");
+    sol.steps.forEach((s, i) => {
+      L.push(`${i+1}. ${s.say || ""}`);
+      if(s.math) L.push("", `$$${s.math}$$`, "");
+    });
+    L.push("");
+  }
+  L.push("**답**", "", `> ${sol.answer || ""}${sol.unit ? " " + sol.unit : ""}`, "");
+  if(sol.trap) L.push("**흔한 실수**", "", sol.trap, "");
+  return L.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/* ── 한 문항 ──────────────────────────────────────── */
+async function one(r){
+  const tag = `${r.year}-${r.session} ${String(r.no).padStart(2,"0")}번`;
+  const res = await fetch(WORKER + "/explain", {
+    method:"POST",
+    headers: Object.assign({"Content-Type":"application/json"}, APPKEY ? {"x-app-key":APPKEY} : {}),
+    body: JSON.stringify({
+      q_url:r.q_url, q_text:r.q_text, a_url:r.a_url, a_text:r.a_text,
+      year:r.year, session:r.session, no:r.no, points:r.points,
+      effort: $("#fEffort").value
+    })
+  });
+  const d = await res.json().catch(() => ({}));
+
+  if(!res.ok){
+    if(d.code === "NO_ANSWER"){ N.skip++; log(`${tag} 건너뜀 — 답 없음`, "skip"); return; }
+    throw new Error(d.error || ("HTTP " + res.status));
+  }
+  if(d.usage){ N.tin += d.usage.input_tokens || 0; N.tout += d.usage.output_tokens || 0; }
+
+  const md = toMd(d.sol || {});
+  if(!md || md.length < 20) throw new Error("해설이 비어서 왔습니다");
+
+  /* v204 — 해설 칸이 생겼으므로 상태·판번호도 같이 남긴다.
+     st_sol 은 raw — 기계가 만든 것이라 사람이 검수 화면에서 한 번 봐야 draft 가 된다.
+     sol_ver 를 올려 두면 나중에 «몇 판째인지» 를 알 수 있다.
+     옛 표(칸이 없는 상태)에서도 돌아가게, 실패하면 easy_md 만 다시 넣는다. */
+  const patch = { easy_md: md, st_sol: "raw", sol_by: d.model || null,
+                  sol_ver: (r.sol_ver || 0) + 1 };
+  let up = await sb.from("practicals").update(patch).eq("id", r.id);
+  if(up.error && /st_sol|sol_ver|sol_by|column|schema cache/i.test(up.error.message)){
+    up = await sb.from("practicals").update({ easy_md: md }).eq("id", r.id);
+  }
+  if(up.error) throw new Error("저장 실패 — " + up.error.message);
+
+  N.done++;
+  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""}`, "ok");
+}
+
+/* ── 동시 처리 ────────────────────────────────────── */
+async function run(list){
+  RUNNING = true; STOP = false;
+  $("#btnRun").disabled = true; $("#btnScan").disabled = true;
+  $("#btnStop").disabled = false; $("#btnRetry").disabled = true;
+
+  const conc = +$("#fConc").value || 3;
+  let i = 0;
+  FAILED = [];
+
+  async function worker(){
+    while(!STOP){
+      const idx = i++;
+      if(idx >= list.length) return;
+      const r = list[idx];
+      try{ await one(r); }
+      catch(e){
+        N.bad++; FAILED.push(r);
+        const why = String(e.message || e).slice(0, 120);
+        log(`${r.year}-${r.session} ${String(r.no).padStart(2,"0")}번 실패 — ${why}`, "bad");
+        if(N.done === 0){
+          RUNBAD = (why === LASTWHY) ? RUNBAD + 1 : 1;
+          LASTWHY = why;
+          if(RUNBAD >= 5 && !STOP){
+            STOP = true;
+            log("같은 이유로 연달아 실패해서 멈췄습니다 — 설정 문제로 보입니다", "bad");
+            hint(why);
+          }
+        }
+      }
+      paint();
+    }
+  }
+  await Promise.all(Array.from({length:conc}, worker));
+
+  RUNNING = false;
+  $("#btnStop").disabled = true; $("#btnScan").disabled = false;
+  $("#btnRun").disabled = false;
+  $("#btnRetry").disabled = FAILED.length === 0;
+  log(STOP ? `멈춤 — 완료 ${N.done} · 실패 ${N.bad}` : `끝 — 완료 ${N.done} · 실패 ${N.bad} · 건너뜀 ${N.skip}`);
+}
+
+$("#btnRun").addEventListener("click", () => {
+  if(RUNNING || !TARGET.length) return;
+  N.done = N.bad = N.skip = N.tin = N.tout = 0; N.total = TARGET.length;
+  RUNBAD = 0; LASTWHY = ""; paint();
+  log(`시작 — ${TARGET.length}문항 · 사고량 ${$("#fEffort").value} · 동시 ${$("#fConc").value}`);
+  run(TARGET.slice());
+});
+$("#btnStop").addEventListener("click", () => { STOP = true; $("#btnStop").disabled = true; log("멈추는 중… 진행 중인 것은 끝내고 섭니다"); });
+$("#btnRetry").addEventListener("click", () => {
+  if(RUNNING || !FAILED.length) return;
+  const again = FAILED.slice();
+  N.total = again.length; N.done = N.bad = N.skip = 0; paint();
+  log(`실패한 ${again.length}문항 다시`);
+  run(again);
+});
+
+window.addEventListener("beforeunload", e => { if(RUNNING){ e.preventDefault(); e.returnValue = ""; } });
+
+/* ── 시작 ─────────────────────────────────────────── */
+(async function boot(){
+  if(!CFG.SUPABASE_URL){ $("#loginMsg").textContent = "config.js 를 찾지 못했습니다."; return; }
+  if(await gate()) await loadSubjects();
+  sb.auth.onAuthStateChange?.(() => {});
+})();
+})();
+</script>
+</body>
+</html>

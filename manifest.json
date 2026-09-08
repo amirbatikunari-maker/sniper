@@ -1,41 +1,12 @@
 {
-  "name": "sniper",
-  "short_name": "sniper",
-  "start_url": "./index.html?v=12",
+  "name": "기출 해설 노트",
+  "short_name": "해설노트",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#F6F7F9",
-  "theme_color": "#F6F7F9",
+  "background_color": "#f8fafc",
+  "theme_color": "#1d4ed8",
+  "orientation": "portrait",
   "icons": [
-    {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "WORK Agent",
-      "short_name": "WORK",
-      "url": "./work.html",
-      "icons": [
-        {
-          "src": "./icon.svg",
-          "sizes": "any"
-        }
-      ]
-    },
-    {
-      "name": "검색",
-      "short_name": "검색",
-      "url": "./index.html?q=",
-      "icons": [
-        {
-          "src": "./icon.svg",
-          "sizes": "any"
-        }
-      ]
-    }
-  ],
-  "id": "sniper-v12"
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
 }

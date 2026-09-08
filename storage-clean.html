@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>저장소 정리 · 기출 해설 노트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb; --card:#fff; --ink:#0e1726; --mut:#5c6b84; --line:#dce3ed;
+  --ac:#1f6feb; --ok:#12946b; --bad:#d2453c; --warn:#c6851b; --sunk:#eef2f8;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0b1220; --card:#131d2e; --ink:#e4eaf3; --mut:#8798b2; --line:#22304a;
+  --ac:#55a0ff; --ok:#35be8d; --bad:#ff6b61; --warn:#e5ac45; --sunk:#0f1827;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Pretendard,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 90px}
+h1{font-size:20px;margin:0 0 4px;font-weight:700}
+.sub{color:var(--mut);font-size:13.5px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:700}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+select,input,button{font:inherit;color:inherit}
+input[type=email],input[type=password],input[type=number],select{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+  background:var(--sunk);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+button{padding:10px 16px;border-radius:7px;border:1px solid var(--line);
+  background:var(--sunk);cursor:pointer;font-weight:600;font-size:14px}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btns>button{flex:none}
+.mono,.stat{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.stat{display:flex;gap:6px 22px;flex-wrap:wrap;font-size:12.5px;color:var(--mut)}
+.stat b{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:4px}
+.tile{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.tile .lb{font-size:11.5px;color:var(--mut);font-family:"IBM Plex Mono",monospace;
+  letter-spacing:.06em;text-transform:uppercase}
+.tile .vl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:3px}
+.tile .sm{font-size:12px;color:var(--mut);font-family:"IBM Plex Mono",monospace}
+.tile.hot .vl{color:var(--bad)}
+.bars{margin-top:6px}
+.brow{display:grid;grid-template-columns:1fr 62px;gap:10px;align-items:center;margin:7px 0}
+.brow .nm{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--mut);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .tr{grid-column:1/-1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.brow .tr>i{display:block;height:100%;background:var(--ac)}
+.brow .tr>i.orph{background:var(--bad)}
+.brow .sz{font-family:"IBM Plex Mono",monospace;font-size:12px;text-align:right;color:var(--ink)}
+.log{max-height:220px;overflow:auto;background:var(--sunk);border:1px solid var(--line);
+  border-radius:7px;padding:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.7}
+.log div{white-space:pre-wrap;word-break:break-all}
+.log .ok{color:var(--ok)}.log .bad{color:var(--bad)}.log .warn{color:var(--warn)}
+.list{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:7px;margin-top:10px}
+.it{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;
+  padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.it:last-child{border-bottom:0}
+.it .p{font-family:"IBM Plex Mono",monospace;font-size:11.5px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.it .p em{font-style:normal;color:var(--mut)}
+.it .s{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--mut)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;
+  max-height:420px;overflow:auto;margin-top:10px}
+.th{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--sunk);position:relative}
+.th img{width:100%;height:78px;object-fit:cover;display:block}
+.th .cap{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--mut);
+  padding:3px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.warnbox{border:1px solid var(--warn);border-left:3px solid var(--warn);border-radius:0 7px 7px 0;
+  background:var(--sunk);padding:12px 14px;font-size:13.5px;margin-top:12px}
+.warnbox b{color:var(--warn)}
+.note{font-size:12.5px;color:var(--mut);margin-top:10px}
+.hide{display:none!important}
+.seg{display:flex;gap:0;margin-top:10px}
+.seg button{border-radius:0;flex:1;font-size:13px;padding:8px 0}
+.seg button:first-child{border-radius:7px 0 0 7px}
+.seg button:last-child{border-radius:0 7px 7px 0;border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
+</style>
+<style>
+.subnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  max-width:1100px;margin:14px auto 0;padding:8px 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.subnav-t{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  color:var(--faint);margin-right:6px;white-space:nowrap}
+.subnav a{font-size:13px;font-weight:600;text-decoration:none;padding:7px 11px;
+  border-radius:7px;color:var(--mut);white-space:nowrap}
+.subnav a:hover{background:var(--acs);color:var(--ac)}
+.subnav a.on{background:var(--ac);color:#fff}
+</style>
+</head>
+<body>
+<div class="subnav">
+  <span class="subnav-t">자료 만들기</span>
+  <a href="./ingest.html">PDF 자동 변환</a>
+  <a href="./review.html">검수</a>
+  <a href="./explain-batch.html">해설 배치</a>
+  <a href="./storage-clean.html" class="on">저장소 정리</a>
+  <a href="./practice.html" style="margin-left:auto">← 실기뷰어</a>
+</div>
+
+<div class="wrap">
+  <h1>저장소 정리</h1>
+  <p class="sub">qfig 버킷에 있는 그림 중 어디서도 안 부르는 것을 찾아냄. 지우기 전에 눈으로 확인하는 단계가 있음.</p>
+
+  <div class="card" id="loginCard">
+    <h2>로그인</h2>
+    <div class="row">
+      <div><label for="em">이메일</label><input id="em" type="email" autocomplete="username"></div>
+      <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="btns"><button class="pri" id="btnLogin">들어가기</button></div>
+    <p class="note" id="loginMsg"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <div class="card">
+      <h2>훑기</h2>
+      <p class="note" style="margin:0 0 10px">
+        버킷 전체 파일 목록과 DB의 그림 주소를 대조함. 파일이 많으면 1~2분 걸림.
+      </p>
+      <div class="row">
+        <div>
+          <label for="fSafe">최근 며칠 안에 올린 것은 건드리지 않음</label>
+          <input id="fSafe" type="number" value="7" min="0" max="90">
+        </div>
+      </div>
+      <div class="btns"><button class="pri" id="btnScan">훑기 시작</button></div>
+      <div class="log hide" id="log" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card hide" id="sumCard">
+      <h2>결과</h2>
+      <div class="tiles">
+        <div class="tile"><div class="lb">전체 파일</div><div class="vl" id="tAll">–</div><div class="sm" id="tAllN"></div></div>
+        <div class="tile"><div class="lb">쓰는 중</div><div class="vl" id="tUse">–</div><div class="sm" id="tUseN"></div></div>
+        <div class="tile hot"><div class="lb">안 쓰는 것</div><div class="vl" id="tOrp">–</div><div class="sm" id="tOrpN"></div></div>
+        <div class="tile"><div class="lb">무료 한도 대비</div><div class="vl" id="tPct">–</div><div class="sm">1 GB 기준</div></div>
+      </div>
+      <div class="warnbox" id="whyBox"></div>
+
+      <h2 style="margin:20px 0 4px">폴더별 용량</h2>
+      <p class="note" style="margin:0 0 6px">붉은 칸이 안 쓰는 몫임</p>
+      <div class="bars" id="bars"></div>
+    </div>
+
+    <div class="card hide" id="orpCard">
+      <h2>안 쓰는 그림 — 지우기 전에 확인</h2>
+      <div class="stat" style="margin-bottom:4px">
+        <span>고른 것 <b id="selN">0</b></span><span>합계 <b id="selSz">0 B</b></span>
+      </div>
+      <div class="seg">
+        <button id="tabList" aria-pressed="true">목록</button>
+        <button id="tabThumb" aria-pressed="false">그림으로 보기</button>
+      </div>
+      <div id="listView"><div class="list" id="list"></div></div>
+      <div id="thumbView" class="hide"><div class="thumbs" id="thumbs"></div>
+        <p class="note">앞 120장만 미리 보여줌. 눈에 익은 그림이 있으면 «되돌릴 수 없는 것»이니 목록에서 체크를 푸세요.</p>
+      </div>
+      <div class="btns">
+        <button id="btnAll">전부 고르기</button>
+        <button id="btnNone">고른 것 풀기</button>
+        <button id="btnCsv">목록 내려받기</button>
+        <button class="danger" id="btnDel" disabled>고른 것 지우기</button>
+      </div>
+      <p class="note">지운 파일은 되돌릴 수 없음. 목록을 먼저 내려받아 두는 것을 권함.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script>
+(function(){
+"use strict";
+const CFG = window.APP_CONFIG || {};
+const $ = s => document.querySelector(s);
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+const BUCKET = "qfig";
+const FREE_LIMIT = 1024 * 1024 * 1024;              /* 무료 1 GB */
+
+/* qfig 를 부르는 표와 칸. 하나라도 빠뜨리면 쓰는 그림을 지우게 되므로
+   새 기능을 만들 때 여기에 같이 적어 둘 것. */
+const REFS = [
+  { table:"practicals",    cols:["q_url","a_url"], json:["cand"] },
+  { table:"questions",     cols:["figure_url"] },
+  { table:"subject_notes", cols:["url","flat_url","path"] }
+];
+/* ★ v220 — json 칸을 빼먹고 있었다.
+   검수 화면에서 «이미 검수한 칸» 에 새 그림을 올리면, 덮어쓰지 않고
+   practicals.cand 에 [{slot,url,at}] 로 쌓아 둔다. 사람이 «이걸로» 를
+   누르기 전까지는 q_url·a_url 어디에도 안 들어간다.
+
+   그런데 여기서는 q_url·a_url 만 봤다. 그래서 후보로 쌓인 그림이
+   «아무 데서도 안 쓰는 것» 으로 잡혀, 청소 한 번에 통째로 날아갔다.
+   다시 자른 그림이 사라지는 셈이라 되돌릴 방법도 없다.
+
+   ★ 그림을 쓰는 칸을 새로 만들면 여기에 반드시 같이 적을 것.
+     하나라도 빠지면 «쓰는 그림» 을 지우게 된다. */
+function urlsInJson(v){
+  const out = [];
+  (function walk(x){
+    if(!x) return;
+    if(typeof x === "string"){ out.push(x); return; }
+    if(Array.isArray(x)) return void x.forEach(walk);
+    if(typeof x === "object") return void Object.values(x).forEach(walk);
+  })(v);
+  return out;
+}
+
+let FILES = [], ORPHAN = [], SEL = new Set();
+
+const fmt = n => {
+  if(n < 1024) return n + " B";
+  if(n < 1048576) return (n/1024).toFixed(0) + " KB";
+  if(n < 1073741824) return (n/1048576).toFixed(1) + " MB";
+  return (n/1073741824).toFixed(2) + " GB";
+};
+function log(m, cls){
+  const b = $("#log"); b.classList.remove("hide");
+  const d = document.createElement("div"); if(cls) d.className = cls;
+  d.textContent = m; b.appendChild(d); b.scrollTop = b.scrollHeight;
+}
+
+/* ── 로그인 ─────────────────────────────────────── */
+async function gate(){
+  const { data } = await sb.auth.getSession();
+  if(data?.session){ $("#loginCard").classList.add("hide"); $("#main").classList.remove("hide"); return true; }
+  return false;
+}
+$("#btnLogin").addEventListener("click", async () => {
+  const email = $("#em").value.trim(), password = $("#pw").value;
+  if(!email || !password) return void ($("#loginMsg").textContent = "이메일과 비밀번호를 넣으세요.");
+  $("#btnLogin").disabled = true; $("#loginMsg").textContent = "확인 중…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("#btnLogin").disabled = false;
+  if(error) return void ($("#loginMsg").textContent = "들어가지 못했습니다 — " + error.message);
+  $("#loginMsg").textContent = ""; await gate();
+});
+
+/* ── 버킷 훑기 (폴더를 타고 내려감) ─────────────── */
+async function walk(prefix, out, depth){
+  if(depth > 6) return;
+  for(let off = 0; ; off += 100){
+    const { data, error } = await sb.storage.from(BUCKET)
+      .list(prefix, { limit:100, offset:off, sortBy:{ column:"name", order:"asc" } });
+    if(error) throw new Error(`${prefix||"/"} 목록 실패 — ${error.message}`);
+    if(!data || !data.length) break;
+    for(const e of data){
+      const full = prefix ? prefix + "/" + e.name : e.name;
+      if(e.id === null || (!e.metadata && !/\.[a-z0-9]{2,5}$/i.test(e.name))){
+        await walk(full, out, depth + 1);                 /* 폴더 */
+      }else{
+        out.push({
+          path: full,
+          size: e.metadata?.size || 0,
+          at: e.created_at || e.updated_at || null
+        });
+      }
+    }
+    if(data.length < 100) break;
+    if(out.length && out.length % 500 === 0) log(`  …${out.length}개 확인`);
+  }
+}
+
+/* ── DB 에서 참조 주소 모으기 ───────────────────── */
+function toPath(v){
+  if(!v) return null;
+  const s = String(v);
+  const m = s.match(new RegExp(`/${BUCKET}/(.+)$`));
+  if(m) return decodeURIComponent(m[1].split("?")[0]);
+  if(!/^https?:/i.test(s)) return s.replace(/^\/+/, "");   /* subject_notes.path 처럼 경로만 든 칸 */
+  return null;
+}
+async function collectRefs(){
+  const used = new Set();
+  for(const R of REFS){
+    let got = 0;
+    for(let from = 0; from < 100000; from += 1000){
+      const sel = R.cols.concat(R.json || []).join(",");
+      const { data, error } = await sb.from(R.table).select(sel).range(from, from + 999);
+      if(error){
+        log(`  ${R.table} 건너뜀 — ${error.message}`, "warn");
+        break;                                    /* 표가 없으면 넘어감 */
+      }
+      (data || []).forEach(row => {
+        R.cols.forEach(c => { const p = toPath(row[c]); if(p) used.add(p); });
+        (R.json || []).forEach(c => urlsInJson(row[c]).forEach(v => {
+          const p = toPath(v); if(p) used.add(p);
+        }));
+      });
+      got += (data || []).length;
+      if(!data || data.length < 1000) break;
+    }
+    log(`  ${R.table} — ${got}줄 확인${(R.json||[]).length ? ` (${R.json.join("·")} 칸 포함)` : ""}`
+      + ` (누적 참조 ${used.size})`);
+  }
+  return used;
+}
+
+/* ── 폴더별 묶기 ────────────────────────────────── */
+function groupKey(p){
+  const seg = p.split("/");
+  if(seg[0] === "prac" && seg.length > 2){
+    const m = seg[2].match(/^(\d{4})_(\d+)_/);
+    return m ? `prac/${seg[1]}/${m[1]}년 ${m[2]}회` : `prac/${seg[1]}`;
+  }
+  return seg.length > 1 ? seg.slice(0, 2).join("/") : seg[0];
+}
+
+/* ── 훑기 ───────────────────────────────────────── */
+$("#btnScan").addEventListener("click", async () => {
+  $("#btnScan").disabled = true;
+  $("#log").innerHTML = ""; $("#sumCard").classList.add("hide"); $("#orpCard").classList.add("hide");
+  try{
+    log("버킷 목록을 받는 중…");
+    FILES = []; await walk("", FILES, 0);
+    log(`파일 ${FILES.length}개 · 합계 ${fmt(FILES.reduce((s,f)=>s+f.size,0))}`, "ok");
+
+    log("DB 에서 쓰는 그림 주소를 모으는 중…");
+    const used = await collectRefs();
+
+    const days = Math.max(0, +$("#fSafe").value || 0);
+    const cut = Date.now() - days * 86400000;
+    let recent = 0;
+
+    ORPHAN = FILES.filter(f => {
+      if(used.has(f.path)) return false;
+      if(f.at && new Date(f.at).getTime() > cut){ recent++; return false; }
+      return true;
+    });
+
+    const all = FILES.reduce((s,f)=>s+f.size,0);
+    const orp = ORPHAN.reduce((s,f)=>s+f.size,0);
+    $("#tAll").textContent = fmt(all);  $("#tAllN").textContent = FILES.length + "개";
+    $("#tUse").textContent = fmt(all-orp); $("#tUseN").textContent = (FILES.length-ORPHAN.length) + "개";
+    $("#tOrp").textContent = fmt(orp);  $("#tOrpN").textContent = ORPHAN.length + "개";
+    $("#tPct").textContent = Math.round(all / FREE_LIMIT * 100) + "%";
+
+    /* 왜 쌓였는지 — _v스탬프 중복이 있으면 짚어 준다 */
+    const stampDup = ORPHAN.filter(f => /_v\d+_[qa]\.jpg$/i.test(f.path)).length;
+    $("#whyBox").innerHTML =
+      `안 쓰는 그림이 <b>${ORPHAN.length}개 · ${fmt(orp)}</b>` +
+      (recent ? ` (최근 ${days}일 안에 올린 ${recent}개는 뺐음)` : "") + `.<br>` +
+      (stampDup
+        ? `그중 <b>${stampDup}개</b>가 <code>_v스탬프</code> 가 붙은 실기 그림임 — 회차를 다시 올릴 때마다
+           <code>prac/{과목}/{연도}_{회차}_{번호}_v{스탬프}_q.jpg</code> 로 <b>새 경로</b>가 만들어지고
+           옛 판은 지워지지 않아서 쌓인 것. 재업로드를 많이 한 회차일수록 많음.`
+        : `경로 규칙상 재업로드 때 남은 옛 판일 가능성이 큼.`);
+
+    const G = {};
+    FILES.forEach(f => { const k = groupKey(f.path); (G[k] ||= { all:0, orp:0 }).all += f.size; });
+    ORPHAN.forEach(f => { const k = groupKey(f.path); (G[k] ||= { all:0, orp:0 }).orp += f.size; });
+    const rows = Object.entries(G).sort((a,b) => b[1].all - a[1].all).slice(0, 14);
+    const max = rows.length ? rows[0][1].all : 1;
+    $("#bars").innerHTML = rows.map(([k,v]) => `
+      <div class="brow">
+        <div class="nm" title="${k}">${k}</div>
+        <div class="sz">${fmt(v.all)}</div>
+        <div class="tr">
+          <i style="width:${(v.all-v.orp)/max*100}%;float:left"></i>
+          <i class="orph" style="width:${v.orp/max*100}%;float:left"></i>
+        </div>
+      </div>`).join("") || `<p class="note">폴더가 없습니다.</p>`;
+
+    $("#sumCard").classList.remove("hide");
+    if(ORPHAN.length){ SEL = new Set(); drawList(); drawThumbs(); $("#orpCard").classList.remove("hide"); }
+    log("끝", "ok");
+  }catch(e){
+    log("실패 — " + (e.message || e), "bad");
+  }finally{ $("#btnScan").disabled = false; }
+});
+
+/* ── 목록 ───────────────────────────────────────── */
+function drawList(){
+  $("#list").innerHTML = ORPHAN.slice(0, 3000).map((f,i) => {
+    const seg = f.path.split("/");
+    const tail = seg.pop();
+    return `<label class="it">
+      <input type="checkbox" data-i="${i}"${SEL.has(i)?" checked":""}>
+      <span class="p"><em>${seg.join("/")}/</em>${tail}</span>
+      <span class="s">${fmt(f.size)}</span>
+    </label>`;
+  }).join("") + (ORPHAN.length > 3000
+    ? `<div class="it"><span></span><span class="p">…앞 3000개만 표시함</span><span class="s"></span></div>` : "");
+  $("#list").querySelectorAll("input").forEach(cb => cb.addEventListener("change", e => {
+    const i = +e.target.dataset.i;
+    e.target.checked ? SEL.add(i) : SEL.delete(i);
+    tally();
+  }));
+  tally();
+}
+function drawThumbs(){
+  const pub = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
+  $("#thumbs").innerHTML = ORPHAN.slice(0, 120).map(f => `
+    <div class="th"><img loading="lazy" src="${pub(f.path)}" alt="">
+      <div class="cap" title="${f.path}">${f.path.split("/").pop()}</div></div>`).join("");
+}
+function tally(){
+  let sz = 0; SEL.forEach(i => sz += ORPHAN[i]?.size || 0);
+  $("#selN").textContent = SEL.size;
+  $("#selSz").textContent = fmt(sz);
+  $("#btnDel").disabled = SEL.size === 0;
+}
+$("#btnAll").addEventListener("click", () => { SEL = new Set(ORPHAN.map((_,i)=>i)); drawList(); });
+$("#btnNone").addEventListener("click", () => { SEL = new Set(); drawList(); });
+
+$("#tabList").addEventListener("click", () => {
+  $("#tabList").setAttribute("aria-pressed","true"); $("#tabThumb").setAttribute("aria-pressed","false");
+  $("#listView").classList.remove("hide"); $("#thumbView").classList.add("hide");
+});
+$("#tabThumb").addEventListener("click", () => {
+  $("#tabThumb").setAttribute("aria-pressed","true"); $("#tabList").setAttribute("aria-pressed","false");
+  $("#thumbView").classList.remove("hide"); $("#listView").classList.add("hide");
+});
+
+$("#btnCsv").addEventListener("click", () => {
+  const csv = "path,size_bytes,created_at\n" +
+    ORPHAN.map(f => `"${f.path}",${f.size},${f.at || ""}`).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type:"text/csv;charset=utf-8" }));
+  a.download = `qfig-안쓰는그림-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+});
+
+/* ── 지우기 ─────────────────────────────────────── */
+$("#btnDel").addEventListener("click", async () => {
+  const list = [...SEL].map(i => ORPHAN[i]).filter(Boolean);
+  if(!list.length) return;
+  const sz = fmt(list.reduce((s,f)=>s+f.size,0));
+  if(!confirm(`${list.length}개 · ${sz} 를 지웁니다.\n되돌릴 수 없습니다. 계속할까요?`)) return;
+
+  $("#btnDel").disabled = true;
+  let done = 0, bad = 0;
+  for(let i = 0; i < list.length; i += 100){
+    const chunk = list.slice(i, i + 100).map(f => f.path);
+    const { error } = await sb.storage.from(BUCKET).remove(chunk);
+    if(error){ bad += chunk.length; log(`지우기 실패 — ${error.message}`, "bad"); }
+    else { done += chunk.length; log(`${done}/${list.length} 지움`, "ok"); }
+  }
+  const gone = new Set(list.map(f => f.path));
+  ORPHAN = ORPHAN.filter(f => !gone.has(f.path));
+  FILES  = FILES.filter(f => !gone.has(f.path));
+  SEL = new Set(); drawList(); drawThumbs();
+  log(`끝 — ${done}개 지움${bad ? ` · ${bad}개 실패` : ""}`, bad ? "bad" : "ok");
+  alert(`${done}개를 지웠습니다. 다시 훑으면 줄어든 용량이 보입니다.`);
+});
+
+(async function boot(){
+  if(!CFG.SUPABASE_URL){ $("#loginMsg").textContent = "config.js 를 찾지 못했습니다."; return; }
+  await gate();
+})();
+})();
+</script>
+</body>
+</html>

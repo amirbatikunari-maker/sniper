@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script>
+/* ★ 낡은 서비스 워커가 이 페이지를 물고 있으면 스스로 지우고 한 번만 새로고침한다.
+   "강력 새로고침 해주세요" "Unregister 눌러주세요" 안내를 계속 반복할 필요가 없도록. */
+(function(){
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller && !sessionStorage.getItem('sw-cleared-v3')){
+    sessionStorage.setItem('sw-cleared-v3','1');
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      return Promise.all(regs.map(function(r){ return r.unregister(); }));
+    }).then(function(){ location.reload(); });
+  }
+})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PDF 자동 변환 · 기출 해설 노트</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<style>
+:root{--paper:#E9ECE6;--card:#FCFCFA;--ink:#10233D;--ink-2:#5A6B7F;--rule:#D3D8CD;
+      --accent:#1D4ED8;--stamp:#BE2B26;--ok:#137A4B;--warn:#9A6B00;
+      --font-d:"IBM Plex Sans KR",Pretendard,sans-serif;--font-m:"IBM Plex Mono",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Pretendard,sans-serif;font-size:14px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 90px}
+h1{font:700 20px/1.3 var(--font-d);margin:0 0 4px;letter-spacing:-.02em}
+.lead{color:var(--ink-2);font-size:13px;margin-bottom:22px}
+.box{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:18px;margin-bottom:14px}
+.eyebrow{display:flex;align-items:baseline;gap:10px;font:600 11px/1 var(--font-d);letter-spacing:.14em;color:var(--ink-2);margin-bottom:14px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:0 0 5px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.4px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink);font:inherit}
+textarea{font-family:var(--font-m);font-size:12px;min-height:120px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+
+/* ── 블록 탭 ── */
+.btabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
+.btab{flex:1;min-width:150px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  padding:12px 14px;border-radius:12px;cursor:pointer;text-align:left;
+  border:1.5px solid var(--rule);background:var(--card);color:var(--ink-2);
+  font:700 14px/1.2 var(--font-d)}
+.btab small{font:500 10.5px/1.3 var(--font-m);opacity:.8}
+.btab.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.btab.on small{color:rgba(255,255,255,.8)}
+#tab-practical[hidden],#tab-written[hidden]{display:none}
+/* 로그인 전 — 자물쇠. 인라인 style 이 어떤 이유로 지워져도 여기서 한 번 더 막는다 */
+/* 로그인 전 — 자물쇠. 인라인 style 로 여닫지 않고 이 한 줄로만 잠근다.
+   (인라인으로 하면 #app{display:none} 같은 규칙과 싸워서 «열었는데도 안 보이는» 일이 난다) */
+body.locked #btabs,body.locked #tab-written,body.locked #tab-practical{display:none !important}
+.pvnote{font-size:12.5px;color:var(--ink-2);margin:0 0 10px}
+.pvnote a{color:var(--accent);margin-left:8px}
+#pvFrame{width:100%;height:min(1100px,calc(100vh - 210px));min-height:560px;
+  border:1px solid var(--rule);border-radius:14px;background:var(--card);display:block}
+button{font:600 14px/1 var(--font-d);padding:12px 18px;border:0;border-radius:10px;background:var(--ink);color:var(--paper);cursor:pointer}
+button.ghost{background:transparent;border:1.4px solid var(--rule);color:var(--ink)}
+button.danger{background:var(--stamp)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.msg{margin-top:12px;padding:11px 13px;border-radius:9px;font-size:13px;white-space:pre-wrap;font-family:var(--font-m);display:none}
+.msg.ok{display:block;background:#E3F3EA;color:var(--ok)}
+.msg.err{display:block;background:#FBE9E8;color:var(--stamp)}
+.msg.info{display:block;background:#E4ECFD;color:var(--accent)}
+.hint{font-size:12px;color:var(--ink-2);margin-top:8px}
+code{font-family:var(--font-m);font-size:12px;background:#E4ECFD;padding:1px 5px;border-radius:4px}
+.check{display:flex;align-items:flex-start;gap:9px;margin:10px 0;font-size:13px}
+.check input{width:18px;height:18px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.drop{border:1.6px dashed var(--rule);border-radius:12px;padding:26px;text-align:center;color:var(--ink-2);cursor:pointer;transition:.15s}
+.drop.on{border-color:var(--accent);background:#E4ECFD;color:var(--accent)}
+.drop b{display:block;font:600 15px/1.4 var(--font-d);color:var(--ink);margin-bottom:4px}
+.srctabs{display:flex;gap:6px;margin-bottom:14px}
+.srctab{padding:8px 14px;border-radius:999px;border:1.4px solid var(--rule);
+     font:600 12px/1 var(--font-d);background:none;color:var(--ink-2)}
+.srctab.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.imglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.imgchip{display:flex;align-items:center;gap:6px;padding:5px 6px 5px 5px;border:1.4px solid var(--rule);
+  border-radius:8px;background:var(--card);font-family:var(--font-m);font-size:11px;max-width:160px}
+.imgchip img{width:28px;height:28px;object-fit:cover;border-radius:4px;flex:none}
+.imgchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imgchip b{flex:none;color:var(--ink-2);cursor:pointer;padding:0 2px}
+
+/* 진행 */
+.prog{height:6px;border-radius:99px;background:var(--rule);overflow:hidden;margin:14px 0 10px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.stats{display:flex;gap:16px;font-family:var(--font-m);font-size:12px;color:var(--ink-2);flex-wrap:wrap}
+.stats b{color:var(--ink);font-weight:600}
+.batches{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.bt{min-width:52px;padding:5px 8px;border-radius:7px;border:1.4px solid var(--rule);
+    font:500 11px/1 var(--font-m);color:var(--ink-2);text-align:center}
+.bt.run{border-color:var(--accent);color:var(--accent);animation:pulse 1s infinite}
+.bt.done{background:#E3F3EA;border-color:#B7DEC8;color:var(--ok)}
+.bt.fail{background:#FBE9E8;border-color:#F0C7C5;color:var(--stamp)}
+.bt.split{background:#FDF3DC;border-color:#EAD9A8;color:var(--warn)}
+.bt.skip{background:#EEF0F3;border-color:var(--rule);color:var(--ink-2);opacity:.75}
+/* 묶음 칩을 눌러 켜고 끄기 — 꺼진(제외된) 묶음 */
+.bt{cursor:pointer;user-select:none;position:relative;background:var(--card)}
+.bt.off{opacity:.4;border-style:dashed;text-decoration:line-through}
+.bt:active{transform:scale(.96)}
+button.sm{font:600 12px/1 var(--font-d);padding:7px 11px;border-radius:8px}
+@keyframes pulse{50%{opacity:.45}}
+.log{margin-top:14px;max-height:220px;overflow:auto;font-family:var(--font-m);font-size:11.5px;
+     background:var(--paper);border:1px solid var(--rule);border-radius:9px;padding:10px;line-height:1.7}
+.log div{white-space:pre-wrap}
+.log .e{color:var(--stamp)}
+.log .g{color:var(--ok)}
+.pv{margin-top:12px;max-height:300px;overflow:auto;border:1px solid var(--rule);border-radius:10px;padding:12px;font-size:12px}
+.pv .q{padding:7px 0;border-bottom:1px dashed var(--rule)}
+.pv .q b{color:var(--accent);font-family:var(--font-m)}
+.pv .q .bad{color:var(--stamp)}
+/* 로그인 전에는 감춰 둔다. 여는 열쇠는 body.unlocked 하나뿐이다. */
+#app{display:none}
+body.unlocked #app{display:block}
+#fatal{display:none;position:sticky;top:0;z-index:99;margin:0 0 16px;padding:13px 15px;
+  background:#FBE9E8;border:1.4px solid var(--stamp);border-radius:10px;color:var(--stamp);
+  font-family:var(--font-m);font-size:12.5px;white-space:pre-wrap;line-height:1.6}
+#fatal b{display:block;font-family:var(--font-d);font-size:13px;margin-bottom:4px}
+.nav3{display:flex;gap:2px;padding:7px 8px;overflow-x:auto;padding-top:calc(7px + env(safe-area-inset-top));
+  background:var(--ink);}
+.nav3 a{flex:1;text-align:center;padding:7px 5px;border-radius:8px;
+  font:600 11px/1 var(--font-d,"IBM Plex Sans KR",sans-serif);letter-spacing:.02em;
+  color:color-mix(in srgb, var(--paper) 55%, transparent);text-decoration:none;
+  transition:background .15s,color .15s;white-space:nowrap}
+.nav3 a.on{background:color-mix(in srgb, var(--paper) 15%, transparent);color:var(--paper)}
+
+/* 탭 사이 구분선 — 가운데만 얇게. 지금 보고 있는 탭(알약) 양옆은 지워
+   알약 테두리와 선이 겹쳐 지저분해지지 않게 한다. */
+.nav3 a{position:relative}
+.nav3 a + a::before{content:"";position:absolute;left:-1px;top:24%;bottom:24%;width:1px;
+  background:color-mix(in srgb,var(--paper) 20%,transparent)}
+.nav3 a.on::before,.nav3 a.on + a::before{background:transparent}
+.nav3 a:not(.on):hover{color:var(--paper)}
+</style>
+<link rel="stylesheet" href="./app-enhance.css?v=228">
+<style>
+/* v209 — «자료 만들기» 갈래 메뉴. 푸는 화면과 만드는 화면을 갈라 둔다. */
+.subnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  max-width:1100px;margin:10px auto 0;padding:8px 12px;
+  border:1px solid var(--line,#dce3ed);border-radius:10px;background:var(--surface-2,#f1f5f9)}
+.subnav-t{font:700 11px/1 var(--font-d,system-ui);letter-spacing:.08em;
+  color:var(--muted,#64748b);margin-right:6px;white-space:nowrap}
+.subnav a{font:600 13px/1 var(--font-d,system-ui);text-decoration:none;padding:7px 11px;
+  border-radius:7px;color:var(--muted,#64748b);white-space:nowrap}
+.subnav a:hover{background:rgba(31,111,235,.10);color:var(--accent,#1f6feb)}
+.subnav a.on{background:var(--accent,#1f6feb);color:#fff}
+@media(prefers-color-scheme:dark){.subnav{background:#0f1827;border-color:#22304a}}
+</style>
+</head>
+<body>
+<nav class="nav3">
+  <a href="./index.html">필기뷰어</a>
+  <a href="./practice.html">실기뷰어</a>
+  <a href="./calc.html">계산기</a><a href="./upload.html">기계</a>
+  <a href="./ingest.html" class="on">자동 변환</a>
+  <a href="./interview.html">면접</a>
+  <a href="./portfolio.html">포트폴리오</a>
+</nav>
+<div class="subnav">
+  <span class="subnav-t">자료 만들기</span>
+  <a href="./ingest.html" class="on">PDF 자동 변환</a>
+  <a href="./review.html">검수</a>
+  <a href="./explain-batch.html">해설 배치</a>
+  <a href="./storage-clean.html">저장소 정리</a>
+</div>
+
+
+<div class="wrap">
+  <h1>자동 변환</h1>
+  <div class="lead">PDF 를 넣으면 문제 단위로 잘라 뷰어에 올립니다.</div>
+
+  <!-- 어느 쪽을 눌러야 하는지부터 정해 준다. 이걸 몰라 헤매는 게 이 화면의 첫 관문이었다. -->
+  <div class="box" style="border-color:var(--accent)">
+    <div class="eyebrow">먼저 · 둘 중 어느 쪽인가</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr>
+        <td style="padding:7px 0;width:92px;vertical-align:top"><b>실기 변환</b></td>
+        <td style="padding:7px 0;border-bottom:1px solid var(--rule)">
+          답을 <b>글로 적는</b> 시험. 문제집에 <code>문제 01 … ► 답안작성</code> 이 있는 PDF.<br>
+          <span style="color:var(--ink-2)">AI 를 안 쓰고 머리글만 찾아 자릅니다 — 돈이 안 들고 몇 번 돌려도 결과가 같습니다. 도면은 그림으로 남습니다.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:7px 0;vertical-align:top"><b>필기 변환</b></td>
+        <td style="padding:7px 0">
+          답이 <b>①②③④ 객관식</b>인 시험.<br>
+          <span style="color:var(--ink-2)">AI 가 쪽을 읽어 보기·정답·해설을 뽑아 냅니다. 시간과 토큰이 듭니다.</span>
+        </td>
+      </tr>
+    </table>
+    <div class="hint" style="margin-top:10px">
+      <b>전기기사 실기 기출문제집</b>(다산에듀)이라면 → <b>실기 변환</b> 입니다.
+      쪽수가 많으니 <b>몇 쪽부터 · 몇 쪽까지</b> 를 200쪽 정도로 끊어서 넣으세요.
+    </div>
+  </div>
+  <div id="fatal"></div>
+
+  <!-- 로그인 -->
+  <div class="box" id="auth">
+    <div class="eyebrow">로그인</div>
+    <div class="grid">
+      <div><label>이메일</label><input id="em" type="email" autocomplete="username"></div>
+      <div><label>비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="bar"><button id="login">로그인</button></div>
+    <div class="msg" id="am"></div>
+  </div>
+
+  <!-- ══ 블록 탭 ══
+       필기(AI 로 통째 해석)와 실기(머리글로 잘라 그림으로 보관)는 방식이 아예 다르다.
+       한 화면에 섞어 두면 어느 단추가 어느 쪽 것인지 헷갈려서 탭으로 갈라 둔다. -->
+  <div class="btabs" id="btabs">
+    <button type="button" class="btab" data-tab="written">필기 변환<small>객관식 · AI 가 읽음</small></button>
+    <button type="button" class="btab on" data-tab="practical">실기 변환<small>서술형 · 머리글로 자름</small></button>
+  </div>
+
+  <div id="tab-written" hidden>
+  <div id="app">
+    <!-- 1. 대상 -->
+    <div class="box">
+      <div class="eyebrow">1 · 어느 회차인가</div>
+      <div class="grid">
+        <div><label>과목명</label><input id="sname" placeholder="위험물산업기사"></div>
+        <div><label>과목 코드</label><input id="scode" placeholder="danger-ind"></div>
+        <div><label>분류</label><input id="scat" placeholder="소방·안전"></div>
+        <div><label>연도</label><input id="year" placeholder="2020  ·  2021~2026  ·  합본"></div>
+        <div><label>회차</label><input id="sess" placeholder="3  ·  1~4회  ·  개념정리"></div>
+      </div>
+      <label style="margin-top:11px">화면에 보일 이름</label>
+      <input id="elabel" placeholder="비워 두면 «연도 + 회차» 로 자동으로 만듭니다">
+      <div class="hint" style="margin-top:6px">
+        연도·회차·이름 모두 <b>숫자·한글·기호 아무거나</b> 넣을 수 있습니다.
+        예) 연도 <b>2021~2026</b> · 회차 <b>합본</b> · 이름 <b>위험물 6개년 합본</b><br>
+        뷰어에서 묶는 기준(연도)과 순서(회차)는 적어 주신 글 속 <b>첫 숫자</b>를 씁니다.
+        숫자가 없으면 맨 위에 놓입니다.
+      </div>
+    </div>
+
+<!-- 2. 자료 -->
+    <div class="box">
+      <div class="eyebrow">2 · 자료 넣기</div>
+      <div class="srctabs">
+        <button class="srctab on" data-src="pdf" type="button">PDF 한 개</button>
+        <button class="srctab" data-src="images" type="button">사진 여러 장</button>
+        <!-- ★ 잘못 올렸을 때 언제든 누를 수 있는 파일 취소 버튼 -->
+        <button id="cancelFile" class="ghost" type="button" style="margin-left:auto; display:none; color:var(--bad); border-color:var(--bad)">파일 취소</button>
+      </div>
+
+      <div id="src-pdf">
+        <div class="drop" id="drop">
+          <b>PDF 파일을 여기에 끌어다 놓기</b>
+          눌러서 고르셔도 됩니다
+        </div>
+        <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+      </div>
+
+      <div id="src-images" hidden>
+        <div class="drop" id="dropImg">
+          <b>사진 여러 장을 한꺼번에 끌어다 놓기</b>
+          문제지를 순서대로 찍은 사진들. 눌러서 고르거나, 캡처한 이미지를 <b>Ctrl+V</b> 로 붙여넣어도 됩니다
+        </div>
+        <input id="fileImg" type="file" accept="image/*" multiple hidden>
+        <div class="imglist" id="imglist"></div>
+      </div>
+
+      <div class="msg" id="fm"></div>
+
+      <!-- 간소화된 설정 영역: 무조건 1장(페이지)씩 단건 처리 -->
+      <div class="grid" style="margin-top:14px">
+        <div><label id="fromLabel">시작 페이지</label><input id="pFrom" type="number" min="1" value="1"></div>
+        <div><label id="toLabel">끝 페이지</label><input id="pTo" type="number" min="1"></div>
+        <div><label>호출 간격</label>
+          <select id="gap">
+            <option value="1500">1.5초</option>
+            <option value="4000" selected>4초 (무료 한도 안전)</option>
+            <option value="8000">8초</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="margin-top:14px">자료에 해설이 실려 있나요</label>
+      <select id="hasExp">
+        <option value="no" selected>없음 — AI가 해설을 새로 씁니다</option>
+        <option value="yes">있음 — 실린 해설을 근거로 다시 정리합니다</option>
+        <option value="answer">정답만 표시돼 있음</option>
+      </select>
+
+      <div class="check" style="margin-top:14px"><input type="checkbox" id="hasAnswerTable">
+        <span>정답이 문제와 따로, 표로 몰려 있어요(보통 맨 뒷장) <span style="color:var(--ink-2)">— 예: "1 2 3 4 … / ②④①④…" 처럼 번호·정답이 줄지어 있는 표. 위치를 알려주시면 따로 뽑아서 문항 번호에 맞춰 붙여넣습니다</span></span></div>
+      <div class="grid" id="atRange" style="display:none;margin-top:10px">
+        <div><label id="atFromLabel">정답표 시작 페이지</label><input id="atFrom" type="number" min="1"></div>
+        <div><label id="atToLabel">정답표 끝 페이지</label><input id="atTo" type="number" min="1"></div>
+      </div>
+
+      <div class="check" style="margin-top:14px"><input type="checkbox" id="autoUp" checked>
+        <span>묶음이 끝날 때마다 곧바로 Supabase에 올리기 <span style="color:var(--ink-2)">— 도중에 창이 닫혀도 그때까지 한 건 남습니다</span></span></div>
+      
+      <label style="margin-top:14px">해설에 도식(선도·계통도) 넣기</label>
+      <select id="svgMode">
+        <option value="off">넣지 않음 — 글로만 (가장 빠름)</option>
+        <option value="auto" selected>필요한 문항만 — 묶음당 최대 2개 (권장)</option>
+        <option value="many">넉넉하게 — 묶음당 최대 5개 (느림)</option>
+      </select>
+      <div class="hint" style="margin-top:6px">
+        p-h선도·습공기선도·2단압축 계통도처럼 <b>그림 없이는 설명이 안 되는 문항</b>에만 그립니다.
+        단순 계산·암기·법규 문항에는 안 그립니다 — 그게 느려지는 주범이었습니다.
+      </div>
+
+      <div class="hint" id="autoImgRow"><b>PDF 그대로 변환</b>은 텍스트를 바로 읽고, <b>사진으로 변환</b>은 각 쪽을 고해상도 이미지(JPEG)로 바꿔서 읽습니다.</div>
+    </div>
+
+
+    <!-- 3. 실행 -->
+    <div class="box">
+      <div class="eyebrow">3 · 돌리기</div>
+      <div class="bar">
+        <button id="run" disabled>변환 시작</button>
+        <button class="ghost" id="runImage" disabled>이미지로 변환해 추출</button>
+        <button class="ghost" id="stop" disabled>중지</button>
+        <button class="ghost" id="retry" disabled>실패한 묶음만 다시</button>
+        <button class="ghost" id="reset">기록 지우기</button>
+      </div>
+      <div class="prog"><i id="pi"></i></div>
+      <div class="stats">
+        <span>묶음 <b id="stB">0 / 0</b></span>
+        <span>문항 <b id="stQ">0</b></span>
+        <span>해설 있음 <b id="stE">0</b></span>
+        <span>그림 <b id="stFig">0</b></span>
+        <span>실패 <b id="stF">0</b></span>
+        <span>토큰 <b id="stT">0</b></span>
+      </div>
+      <div class="hint" style="margin-top:12px">묶음을 눌러 켜고 끄세요 — 꺼진 묶음(점선)은 건너뜁니다. 초록색은 이미 끝난 묶음이라 다시 돌리지 않습니다.</div>
+      <div class="bar" style="margin-top:8px">
+        <button class="ghost sm" data-sel="all">전체 켜기</button>
+        <button class="ghost sm" data-sel="none">전체 끄기</button>
+        <button class="ghost sm" data-sel="fail">실패한 것만</button>
+        <button class="ghost sm" data-sel="todo">아직 안 된 것만</button>
+        <button class="ghost sm" data-sel="gap">빠진 번호 찾기</button>
+      </div>
+      <div class="batches" id="batches"></div>
+      <div class="check"><input type="checkbox" id="redo">
+        <span>이미 끝난 묶음도 다시 뽑기 <span style="color:var(--ink-2)">— 평소에는 꺼두세요. 켜면 초록색 묶음까지 처음부터 다시 돌립니다</span></span></div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <!-- 4. 결과 -->
+    <div class="box">
+      <div class="eyebrow">4 · 결과 확인과 저장</div>
+      <div class="bar">
+        <button id="up" disabled>Supabase에 올리기</button>
+        <button class="ghost" id="dl" disabled>JSON 내려받기</button>
+      </div>
+      <div class="msg" id="um"></div>
+      <div class="pv" id="pv" style="display:none"></div>
+    </div>
+  </div>
+  </div><!-- /tab-written -->
+
+  <!-- ══ 실기 변환 ══
+       실기 쪽 «자료함» 과 «PDF 에서 문제 가져오기» 를 여기로 옮겼다.
+       실기뷰어에서는 늘 접혀 있으면서도 문제를 보려면 그 밑까지 스크롤해야 해서 거슬렸다.
+
+       ★ 코드를 통째로 베껴 오지 않고 실기뷰어의 그 화면만 그대로 불러 쓴다.
+         두 쪽이 #run · #stop · #drop · #file · #log 같은 이름을 똑같이 쓰기 때문에
+         한 문서에 합치면 서로의 단추를 집어 간다. 같은 출처(same-origin)라
+         로그인도 그대로 이어지고, 고치는 자리도 한 곳으로 유지된다. -->
+  <div id="tab-practical">
+    <div class="pvnote">
+      실기 <b>자료함</b>과 <b>PDF 에서 문제 가져오기</b>입니다. 실기뷰어에서 이리로 옮겨 왔습니다.
+      <a href="./practice.html?only=import" target="_blank" rel="noopener">새 창에서 크게 보기 ↗</a>
+    </div>
+    <iframe id="pvFrame" title="실기 변환" loading="lazy"></iframe>
+  </div>
+</div>
+
+<script>
+/* ★ 무슨 에러가 나든 화면에 바로 보여준다 — 콘솔 뒤질 필요 없게 */
+function showFatal(title, detail){
+  const el = document.getElementById("fatal");
+  if(!el) return;
+  el.style.display = "block";
+  el.innerHTML = "<b>" + title + "</b>" + detail;
+}
+window.addEventListener("error", e => showFatal("스크립트 오류", (e.message||"") + (e.filename?"\n"+e.filename+":"+e.lineno:"")));
+window.addEventListener("unhandledrejection", e => showFatal("처리 안 된 오류", String(e.reason?.message||e.reason||"")));
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="./config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+
+/* ── 로그인 전에 감출 것들 ──
+   ★ 여기서 한 번 데였다. 앞 판은 잠글 것마다 el.style.display 를 직접 만졌는데,
+     #app 은 CSS 에 이미 display:none 이 걸려 있어서 «열 때» 빈 문자열을 넣으면
+     그 CSS 가 되살아나 필기 변환 화면이 통째로 사라졌다.
+     그래서 인라인 style 은 손대지 않고 body 의 class 하나로만 여닫는다. */
+function gateUI(on){
+  window.INGEST_UNLOCKED = on;
+  document.body.classList.toggle("unlocked", on);
+  document.body.classList.toggle("locked", !on);
+  $("#auth").style.display = on ? "none" : "block";
+  /* 실기 iframe 은 로그인 전에는 아예 안 불러 온다 — 안 보이는 곳에서 혼자 돌 이유가 없다 */
+  if(!on){ const fr = $("#pvFrame"); if(fr) fr.removeAttribute("src"); }
+}
+
+/* 시작하자마자 로그인 박스부터 확실히 보여준다 */
+gateUI(false);
+
+if(typeof window.supabase === "undefined"){
+  showFatal("Supabase 라이브러리를 불러오지 못했습니다.",
+    "인터넷 연결을 확인하거나, 광고 차단 확장 프로그램이 jsdelivr.net 을 막고 있는지 확인해 주세요.");
+  throw new Error("supabase-js not loaded");
+}
+if(typeof window.PDFLib === "undefined"){
+  showFatal("PDF 라이브러리를 불러오지 못했습니다.",
+    "인터넷 연결을 확인하거나, 광고 차단 확장 프로그램을 확인해 주세요.");
+}
+if(typeof window.pdfjsLib !== "undefined"){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+}
+const CFG = window.APP_CONFIG || {};
+if(!CFG.SUPABASE_URL || CFG.SUPABASE_URL.includes("xxxx")){
+  showFatal("config.js 에 Supabase 정보가 없습니다.", "SUPABASE_URL 과 SUPABASE_ANON_KEY 를 채워주세요.");
+}
+/* 이 화면은 회차를 통째로 갈아엎을 수 있는 곳이라 세션을 남기지 않는다.
+   persistSession:false + storage:sessionStorage → 탭을 닫으면 로그인이 풀려서
+   다음에 들어올 때 반드시 다시 로그인해야 한다. (뷰어·면접 탭 로그인은 그대로 유지된다) */
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sb-ingest-temp" }
+});
+// PC 환경(너비 768px 초과 및 모바일 기기가 아님)에서는 Render 서버만 단독으로 사용
+const isPC = window.innerWidth > 768 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+/* v201 — 예전에는 PC 에서 Render 서버만 단독으로 썼다. 그 서버는 Gemini 라
+   Claude 로 갈아탄 뒤로는 PC 에서만 옛 모델이 도는 상태가 된다. 한 곳으로 모은다. */
+const ENDPOINTS = [CFG.WORKER_URL, CFG.WORKER_BACKUP_URL].filter(Boolean);
+
+/* ── 서버 고르기 ──────────────────────────────────────────────
+   앞 서버가 죽어 있으면 묶음마다 타임아웃(최대 90초)을 처음부터 다시 기다리게 된다.
+   그래서 ① 실제로 응답한 서버를 기억해 다음부터 그 서버를 먼저 부르고,
+        ② 예비 서버(Render 무료 플랜)는 잠들어 있으면 깨는 데 1분쯤 걸리므로
+           변환을 시작하는 순간 백그라운드로 미리 깨워 둔다. */
+let PREFERRED = null, WOKE = false;
+const HEDGE_MS = 25000;   // 이 시간 안에 답이 없으면 다른 서버에도 같이 보낸다
+const endpointOrder = () =>
+  PREFERRED ? [PREFERRED, ...ENDPOINTS.filter(e => e !== PREFERRED)] : ENDPOINTS;
+function wakeBackup(){
+  if(WOKE || ENDPOINTS.length < 2) return;
+  WOKE = true;
+  ENDPOINTS.slice(1).forEach(base => {
+    log(`예비 서버(${new URL(base).hostname})를 미리 깨우는 중…`);
+    fetch(base.replace(/\/$/,"") + "/", { method:"GET", mode:"no-cors", cache:"no-store" }).catch(()=>{});
+  });
+}
+const say = (el,t,k) => { el.textContent = t; el.className = "msg " + (k||"info"); };
+
+/* ── 자료 상태 ──
+   SRC: 'pdf' | 'images'
+   PDF_BYTES: 원본 PDF 바이트 (pdf.js 렌더링용, pdf-lib 와 별개로 보관)
+   IMAGES: 사진 모드일 때 사용자가 올린 파일들 [{name, mime, b64}] */
+let SRC = "pdf";
+let PDF = null, PDF_BYTES = null, PAGES = 0;
+let IMAGES = [];
+let BATCHES = [], RESULTS = {}, RUNNING = false, ABORT = false, TOKENS = 0;
+let ANSWER_KEY = {}; // {문항번호: 정답(1~4)} — 정답표를 따로 뽑았을 때 채워진다
+let FORCE_IMAGE_MODE = false;
+let DB_NUMBERS = []; // ★ 추가: DB에 이미 올라간 문항 번호들
+
+// ★ 추가: Supabase(저장소)에서 이미 올라간 문항 번호 동기화
+async function fetchSavedNumbers() {
+  const scode = $("#scode").value.trim();
+  /* year·session 칸이 글자로 바뀌었으므로 적으신 그대로 비교한다 */
+  const year = $("#year").value.trim();
+  const sess = $("#sess").value.trim();
+  if(!scode || !year) return;
+  
+  try {
+    const { data: sub } = await sb.from("subject_list").select("id").eq("code", scode).maybeSingle();
+    if(!sub) return;
+    const { data: ex } = await sb.from("exam_list").select("id").eq("subject_id", sub.id).eq("year", year).eq("session", sess).maybeSingle();
+    if(!ex) return;
+    const { data: qs } = await sb.from("questions").select("number").eq("exam_id", ex.id);
+    if(qs) {
+      DB_NUMBERS = qs.map(q => q.number);
+      preview(); // 가져온 뒤 UI 바로 업데이트
+    }
+  } catch(e) { console.log("DB 동기화 중 오류:", e); }
+}
+
+
+/* ── 로그 ── */
+function log(t, k){
+  const d = document.createElement("div");
+  d.className = k||""; d.textContent = new Date().toTimeString().slice(0,8) + "  " + t;
+  $("#log").appendChild(d); $("#log").scrollTop = 1e9;
+}
+
+/* ── 로그인 ── */
+async function refresh(){
+  try{
+    const {data,error} = await sb.auth.getSession();
+    if(error) return showFatal("로그인 상태를 확인하지 못했습니다.", error.message);
+    /* ★ 예전에는 #app 만 여닫았다. 그런데 «필기 변환 / 실기 변환» 알약(#btabs)과
+       실기 쪽 iframe(#tab-practical)은 #app 바깥에 있어서, 로그인도 안 한 사람에게
+       그대로 보였다. 잠글 것은 한 곳에 모아 함께 여닫는다. */
+    gateUI(!!data.session);
+    if(data.session){ mountLogout(); window.ingestRetab?.(); }
+    document.getElementById("fatal").style.display = "none";
+  }catch(err){
+    showFatal("화면을 전환하는 중 오류가 났습니다.", err.message);
+  }
+}
+/* 자리 비울 때 바로 잠글 수 있게 로그아웃 버튼을 붙인다 */
+function mountLogout(){
+  if(document.getElementById("logout")) return;
+  const b = document.createElement("button");
+  b.id = "logout"; b.className = "ghost sm"; b.textContent = "로그아웃";
+  b.style.cssText = "position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:50";
+  b.onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  document.body.appendChild(b);
+}
+$("#login").onclick = async () => {
+  try{
+    const {error} = await sb.auth.signInWithPassword({email:$("#em").value.trim(), password:$("#pw").value});
+    if(error) return say($("#am"), "로그인 실패 — " + error.message, "err");
+    await refresh();
+  }catch(err){ showFatal("로그인 요청 중 오류가 났습니다.", err.message); }
+};
+
+/* ── 저장된 진행 상황 ── */
+const slot = () => `ingest:${$("#scode").value.trim()}:${$("#year").value}:${$("#sess").value}`;
+function save(){ try{ localStorage.setItem(slot(), JSON.stringify(RESULTS)); }catch(e){} }
+function load(){
+  try{ RESULTS = JSON.parse(localStorage.getItem(slot())||"{}"); }catch(e){ RESULTS = {}; }
+  stats(); preview();
+  fetchSavedNumbers(); // ★ 추가: 데이터를 불러올 때 DB도 같이 체크
+}
+["scode","year","sess"].forEach(id => $("#"+id).addEventListener("change", () => { load(); plan(); }));
+$("#reset").onclick = () => {
+  if(!confirm("이 회차의 변환 기록을 지웁니다. Supabase에 이미 올라간 것은 남습니다.")) return;
+  localStorage.removeItem(slot()); localStorage.removeItem(bslot());
+  RESULTS = {}; BATCHES = []; TOKENS = 0; ANSWER_KEY = {};
+  $("#log").innerHTML=""; $("#batches").innerHTML=""; plan(); drawBatches(); stats(); preview();
+};
+
+/* ── 소스 전환: PDF ↔ 사진 여러 장 ── */
+function setSource(src){
+  SRC = src;
+  document.querySelectorAll(".srctab").forEach(t => t.classList.toggle("on", t.dataset.src === src));
+  $("#src-pdf").hidden = src !== "pdf";
+  $("#src-images").hidden = src !== "images";
+  $("#autoImgRow").style.display = src === "pdf" ? "block" : "none";
+  $("#runImage").style.display   = src === "pdf" ? "" : "none";  // 사진 모드에선 이미 사진이라 필요 없다
+  if(src === "pdf"){
+    $("#fromLabel").textContent = "시작 페이지";
+    $("#toLabel").textContent = "끝 페이지";
+    if($("#chunkLabel")) $("#chunkLabel").textContent = "한 번에 보낼 페이지";
+    if($("#atFromLabel")) $("#atFromLabel").textContent = "정답표 시작 페이지";
+    if($("#atToLabel")) $("#atToLabel").textContent = "정답표 끝 페이지";
+  }else{
+    $("#fromLabel").textContent = "시작 번호";
+    $("#toLabel").textContent = "끝 번호";
+    if($("#chunkLabel")) $("#chunkLabel").textContent = "한 번에 보낼 장수";
+    if($("#atFromLabel")) $("#atFromLabel").textContent = "정답표 시작 번호";
+    if($("#atToLabel")) $("#atToLabel").textContent = "정답표 끝 번호";
+  }
+  $("#fm").className = "msg";
+  $("#run").disabled = src === "pdf" ? !PDF : !IMAGES.length;
+  $("#runImage").disabled = src !== "pdf" || !PDF;
+  if(src === "pdf" && PDF) plan(); else if(src === "images" && IMAGES.length) plan();
+}
+document.querySelectorAll(".srctab").forEach(t => t.onclick = () => setSource(t.dataset.src));
+$("#hasAnswerTable")?.addEventListener("change", e => {
+  const r = $("#atRange"); if(r) r.style.display = e.target.checked ? "grid" : "none";
+});
+
+/* ── PDF 받기 ── */
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
+["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("on"); }));
+["dragleave","drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("on"); }));
+drop.addEventListener("drop", ev => { const f = ev.dataTransfer.files[0]; if(f) takePDF(f); });
+$("#file").onchange = e => { const f = e.target.files[0]; if(f) takePDF(f); };
+
+function looksLikePDF(file){
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+}
+async function takePDF(file){
+  if(!looksLikePDF(file)) return say($("#fm"), "PDF 파일만 넣을 수 있습니다.", "err");
+  /* 변환이 도는 중에 파일을 갈아끼우면, 이미 날아간 요청들은 옛 파일로 계속 돌면서
+     묶음 목록만 새로 만들어진다. 그래서 색 표시가 사라지고 실패 0으로 보이는 것뿐이지
+     실제로 성공한 게 아니다. 아예 못 바꾸게 막는다. */
+  if(RUNNING) return say($("#fm"), "지금 변환 중입니다. \"중지\"를 먼저 누른 뒤 새 파일을 올려주세요.", "err");
+  say($("#fm"), "여는 중…", "info");
+  try{
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const doc = await PDFLib.PDFDocument.load(bytes, {ignoreEncryption:true});
+    PDF = doc; PDF_BYTES = bytes; PAGES = doc.getPageCount();
+    $("#pTo").value = PAGES; $("#pFrom").value = 1;
+    drop.innerHTML = `<b>${file.name}</b>${PAGES}쪽 · ${(file.size/1048576).toFixed(1)}MB`;
+    say($("#fm"), `${PAGES}쪽을 읽었습니다. 페이지 범위를 확인하고 시작하세요.`, "ok");
+    $("#run").disabled = false;
+    $("#runImage").disabled = false;
+    plan();
+  }catch(e){
+    say($("#fm"), "PDF를 열지 못했습니다 — " + e.message + "\n암호가 걸린 파일이면 먼저 암호를 풀어주세요. 스캔 이미지들을 그대로 갖고 계시면 위쪽 \"사진 여러 장\" 탭을 대신 써보세요.", "err");
+  }
+}
+
+/* ── 사진 여러 장 받기 ── */
+const dropImg = $("#dropImg");
+dropImg.onclick = () => $("#fileImg").click();
+["dragenter","dragover"].forEach(e => dropImg.addEventListener(e, ev => { ev.preventDefault(); dropImg.classList.add("on"); }));
+["dragleave","drop"].forEach(e => dropImg.addEventListener(e, ev => { ev.preventDefault(); dropImg.classList.remove("on"); }));
+dropImg.addEventListener("drop", ev => { takeImages([...ev.dataTransfer.files].filter(f => f.type.startsWith("image/"))); });
+/* 화면에 보일 이름을 안 적으면 «연도 + 회차» 로 만들어 둔다.
+   직접 손댄 뒤에는 건드리지 않는다 — 고쳐 놓은 걸 덮어쓰면 짜증난다. */
+let LABEL_TOUCHED = false, LABEL_DONE = null;
+$("#elabel")?.addEventListener("input", () => { LABEL_TOUCHED = $("#elabel").value.trim() !== ""; });
+function autoLabel(){
+  if(LABEL_TOUCHED) return;
+  const y = $("#year").value.trim(), n = $("#sess").value.trim();
+  if(!y && !n) return;
+  const yy = y ? (/^\d+$/.test(y) ? y + "년" : y) : "";
+  const nn = n ? (/^\d+$/.test(n) ? n + "회" : n) : "";
+  $("#elabel").placeholder = [yy, nn].filter(Boolean).join(" ") || "비워 두면 자동으로 만듭니다";
+}
+["year","sess"].forEach(id => $("#"+id)?.addEventListener("input", autoLabel));
+
+$("#fileImg").onchange = e => takeImages([...e.target.files]);
+
+/* ── 클립보드 붙여넣기 ──
+   캡처 도구로 오린 화면을 파일로 저장했다가 다시 고르는 게 번거로워서,
+   Ctrl+V 로 바로 넣을 수 있게 한다. 여러 장을 한 번에 붙여도 순서대로 들어간다.
+   붙여넣은 이미지는 이름이 없으므로 붙인 순서대로 번호를 매겨 정렬이 흐트러지지 않게 한다. */
+let PASTE_N = 0;
+addEventListener("paste", async e => {
+  if(/^(INPUT|TEXTAREA)$/.test(e.target?.tagName)) return;
+  const items = [...(e.clipboardData?.items || [])].filter(i => i.type.startsWith("image/"));
+  if(!items.length) return;
+  e.preventDefault();
+  if(SRC !== "images"){
+    say($("#fm"), "사진 모드에서만 붙여넣을 수 있습니다. 위에서 \"사진 여러 장\"을 골라 주세요.", "err");
+    return;
+  }
+  const files = items.map(it => {
+    const f = it.getAsFile();
+    if(!f) return null;
+    const stamp = String(++PASTE_N).padStart(3, "0");
+    const ext = (f.type.split("/")[1] || "png").replace("jpeg", "jpg");
+    return new File([f], `붙여넣기_${stamp}.${ext}`, { type:f.type });
+  }).filter(Boolean);
+  if(files.length) takeImages(files);
+});
+
+function fileToB64(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = () => rej(new Error("파일을 읽지 못했습니다: " + file.name));
+    r.readAsDataURL(file);
+  });
+}
+/* ★ 폰 카메라 원본(보통 3~8MB)을 그대로 보내면 업로드 중 끊길 위험이 커진다.
+   글자를 읽는 데는 원본 해상도가 필요 없으므로, 긴 변 기준 1600px로 줄이고
+   JPEG로 다시 압축해서 보통 200~500KB 수준으로 낮춘다 — 훨씬 안정적으로 전송된다. */
+function compressImage(file, maxSide = 1600, quality = 0.85){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width:w, height:h } = img;
+      if(Math.max(w,h) > maxSide){
+        const s = maxSide / Math.max(w,h);
+        w = Math.round(w*s); h = Math.round(h*s);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if(!blob) return reject(new Error("이미지를 압축하지 못했습니다: " + file.name));
+        const r = new FileReader();
+        r.onload = () => resolve({ b64: r.result.split(",")[1], mime: "image/jpeg", size: blob.size });
+        r.onerror = () => reject(new Error("압축된 이미지를 읽지 못했습니다: " + file.name));
+        r.readAsDataURL(blob);
+      }, "image/jpeg", quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("이미지를 열지 못했습니다: " + file.name)); };
+    img.src = url;
+  });
+}
+/* 자연스러운 순서로: "2쪽.jpg" 가 "10쪽.jpg" 보다 앞에 오도록 숫자 기준 정렬 */
+function naturalSort(a, b){
+  return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:"base"});
+}
+async function takeImages(files){
+  if(!files.length) return;
+  if(RUNNING) return say($("#fm"), "지금 변환 중입니다. \"중지\"를 먼저 누른 뒤 새 파일을 올려주세요.", "err");
+  say($("#fm"), `${files.length}장 읽고 줄이는 중…`, "info");
+  try{
+    const added = [];
+    for(const f of files){
+      try{
+        const c = await compressImage(f);
+        added.push({ name:f.name, mime:c.mime, b64:c.b64, size:c.size, origSize:f.size });
+      }catch(e){
+        // 압축 실패(예: HEIC 등 브라우저가 못 여는 형식)하면 원본 그대로라도 넣는다
+        const b64 = await fileToB64(f);
+        added.push({ name:f.name, mime:f.type || "image/jpeg", b64, size:f.size });
+      }
+    }
+    IMAGES = IMAGES.concat(added).sort(naturalSort);
+    drawImgList();
+    $("#pFrom").value = 1; $("#pTo").value = IMAGES.length;
+    const savedPct = added.length && added[0].origSize
+      ? Math.round((1 - added.reduce((s,a)=>s+a.size,0)/added.reduce((s,a)=>s+(a.origSize||a.size),0)) * 100)
+      : 0;
+    say($("#fm"), `총 ${IMAGES.length}장${savedPct>0?` (용량 약 ${savedPct}% 줄임)`:""}. 순서가 이상하면 파일명 앞에 01, 02 처럼 번호를 붙여 다시 올려주세요.`, "ok");
+    $("#run").disabled = false;
+    plan();
+  }catch(e){
+    say($("#fm"), "사진을 읽지 못했습니다 — " + e.message, "err");
+  }
+}
+function drawImgList(){
+  $("#imglist").innerHTML = IMAGES.map((im, i) => `
+    <span class="imgchip" data-i="${i}">
+      <img src="data:${im.mime};base64,${im.b64}" alt="">
+      <span>${im.name}</span>
+      <b data-del="${i}" title="빼기">✕</b>
+    </span>`).join("");
+  $("#imglist").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    IMAGES.splice(+b.dataset.del, 1);
+    drawImgList();
+    $("#pTo").value = IMAGES.length;
+    if(!IMAGES.length){ $("#run").disabled = true; say($("#fm"), "사진을 다시 올려주세요.", "info"); }
+    plan();
+  });
+}
+
+/* ── 묶음 진행 상황 저장 ──
+   문항(RESULTS)만 저장하고 묶음 상태는 안 남겼더니, 파일을 다시 올리거나 새로고침할 때마다
+   전부 처음부터 다시 뽑았다. 어느 쪽이 이미 끝났는지를 따로 기억해 둔다. */
+const bslot = () => slot() + ":batches";
+function saveBatches(){
+  try{
+    const m = {};
+    for(const b of BATCHES)
+      if(b.status === "done" || b.status === "skip")
+        m[`${b.from}-${b.to}`] = { status:b.status, count:b.count||0, mode:b.mode||"", msg:b.msg||"" };
+    localStorage.setItem(bslot(), JSON.stringify(m));
+  }catch(e){}
+}
+function loadBatchState(){
+  try{ return JSON.parse(localStorage.getItem(bslot()) || "{}"); }catch(e){ return {}; }
+}
+
+/* ── 묶음 계획 ── */
+function plan(){
+  const total = SRC === "pdf" ? PAGES : IMAGES.length;
+  if(!total) return;
+  /* 돌리는 중에 목록을 다시 만들면 진행 중인 묶음들이 통째로 버려져서
+     성공·실패 표시가 사라지고 실패 0(=100%)처럼 보인다. 실제 결과가 아니다. */
+  if(RUNNING) return;
+  const from = Math.max(1, +$("#pFrom").value||1);
+  const to   = Math.min(total, +$("#pTo").value||total);
+  const size = +($("#chunk")?.value || 1);   // 선택칸을 없앴으므로 기본은 1장(쪽)씩
+  BATCHES = [];
+  const prev = loadBatchState();
+  for(let p = from; p <= to; p += size){
+    const end = Math.min(p+size-1, to);
+    const b = { from:p, to:end, status:"", count:0, kind:SRC, off:false };
+    const saved = prev[`${p}-${end}`];
+    if(saved) Object.assign(b, saved);   // 지난번에 이미 끝낸 묶음은 그대로 두고 건너뛴다
+    BATCHES.push(b);
+  }
+  drawBatches(); stats();
+}
+["pFrom","pTo","chunk"].forEach(id => $("#"+id)?.addEventListener("change", plan));
+
+function unit(){ return SRC === "pdf" ? "쪽" : "번"; }
+
+/* 글 속 첫 숫자만 뽑는다. "2021~2026" → 2021, "합본" → 0 */
+function firstNum(v){ const m = String(v || "").match(/\d+/); return m ? +m[0] : 0; }
+function autoLabelText(){
+  const y = $("#year").value.trim(), n = $("#sess").value.trim();
+  const yy = y ? (/^\d+$/.test(y) ? y + "년" : y) : "";
+  const nn = n ? (/^\d+$/.test(n) ? n + "회" : n) : "";
+  return [yy, nn].filter(Boolean).join(" ");
+}
+function drawBatches(){
+  $("#batches").innerHTML = BATCHES.map((b,i) =>
+    `<button type="button" class="bt ${b.status} ${b.off?"off":""}" data-i="${i}" title="${
+      (b.msg||"") || (b.status==="done" ? "이미 끝남 — 건너뜁니다" : "눌러서 켜고 끄기")
+    }">${b.from}${b.to>b.from?"–"+b.to:""}${b.count?` · ${b.count}`:""}</button>`).join("");
+  saveBatches();
+}
+/* 묶음 칩을 눌러 켜고 끄기 — 페이지 번호를 연달아 타이핑하지 않아도 되게 */
+$("#batches").addEventListener("click", e => {
+  const el = e.target.closest(".bt"); if(!el) return;
+  if(RUNNING) return;
+  const b = BATCHES[+el.dataset.i]; if(!b) return;
+  b.off = !b.off; drawBatches();
+});
+/* 뽑힌 번호 사이에 구멍이 났는지 본다. 쪽 경계에 걸린 문항이 통째로 새는 게 가장 흔한 사고라
+   끝난 뒤 눈으로 확인하지 않아도 알 수 있게 한다. */
+function missingNumbers(){
+  const nums = Object.keys(RESULTS).map(Number).filter(n => n > 0).sort((a,b) => a-b);
+  if(!nums.length) return [];
+  const have = new Set(nums), out = [];
+  for(let n = 1; n <= nums[nums.length-1]; n++) if(!have.has(n)) out.push(n);
+  return out;
+}
+document.querySelectorAll("[data-sel]").forEach(btn => btn.onclick = () => {
+  if(RUNNING) return;
+  const how = btn.dataset.sel;
+
+  if(how === "gap"){
+    const miss = missingNumbers();
+    if(!miss.length) return log("빠진 번호가 없습니다. 1번부터 끝까지 이어져 있습니다.", "g");
+    /* 빠진 번호를 담당했을 법한 묶음을 고른다.
+       각 묶음이 실제로 뽑은 번호대(lo~hi)를 기록해 뒀으므로, 그 앞뒤로 걸치는 묶음을 켠다. */
+    const want = new Set();
+    for(const n of miss){
+      BATCHES.forEach((b,i) => {
+        if(b.lo == null) return;
+        if(n >= b.lo - 1 && n <= b.hi + 1) want.add(i);
+      });
+    }
+    BATCHES.forEach((b,i) => { b.off = want.size ? !want.has(i) : false; });
+    $("#redo").checked = true;   // 이미 done 인 묶음을 다시 돌려야 하므로
+    drawBatches();
+    log(`빠진 번호 ${miss.join(", ")} — 관련 묶음 ${want.size || BATCHES.length}개를 켜고 "다시 뽑기"를 함께 켰습니다. "변환 시작"을 누르세요.`, "e");
+    return;
+  }
+
+  BATCHES.forEach(b => {
+    b.off = how === "all"  ? false
+          : how === "none" ? true
+          : how === "fail" ? b.status !== "fail"
+          : /* todo */       (b.status === "done" || b.status === "skip");
+  });
+  drawBatches();
+});
+function stats(){
+  const done = BATCHES.filter(b=>b.status==="done"||b.status==="skip").length;
+  const fail = BATCHES.filter(b=>b.status==="fail").length;
+  const qs = Object.values(RESULTS);
+  $("#stB").textContent = `${done} / ${BATCHES.length}`;
+  $("#stQ").textContent = qs.length;
+  $("#stE").textContent = qs.filter(q=>q.explanation_md||q.explanation_html).length;
+  const figN = qs.filter(q=>q.figure_url).length;
+  const figEl = document.getElementById("stFig"); if(figEl) figEl.textContent = figN;
+  $("#stF").textContent = fail;
+  $("#stT").textContent = TOKENS.toLocaleString();
+  $("#pi").style.width = BATCHES.length ? (done+fail)/BATCHES.length*100 + "%" : "0";
+  $("#up").disabled = !qs.length;
+  $("#dl").disabled = !qs.length;
+  $("#retry").disabled = !fail || RUNNING;
+}
+
+/* ── 프롬프트 ── */
+function buildPrompt(from, to, asImage, tail){
+  const mode = $("#hasExp").value;
+  const src = mode === "yes"
+    ? "이 자료에는 해설이 함께 실려 있다. 실린 해설을 근거로 삼되, 원문을 그대로 옮기지 말고 아래 4단 구성으로 다시 정리해라."
+    : mode === "answer"
+    ? "이 자료에는 정답만 표시돼 있고 해설은 없다. 표시된 정답을 answer 에 넣고, 해설은 네가 직접 작성해라."
+    : "이 자료에는 해설이 없다. 정답을 네가 판단해서 answer 에 넣되 확신이 없으면 null 로 두고, 해설 안에 근거를 밝혀라.";
+
+    const svgMode = $("#svgMode")?.value || "auto";
+    const svgCap = svgMode === "many" ? 5 : 2;
+    const svg = svgMode === "off" ? "" : `
+
+[해설 도식 — 아래에 해당하는 문항에만]
+- 기본은 글과 수식으로만 설명한다. 그림은 "글로는 도저히 설명이 안 되는 문항"에만 넣는다.
+- 그리는 문항은 "explanation_md" 대신 "explanation_html" 에 인라인 <svg> 를 포함한 HTML 을 넣어라.
+  (두 항목을 같이 넣지 말고, 안 그리는 문항에는 explanation_html 을 아예 넣지 마라)
+- 그릴 만한 경우는 이런 것들뿐이다:
+  · 냉동사이클을 p-h(몰리에르) 선도 위에서 따라가야 하는 문항 — 압축·응축·팽창·증발 네 점
+  · 습공기선도 위의 상태변화 경로 — 가열·냉각·가습·감습·혼합
+  · 장치 계통도가 있어야 이해되는 문항 — 2단압축, 2단팽창, 캐스케이드, 열회수, 덕트·배관 계통
+  · T-s 선도, 블록선도, 플로우차트 자체가 답의 근거인 문항
+- 안 그리는 경우(대부분): 공식에 값만 대입하는 계산, 용어·정의, 법규 수치, 단순 비교·암기.
+- 이 응답 전체에서 그림은 최대 ${svgCap}개까지만. 애매하면 그리지 마라.
+- 선도는 정확한 좌표를 재현하려 하지 말고 개형(스케치)에 상태점 번호와 화살표를 얹어라.
+  가로·세로축 이름과 단위는 <text> 로 반드시 적어라.
+- <svg> 규칙: width/height 를 px 숫자로 명시(width 340 이하), 화살표는 <defs><marker>,
+  글자는 <text> 로만 쓰고 LaTeX 금지, 외부 이미지·스크립트·CSS 금지.
+  선은 stroke="currentColor" 를 써서 어두운 배경에서도 보이게 하라.`;
+
+  const label = SRC === "pdf" ? `${from}쪽부터 ${to}쪽까지` : `${from}번째부터 ${to}번째까지`;
+  const kind = asImage ? "사진으로 찍은" : (SRC === "pdf" ? "PDF" : "사진으로 찍은");
+
+  return `첨부한 자료는 자격증 기출문제집을 ${kind} 것으로, ${label}이다.
+${src}
+
+[대상 — 어느 문항을 뽑고 어느 문항을 넘길지]
+- 이 묶음이 맡는 범위는 ${label} 이다.${tail ? ` 마지막에 ${tail}${unit()}을 "이어보기용"으로 한 장 더 붙여 두었다.` : ""}
+- 판단 기준은 딱 하나다: **인쇄된 문항 번호("10." 같은 것)가 맡은 범위 안에 찍혀 있는가.**
+  번호가 맡은 범위 안에 보이면 그 문항은 네 것이다. 무조건 뽑아라.
+- 문항 하나가 쪽 경계에서 잘리는 일이 아주 흔하다. 번호와 문제 본문은 이 쪽 아래쪽에 있는데,
+  보기 ①②③④ 나 표·그림·선도는 다음 쪽 맨 위에 이어지는 식이다.
+  이때는${tail ? ` 이어보기용 ${tail}${unit()} 맨 위에서 뒷부분을 이어받아` : " 보이는 데까지 이어붙여"}
+  문제·보기·그림 설명을 온전하게 맞춘 뒤 **하나의 문항으로** 뽑아라. 절대 버리지 마라.
+  예: "10. 아래 그림은 냉방시의 공기조화 과정을 나타낸다 …" 가 이 쪽 맨 아래에 있고,
+  선도 그림과 보기 ①8 ②5 ③3 ④1 이 다음 쪽 맨 위에 있는 경우 → 10번은 네가 뽑는다.
+- 넘겨야 하는 경우는 아래 둘뿐이다:
+  · 이 범위 첫 쪽 맨 위에, **번호가 안 보이는 조각**(보기만 덩그러니 있거나 그림만 있는 것)이 있을 때
+    → 그건 앞 묶음 문항의 꼬리다. 뽑지 마라.${tail ? `
+  · 이어보기용 ${tail}${unit()}에서 **번호가 새로 찍히며 시작하는** 문항 → 다음 묶음이 맡는다. 뽑지 마라.
+    이어보기용 쪽은 "앞 문항의 뒷부분을 이어받는 용도"로만 써라.` : ""}
+- 위 둘에 해당하지 않으면 애매해도 **일단 뽑아라.** 겹쳐서 두 번 나오는 건 프로그램이 알아서 정리한다.
+  빠뜨리는 것이 훨씬 큰 잘못이다.
+- 뽑기 전에 스스로 확인해라: 맡은 범위에 찍힌 번호를 순서대로 훑어서, 빠진 번호가 없는지 세어봐라.
+- 목차·표지·광고·수험 안내처럼 문제가 아닌 페이지는 무시해라.
+
+[문제 안의 그림·표·선도]
+- 문제를 푸는 데 그림(계통도·선도·회로도·장치도)이나 표가 꼭 필요한 문항이 있다.
+  그런 문항은 글자만 옮기면 풀 수 없게 되므로, 그림이 있는 자리를 알려줘라.
+- 그 문항에만 "figure" 항목을 넣어라. 그림이 없는 문항에는 절대 넣지 마라.
+  "figure": { "page": 쪽번호, "box": [x0, y0, x1, y1], "note": "그림 설명 한 줄" }
+  · page 는 이 묶음에서 몇 번째 쪽인지가 아니라 자료에 적힌 실제 쪽 번호다.
+  · box 는 그 쪽을 가로·세로 각각 0~1 로 봤을 때 그림이 차지하는 네모다.
+    왼쪽 위가 (0,0), 오른쪽 아래가 (1,1) 이다. 넉넉하게 잡아라 — 좁게 자르면 그림이 잘린다.
+  · 보기 ①②③④ 글자는 box 에 넣지 마라. 그림·표 부분만 감싼다.
+  · note 는 "냉동사이클 p-h선도", "벽체 열전도율 표" 처럼 무엇을 그린 것인지 한 줄로.
+- 표가 글자로 옮겨 적을 만큼 단순하면 figure 대신 question_text 안에 그대로 적어라.
+  줄이 복잡하거나 그림이 섞이면 figure 로 잡아라.
+
+[출력 형식]
+- JSON 하나만 출력한다. 최상위는 {"questions":[ … ]} 이다.
+- 각 원소:
+{
+  "number": 인쇄된 문항 번호(정수),
+  "subject_part": "1과목 : 에너지관리" 형태의 과목 구분. 안 보이면 null,
+  "question_text": "문제 원문 그대로. 수식은 $…$",
+  "choices": ["보기1","보기2","보기3","보기4"],
+  "answer": 정답 번호 1~4. 모르면 null,
+  "summary": "12자 이내 유형 요약",
+  "tags": ["계산"|"암기"|"법규"|"그림" 중 해당하는 것],
+  "correct_rate": 정답률이 인쇄돼 있으면 숫자만, 없으면 null,
+  "explanation_md": "해설 본문"
+}
+
+[question_text 작성 규칙 — 가장 자주 틀리는 부분이니 특히 지켜라]
+- question_text 의 첫 글자는 반드시 문제 내용의 첫 글자여야 한다. 번호·머리표를 절대 다시 붙이지 마라.
+  금지하는 형태: "1." "23)" "(4)" "[12]" "문제 5." "Q1." "① " — 어떤 형태든 맨 앞에 오면 안 된다.
+  번호는 "number" 항목에만 적고, question_text 에는 넣지 않는다. 화면에는 번호가 이미 따로 표시된다.
+  나쁜 예: "1. 2단압축 1단 팽창 냉동장치에서…"   ← 실제 번호가 25번이어도 이렇게 쓰면 안 된다
+  나쁜 예: "25. 2단압축 1단 팽창 냉동장치에서…"
+  좋은 예: "2단압축 1단 팽창 냉동장치에서…"
+- 응답 안에서 몇 번째 문항인지를 뜻하는 임시 번호("1.", "2.", …)도 붙이지 마라. 순서는 배열이 정한다.
+- summary 에도 번호를 붙이지 마라. 유형만 적는다. (나쁜 예: "1. 이상기체 계산" / 좋은 예: "이상기체 계산")
+- 주어진 값이 여러 개(엔탈피, 온도 등 항목-값 쌍)라서 나열이 필요하면 마크다운 표를 써도 된다.
+  형식: "| 항목 | 값 |\n| --- | --- |\n| 저단 압축기 흡입증기 엔탈피($h_1$) | 610.4 kJ/kg |" 처럼
+  파이프(|)로 구분한다. 화면 폭이 좁으니 열은 2~3개까지만 써라.
+
+[explanation_md 규칙]
+- 마크다운. **굵게**, 목록(- ), 빈 줄 문단 나눔, 표(위와 같은 파이프 형식)를 쓸 수 있다.
+- 표는 열 2~3개, 행 6개 이하로 짧게만 써라. 그보다 길어지면 표 대신 목록(- )으로 풀어써라.
+- 수식은 인라인 $…$, 독립 수식은 $$…$$ (KaTeX 로 렌더된다).
+- 구성 순서를 지켜라:
+  **핵심 개념** — 무엇을 묻는 문제인지 2~3줄.
+  **풀이** — 공식 → 값 대입 → 계산 → 답. 계산 과정을 절대 생략하지 마라.
+  **보기별 정오** — 1~4번이 각각 왜 맞고 틀린지 한 줄씩.
+  **시험장 암기 포인트** — 2~3개, 짧게.
+- 문과생 눈높이로 쉽게 쓰되 전문 용어와 기호는 그대로 쓰고 뜻을 괄호로 풀어라.
+- 기호가 나오면 뜻과 단위를 반드시 밝혀라. 예: $P$ = 압력(atm)
+
+[정확성]
+- 사진에서 읽히지 않는 값은 지어내지 말고 null 로 둬라.
+- 첨자와 단위를 특히 조심해라. $x^2$ 와 $x_2$, kW 와 kVA 를 혼동하지 마라.${svg}`;
+}
+
+
+/* ── 워커 호출 (parts: [{mime, b64}, ...]) ── */
+async function ask(parts, from, to, asImage, tail){
+  return callWorker(parts, buildPrompt(from, to, asImage, tail), from, to, 32768);
+}
+
+/* 정답표만 따로 뽑을 때 쓰는 훨씬 가벼운 호출 — 문항 전체를 다시 안 뽑으니 출력이 짧아도 된다 */
+async function askAnswerKey(parts, from, to){
+  return callWorker(parts, buildAnswerKeyPrompt(from, to), from, to, 4096);
+}
+
+async function callWorker(parts, promptText, from, to, maxTokens){
+  const body = {
+    contents: [{ role:"user", parts:[
+      ...parts.map(p => ({ inline_data:{ mime_type:p.mime, data:p.b64 } })),
+      { text: promptText }
+    ]}],
+    generationConfig: { temperature:0.15, maxOutputTokens:maxTokens, responseMimeType:"application/json" }
+  };
+
+  /* 요청 하나를 실제로 보내는 부분. SVG 켜짐: 5분, 꺼짐: 90초 대기 */
+  async function attempt(base){
+    const ac = new AbortController();
+    
+    // ★ 추가: 화면의 SVG 체크박스가 켜져 있는지 확인
+    const isSvgOn = ($("#svgMode")?.value || "auto") !== "off";
+    
+    // ★ 수정: SVG가 켜져 있으면 300초(5분), 꺼져 있으면 2분 30초로 엄청 넉넉하게 잡습니다.
+    const timeoutMs = isSvgOn ? 300000 : 150000;
+    const timeoutLabel = isSvgOn ? "5분" : "2분30초";
+    
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    let elapsed = 0;
+    const ticker = setInterval(() => {
+      elapsed += 10;
+      log(`${from}–${to}${unit()} · ${new URL(base).hostname} 응답 기다리는 중… ${elapsed}초`);
+    }, 10000);
+    try{
+      const res = await fetch(base.replace(/\/$/,"") + "/get-data", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body),
+        signal: ac.signal
+      });
+      const d = await res.json();
+      if(!res.ok) return { ok:false, detail: d.detail || String(res.status) };
+      if(d.usage) TOKENS += (d.usage.in||0) + (d.usage.out||0);
+      return {
+        ok:true,
+        text: d.candidates?.[0]?.content?.parts?.[0]?.text || "",
+        truncated: d.finishReason === "MAX_TOKENS",
+        model: d.usedModel
+      };
+    }catch(e){
+      // ★ 수정: 에러 메시지에 5분/90초가 찍히도록 변경
+      return { ok:false, detail: e.name === "AbortError" ? `${timeoutLabel} 안에 응답이 없었습니다 (타임아웃)` : e.message };
+    }finally{
+      clearTimeout(timer); clearInterval(ticker);
+    }
+  }
+
+
+  /* ── 두 서버를 "겹쳐서" 부른다 ────────────────────────────────
+     예전에는 1번 서버가 죽어 있으면 90초를 꽉 기다린 뒤에야 2번 서버로 넘어갔다.
+     한 묶음에 3분씩 멈춰 있는 것처럼 보이던 원인이 이것이다.
+     이제는 HEDGE_MS 안에 답이 없으면 2번 서버에도 같은 요청을 같이 보내고,
+     먼저 답하는 쪽을 쓴다. 한쪽이 에러로 빨리 죽으면 기다리지 않고 즉시 다음 서버를 부른다. */
+  const order = endpointOrder();
+  if(order.length === 1){
+    const r = await attempt(order[0]);
+    if(r.ok){ PREFERRED = order[0]; return r; }
+    throw new Error(r.detail);
+  }
+
+  return new Promise((resolve, reject) => {
+    let done = false, errs = 0, lastErr = "", hedge = null;
+    const started = new Set();
+
+    const armHedge = () => {
+      clearTimeout(hedge);
+      hedge = setTimeout(() => {
+        const next = order.find(b => !started.has(b));
+        if(next && !done) fire(next);
+      }, HEDGE_MS);
+    };
+
+    function fire(base){
+      if(done || started.has(base)) return;
+      started.add(base);
+      const host = new URL(base).hostname;
+      if(started.size > 1) log(`${from}–${to}${unit()} · ${host} 에도 같이 보냅니다 — 먼저 답하는 쪽을 씁니다.`);
+      attempt(base).then(r => {
+        if(r.ok){
+          if(done) return;
+          done = true; clearTimeout(hedge); PREFERRED = base;
+          resolve(r);
+          return;
+        }
+        errs++; lastErr = r.detail;
+        log(`${from}–${to}${unit()} · ${host} 실패 — ${r.detail}`, "e");
+        if(PREFERRED === base) PREFERRED = null;
+        if(done) return;
+        const next = order.find(b => !started.has(b));
+        if(next){ clearTimeout(hedge); fire(next); armHedge(); }
+        else if(errs >= started.size){ done = true; clearTimeout(hedge); reject(new Error(lastErr)); }
+      });
+      armHedge();
+    }
+
+    fire(order[0]);
+  });
+}
+
+
+/* ── 정답표 프롬프트 — 문항 전체를 다시 뽑지 않고, 번호↔정답 짝만 뽑는다 ── */
+function buildAnswerKeyPrompt(from, to){
+  const label = SRC === "pdf" ? `${from}쪽부터 ${to}쪽까지` : `${from}번째부터 ${to}번째까지`;
+  return `첨부한 자료의 ${label}에 있는 "정답표"만 뽑아라. 문제 본문이나 해설은 필요 없다.
+
+표는 여러 형태일 수 있다:
+- "1 2 3 4 5 ... / ②④①④③ ..." 처럼 문항 번호 줄과 정답 줄이 번갈아 나오는 격자형
+- "1.② 2.④ 3.① ..." 처럼 한 줄로 나열된 형태
+- 과목별로 표가 나뉘어 있을 수도 있다. 전부 합쳐서 뽑아라.
+
+①②③④ 같은 원문자나 동그라미 숫자는 전부 1~4 사이의 숫자로 바꿔서 답해라.
+
+[출력 형식]
+JSON만 출력한다. 다른 말은 절대 하지 마라.
+{"answers": {"1": 2, "2": 4, "3": 1, "4": 3}}
+
+문항 번호는 키(key)에 문자열로, 정답은 값(value)에 1~4 사이의 정수로 넣는다.
+표에서 확실히 읽히지 않는 번호는 아예 넣지 마라 — 추측해서 채우지 마라.`;
+}
+
+/* ── PDF 페이지 조각(PDF 그대로) ── */
+async function slicePDF(from, to){
+  const out = await PDFLib.PDFDocument.create();
+  const idx = []; for(let p=from; p<=to; p++) idx.push(p-1);
+  const pages = await out.copyPages(PDF, idx);
+  pages.forEach(p => out.addPage(p));
+  return [{ mime:"application/pdf", b64: b64(await out.save()) }];
+}
+
+/* ── PDF 페이지를 사진(PNG)으로 렌더링 — 깨진/스캔 PDF용 ── */
+async function renderPDFPagesAsImages(from, to){
+  if(typeof window.pdfjsLib === "undefined" || !PDF_BYTES)
+    throw new Error("PDF를 이미지로 바꾸는 기능을 쓸 수 없습니다.");
+  const copy = PDF_BYTES.slice(); // pdf.js 가 버퍼를 소비하므로 매번 복사본을 준다
+  const doc = await pdfjsLib.getDocument({ data: copy }).promise;
+  const parts = [];
+  for(let p = from; p <= to; p++){
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale: 2.2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+    parts.push({ mime:"image/jpeg", b64: dataUrl.split(",")[1] });
+  }
+  return parts;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   문제 속 그림 오려내기
+
+   AI 가 알려준 네모는 대충이다(모델이 좌표를 정밀하게 못 짚는다).
+   그래서 넉넉히 여유를 준 뒤, 잘라낸 조각 안에서 흰 여백을 픽셀로 훑어 잘라낸다.
+   → 대충 잡아도 결과는 그림에 딱 맞게 붙는다.
+
+   부하 관리
+     · 그림이 있다고 표시된 문항에만 돈다 (보통 80문항 중 5~15개)
+     · 같은 쪽은 한 번만 렌더링해서 캐시로 돌려쓴다
+     · 폭 900px·JPEG 0.82 로 줄여 한 장에 30~80KB
+     · 렌더 배율 2.0 고정, 캐시는 최대 3쪽만 들고 있다가 버린다
+   ═══════════════════════════════════════════════════════════════ */
+const PAGE_CACHE = new Map();          // 쪽번호 → canvas
+async function pageCanvas(pageNo){
+  if(PAGE_CACHE.has(pageNo)) return PAGE_CACHE.get(pageNo);
+  if(typeof window.pdfjsLib === "undefined" || !PDF_BYTES) throw new Error("PDF 없음");
+  const doc = await pdfjsLib.getDocument({ data: PDF_BYTES.slice() }).promise;
+  const page = await doc.getPage(pageNo);
+  const viewport = page.getViewport({ scale: 2.0 });
+  const cv = document.createElement("canvas");
+  cv.width = Math.ceil(viewport.width); cv.height = Math.ceil(viewport.height);
+  await page.render({ canvasContext: cv.getContext("2d"), viewport }).promise;
+  if(PAGE_CACHE.size >= 3) PAGE_CACHE.delete(PAGE_CACHE.keys().next().value);
+  PAGE_CACHE.set(pageNo, cv);
+  return cv;
+}
+const dropPageCache = () => PAGE_CACHE.clear();
+
+/* 흰 여백을 걷어내 그림에 딱 맞게 좁힌다 */
+function trimWhite(cv, pad = 6){
+  const w = cv.width, h = cv.height;
+  const d = cv.getContext("2d").getImageData(0, 0, w, h).data;
+  const INK = 236;                                  // 이보다 어두우면 내용이 있다고 본다
+  let x0 = w, y0 = h, x1 = 0, y1 = 0;
+  for(let y = 0; y < h; y++){
+    for(let x = 0; x < w; x++){
+      const i = (y*w + x) * 4;
+      if(d[i] < INK || d[i+1] < INK || d[i+2] < INK){
+        if(x < x0) x0 = x; if(x > x1) x1 = x;
+        if(y < y0) y0 = y; if(y > y1) y1 = y;
+      }
+    }
+  }
+  if(x1 <= x0 || y1 <= y0) return null;             // 통째로 백지 → 그림 없음
+  x0 = Math.max(0, x0-pad); y0 = Math.max(0, y0-pad);
+  x1 = Math.min(w-1, x1+pad); y1 = Math.min(h-1, y1+pad);
+  const out = document.createElement("canvas");
+  out.width = x1-x0+1; out.height = y1-y0+1;
+  out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+/* AI 가 준 네모 → 실제 그림 조각(Blob) */
+async function cropFigure(fig){
+  const page = +fig.page;
+  if(!page || !Array.isArray(fig.box) || fig.box.length !== 4) return null;
+  let [x0, y0, x1, y1] = fig.box.map(Number);
+  if(![x0,y0,x1,y1].every(v => isFinite(v))) return null;
+  if(x1 < x0) [x0,x1] = [x1,x0];
+  if(y1 < y0) [y0,y1] = [y1,y0];
+  /* 넉넉히 여유 — 좁게 잡아 온 경우가 훨씬 많다 */
+  const PADX = 0.04, PADY = 0.03;
+  x0 = Math.max(0, x0-PADX); y0 = Math.max(0, y0-PADY);
+  x1 = Math.min(1, x1+PADX); y1 = Math.min(1, y1+PADY);
+  if(x1-x0 < 0.05 || y1-y0 < 0.02) return null;
+
+  const src = await pageCanvas(page);
+  const cx = Math.floor(x0*src.width),  cy = Math.floor(y0*src.height);
+  const cw = Math.ceil((x1-x0)*src.width), ch = Math.ceil((y1-y0)*src.height);
+  const rough = document.createElement("canvas");
+  rough.width = cw; rough.height = ch;
+  rough.getContext("2d").drawImage(src, cx, cy, cw, ch, 0, 0, cw, ch);
+
+  const tight = trimWhite(rough) || rough;
+  /* 폭 900px 로 제한해 용량을 잡는다 */
+  let out = tight;
+  if(tight.width > 900){
+    out = document.createElement("canvas");
+    out.width = 900; out.height = Math.round(tight.height * 900 / tight.width);
+    out.getContext("2d").drawImage(tight, 0, 0, out.width, out.height);
+  }
+  if(out.width < 40 || out.height < 24) return null;     // 너무 작으면 그림이 아니다
+  return await new Promise(res => out.toBlob(res, "image/jpeg", 0.82));
+}
+
+/* 오려낸 그림을 저장소에 올리고 주소를 돌려준다 */
+async function uploadFigure(blob, qnum){
+  const path = `${$("#scode").value.trim()}/${$("#year").value}-${$("#sess").value}/q${qnum}_${Date.now()}.jpg`;
+  const { error } = await sb.storage.from("qfig").upload(path, blob, { contentType:"image/jpeg", upsert:true });
+  if(error) throw error;
+  return sb.storage.from("qfig").getPublicUrl(path).data.publicUrl;
+}
+
+/* 이 묶음에서 그림이 있다고 표시된 문항만 처리한다 */
+async function attachFigures(list){
+  if(SRC !== "pdf") return 0;                      // 사진 업로드 모드는 원본 쪽 좌표가 없다
+  const targets = list.filter(q => q.figure && q.figure.page);
+  if(!targets.length) return 0;
+  let done = 0;
+  for(const q of targets){
+    try{
+      const blob = await cropFigure(q.figure);
+      if(!blob) continue;
+      q.figure_url  = await uploadFigure(blob, q.number);
+      q.figure_note = q.figure.note || null;
+      done++;
+    }catch(e){
+      log(`${q.number}번 그림을 붙이지 못했습니다 — ${e.message}`, "e");
+    }
+  }
+  if(done) log(`${done}개 문항에 그림을 붙였습니다.`, "g");
+  return done;
+}
+
+/* ── 사진 여러 장 중 index 범위(1-based)를 parts 로 ── */
+function imagesToParts(from, to){
+  return IMAGES.slice(from-1, to).map(im => ({ mime: im.mime, b64: im.b64 }));
+}
+
+function b64(u8){
+  let s = "", CH = 0x8000;
+  for(let i=0; i<u8.length; i+=CH) s += String.fromCharCode.apply(null, u8.subarray(i, i+CH));
+  return btoa(s);
+}
+
+/* 맨 앞에 다시 붙은 문항 번호("1. ", "23) ", "(4) ", "[12] ", "문제 5. ")를 지운다.
+   숫자 뒤에 반드시 공백이 와야만 지우므로 "1.5kg", "2단압축", "20℃" 같은 진짜 본문은 안 건드린다. */
+function stripQNo(s){
+  return String(s??"").replace(
+    /^[\s\u00A0]*(?:문제|문항)?[\s\u00A0]*(?:[[(][\s\u00A0]*\d{1,3}[\s\u00A0]*[\])]|\d{1,3}[\s\u00A0]*[.)])[\s\u00A0]+/,
+    ""
+  );
+}
+
+/* ── 병합 ── */
+function merge(list){
+  let n = 0;
+  for(const raw of list){
+    const q = {
+      number: +(raw.number ?? 0),
+      subject_part: raw.subject_part || null,
+      question_text: raw.question_text || raw.question || "",
+      choices: Array.isArray(raw.choices) ? raw.choices : [],
+      answer: raw.answer != null ? +raw.answer : null,
+      summary: raw.summary || null,
+      explanation_md: raw.explanation_md || null,
+      explanation_html: raw.explanation_html || null,
+      figure_url: raw.figure_url || null,
+      figure_note: raw.figure_note || null,
+      tags: Array.isArray(raw.tags) ? raw.tags : [],
+      correct_rate: raw.correct_rate != null ? +raw.correct_rate : null
+    };
+    if(!q.number || !q.question_text) continue;
+    /* 본문·요약 맨 앞에 번호를 또 적어놓은 경우 제거한다. (관찰 결과, AI가 실제 문항번호와 무관하게
+       "이번 응답의 1번째 항목"이라는 뜻으로 "1."을 붙이는 경우가 많다.)
+       두 번 돌리는 이유: "1. 3) 다음 중…" 처럼 겹쳐 붙는 경우가 있다. */
+    q.question_text = stripQNo(stripQNo(q.question_text));
+    if(q.summary) q.summary = stripQNo(q.summary) || null;
+    /* 정답표를 따로 뽑아뒀으면, 개별 문항이 각자 판단한 답보다 정답표 쪽을 더 믿는다 */
+    if(ANSWER_KEY[q.number] != null) q.answer = ANSWER_KEY[q.number];
+    /* 같은 번호가 두 번 들어오면(경계에 걸친 문항은 앞뒤 묶음에서 같이 나올 수 있다)
+       더 "온전한" 쪽을 남긴다. 보기 개수 → 해설 길이 → 문제 길이 순으로 본다.
+       해설이 길다는 이유로 보기가 잘린 조각이 덮어쓰지 않게 하는 것이 핵심이다. */
+    const old = RESULTS[q.number];
+    const nCh = x => (Array.isArray(x?.choices) ? x.choices.filter(c => String(c||"").trim()).length : 0);
+    const nEx = x => ((x?.explanation_md||"") + (x?.explanation_html||"")).length;
+    const nQ  = x => (x?.question_text||"").length;
+    const better = (a, o) =>
+      nCh(a) !== nCh(o) ? nCh(a) > nCh(o) :
+      Math.abs(nEx(a) - nEx(o)) > 40 ? nEx(a) > nEx(o) :
+      nQ(a) > nQ(o);
+    if(!old || better(q, old)) RESULTS[q.number] = q;
+    n++;
+  }
+  save(); return n;
+}
+
+/* ── 정답표 따로 뽑기 ──
+   맨 뒷장 같은 데 몰려있는 "1 2 3 4 / ②④①④" 식 정답표를 별도로 한 번 읽어서
+   ANSWER_KEY 에 채워두고, 이미 모아둔 문항에도 즉시 소급 적용한다. */
+async function extractAnswerKey(){
+  if(!$("#hasAnswerTable")?.checked) return;
+  const from = +$("#atFrom").value, to = +$("#atTo").value;
+  if(!from || !to){ log("정답표 페이지 범위를 입력해 주세요.", "e"); return; }
+  log(`정답표(${from}–${to}${unit()}) 따로 뽑는 중…`);
+  try{
+    /* 본문과 같은 방식으로 보낸다 — 이미지 모드면 정답표 쪽도 사진으로 바꿔서 */
+    const parts = SRC !== "pdf" ? imagesToParts(from, to)
+                : FORCE_IMAGE_MODE ? await renderPDFPagesAsImages(from, to)
+                : await slicePDF(from, to);
+    const r = await askAnswerKey(parts, from, to);
+    const clean = r.text.trim().replace(/^```(json)?/,"").replace(/```$/,"");
+    const o = JSON.parse(clean);
+    const answers = o.answers || o || {};
+    let got = 0;
+    for(const [num, ans] of Object.entries(answers)){
+      const n = +num, a = +ans;
+      if(n > 0 && a >= 1 && a <= 4){ ANSWER_KEY[n] = a; got++; }
+    }
+    log(`정답표에서 ${got}개 정답을 읽었습니다.`, "g");
+    applyAnswerKeyToResults();
+  }catch(e){
+    log(`정답표를 읽지 못했습니다 — ${e.message}. 문항별 답은 그대로 진행됩니다.`, "e");
+  }
+}
+function applyAnswerKeyToResults(){
+  let changed = 0;
+  for(const q of Object.values(RESULTS)){
+    if(ANSWER_KEY[q.number] != null && q.answer !== ANSWER_KEY[q.number]){
+      q.answer = ANSWER_KEY[q.number]; changed++;
+    }
+  }
+  if(changed){ save(); preview(); log(`이미 모은 문항 중 ${changed}개에 정답표 값을 다시 반영했습니다.`, "g"); }
+}
+
+/* ── 한 묶음 처리 ──
+   실패하면: 아직 나눌 수 있으면 반으로 쪼갠다.
+   PDF 이고 더는 못 나누는데(1쪽)도 실패하면, "PDF가 텍스트로 안 읽히면 사진으로" 옵션이
+   켜져 있는 경우 그 한 쪽을 그림으로 다시 렌더링해서 마지막으로 한 번 더 시도한다. */
+async function runBatch(b, depth = 0, asImage = false){
+  if (FORCE_IMAGE_MODE && b.kind === "pdf") {
+    asImage = true;
+  }
+  b.status = "run"; drawBatches();
+
+  /* ── 쪽 경계에서 잘린 문항 살리기 ──────────────────────────
+     한 문항의 본문이 이 쪽 끝에 있고 보기가 다음 쪽 머리에 이어지는 일이 흔하다.
+     예전에는 "잘린 문항은 넣지 마라"로 처리해서, 그 문항을 이 묶음도 다음 묶음도 안 맡아
+     통째로 사라졌다(80문항 중 68문항만 나온 이유).
+     이제는 다음 쪽 한 장을 "이어보기용"으로 같이 붙여 보내고,
+     프롬프트에서 누가 그 문항을 맡을지 정해준다. */
+  const lastUnit = b.kind === "pdf" ? PAGES : IMAGES.length;
+  const tail = b.to < lastUnit ? b.to + 1 : null;
+  const sendTo = tail || b.to;
+
+  let parts;
+  try{
+    if(asImage) parts = await renderPDFPagesAsImages(b.from, sendTo);
+    else if(b.kind === "pdf") parts = await slicePDF(b.from, sendTo);
+    else parts = imagesToParts(b.from, sendTo);
+  }catch(e){
+    return bad(b, "자료를 준비하지 못했습니다 — " + e.message, depth, asImage, "error");
+  }
+  const mb = (JSON.stringify(parts).length * 0.75 / 1048576).toFixed(1);
+  log(`${b.from}–${b.to}${unit()} 전송 (${mb}MB)${tail ? ` · 이어보기 ${tail}${unit()} 포함` : ""}${asImage ? " · 사진으로" : ""}`);
+
+  let r;
+  try{ r = await ask(parts, b.from, b.to, asImage, tail); }
+  catch(e){ return bad(b, e.message, depth, asImage, "error"); }
+
+  let list = null;
+  try{
+    const clean = r.text.trim().replace(/^```(json)?/,"").replace(/```$/,"");
+    const o = JSON.parse(clean);
+    list = Array.isArray(o) ? o : (o.questions || []);
+  }catch(e){
+    return r.truncated
+      ? bad(b, "응답이 잘렸습니다", depth, asImage, "truncated")
+      : bad(b, "JSON을 읽지 못했습니다", depth, asImage, "parse");
+  }
+
+  /* ★ 에러 없이 "0문항"으로 돌아온 경우.
+     ① PDF 텍스트가 깨져 빈 페이지처럼 보였거나 ② 진짜로 문제가 없는 페이지(표지·목차·안내문)다.
+     둘을 구분할 방법이 없으니 사진으로 한 번 더 확인해 보고, 그래도 0이면 빈 페이지로 처리한다. */
+  if(list.length === 0){
+    return bad(b, "0문항으로 응답했습니다", depth, asImage, "empty");
+  }
+
+    await attachFigures(list);      /* 글자만 옮기면 못 푸는 문항의 그림을 오려 붙인다 */
+    const n = merge(list);
+  /* 이 묶음이 실제로 어느 번호대를 담당했는지 기록해 둔다 —
+     나중에 빠진 번호가 생겼을 때 어느 쪽을 다시 돌려야 하는지 찾는 데 쓴다. */
+  const got = list.map(q => +q.number).filter(x => x > 0);
+  if(got.length){ b.lo = Math.min(...got); b.hi = Math.max(...got); }
+  b.status = "done"; b.count = n; b.mode = asImage ? "img" : "pdf";
+  b.msg = (r.model || "") + (asImage ? " · 사진 변환" : "") + (got.length ? ` · ${b.lo}~${b.hi}번` : "");
+  log(`${b.from}–${b.to}${unit()} → ${n}문항${got.length ? ` (${b.lo}~${b.hi}번)` : ""} (${r.model||"?"}${asImage ? ", 사진 변환" : ""})`, "g");
+
+  drawBatches(); stats(); preview();
+
+
+  if($("#autoUp").checked && n) await push(true);
+  return true;
+}
+
+/* ── 실패했을 때 다음 수를 고른다 ──
+   원인마다 처방이 다르다. 예전에는 뭐가 됐든 "반으로 쪼개기"부터 했는데,
+   텍스트가 안 읽히는 PDF 는 쪼개봐야 결과가 똑같아서 시간만 몇 배로 버렸다.
+     · 0문항              → 문제가 없는 페이지로 보고 건너뛴다(스캔본이면 이미지 모드로 다시 돌리면 된다)
+     · 응답이 잘림        → 내용이 많은 것 → 반으로 쪼개기
+     · 통신 오류·타임아웃 → 쪼개서 가볍게 만들어 재시도 */
+async function bad(b, why, depth, wasImage, kind = "error"){
+  /* 사진 변환은 더 이상 자동으로 끼어들지 않는다.
+     "변환 시작" = PDF 그대로, "이미지로 변환해 추출" = 쪽마다 사진으로.
+     둘 중 무엇을 쓸지는 사람이 고른다. */
+  if(kind === "empty"){
+    b.status = "skip"; b.mode = wasImage ? "img" : "pdf"; b.msg = "문제 없는 페이지";
+    log(`${b.from}–${b.to}${unit()} 문제가 없는 페이지로 보고 건너뜁니다.`
+      + (wasImage || b.kind !== "pdf" ? "" : ` 스캔본이라 글자가 안 읽힌 것일 수도 있습니다 — "이미지로 변환해 추출"을 눌러보세요.`));
+    drawBatches(); stats();
+    return true;
+  }
+
+  if(depth < 2 && b.to > b.from){
+    const mid = Math.floor((b.from + b.to)/2);
+    b.status = "split"; b.msg = why + " → 쪼갬"; drawBatches();
+    log(`${b.from}–${b.to}${unit()} ${why}. 반으로 나눠 다시 시도합니다.`, "e");
+    const ok1 = await runBatch({from:b.from, to:mid, status:"", count:0, kind:b.kind}, depth+1);
+    const ok2 = await runBatch({from:mid+1, to:b.to, status:"", count:0, kind:b.kind}, depth+1);
+    b.status = (ok1 && ok2) ? "done" : "fail";
+    drawBatches(); stats();
+    return b.status === "done";
+  }
+
+  b.status = "fail"; b.msg = why;
+  log(`${b.from}–${b.to}${unit()} 실패 — ${why}`, "e");
+  drawBatches(); stats();
+  return false;
+}
+
+/* ── 전체 실행 ── */
+async function go(only, forceImage){
+  if(SRC === "pdf" && !PDF) return;
+  if(SRC === "images" && !IMAGES.length) return;
+
+  /* 이미지 모드는 PDF 를 넣었을 때만 뜻이 있다 — 사진 여러 장은 이미 사진이다 */
+  FORCE_IMAGE_MODE = !!forceImage && SRC === "pdf";
+  if(FORCE_IMAGE_MODE && typeof window.pdfjsLib === "undefined"){
+    say($("#um"), "PDF를 이미지로 바꾸는 라이브러리를 불러오지 못했습니다. 새로고침하거나 광고 차단을 확인해 주세요.", "err");
+    return;
+  }
+
+  RUNNING = true; ABORT = false; LABEL_DONE = null;
+  $("#run").disabled = $("#retry").disabled = $("#runImage").disabled = true;
+  $("#stop").disabled = false;
+
+  if(FORCE_IMAGE_MODE){
+    log("이미지 변환 모드 — 각 쪽을 사진(JPEG)으로 바꿔서 보냅니다.", "info");
+    if(+($("#chunk")?.value || 1) > 3)
+      log("사진은 용량이 큽니다. 전송이 자꾸 끊기면 \"한 번에 보낼 페이지\"를 2~3쪽으로 줄여보세요.", "info");
+  }else{
+    log("PDF 그대로 보냅니다. 0문항으로 나오는 쪽이 많으면 \"이미지로 변환해 추출\"을 써보세요.", "info");
+  }
+
+  wakeBackup();   // 예비 서버 깨우기를 먼저 걸어둔다(백그라운드) — 필요할 때 이미 깨어 있도록
+  if(!only) await extractAnswerKey(); // 전체를 새로 돌릴 때만 정답표를 (다시) 뽑는다
+  const gap = +$("#gap").value;
+  const redo = !!$("#redo")?.checked;
+  const MODE = FORCE_IMAGE_MODE ? "img" : "pdf";
+
+  /* 꺼놓은 묶음은 아예 대상에서 뺀다. 이미 끝난 묶음은 목록엔 있되 아래에서 건너뛴다
+     ("이미 끝난 묶음도 다시 뽑기"를 켰을 때만 다시 돈다) */
+  const picked = BATCHES.filter(b => !b.off);
+  const list = only ? picked.filter(b => b.status === "fail") : picked;
+  const already = only ? 0
+    : list.filter(b => !redo && (b.status === "done" || (b.status === "skip" && b.mode === MODE))).length;
+  const offCount = BATCHES.length - picked.length;
+  log(`시작 — 대상 ${list.length - already}개${already ? ` (이미 끝난 ${already}개 건너뜀)` : ""}${offCount ? ` · 꺼둔 ${offCount}개 제외` : ""}`);
+  if(list.length - already <= 0){
+    log("돌릴 묶음이 없습니다. 묶음을 눌러 켜거나 \"이미 끝난 묶음도 다시 뽑기\"를 켜주세요.", "e");
+  }
+
+  for(const b of list){
+    if(ABORT){ log("중지했습니다."); break; }
+    if(!only && !redo && (b.status === "done" || (b.status === "skip" && b.mode === MODE))) continue;
+    b.status = ""; b.count = 0;
+    await runBatch(b);
+    if(b !== list[list.length-1]) await new Promise(r => setTimeout(r, gap));
+  }
+
+  RUNNING = false;
+  $("#run").disabled = false; $("#stop").disabled = true;
+  $("#runImage").disabled = SRC !== "pdf" || !PDF;
+  dropPageCache();      /* 쪽 이미지 캐시는 메모리를 크게 먹으므로 다 돌면 버린다 */
+  stats();
+  const f = BATCHES.filter(b=>b.status==="fail").length;
+  const miss = missingNumbers();
+  if(miss.length) log(`빠진 번호 ${miss.length}개: ${miss.join(", ")} — "빠진 번호 찾기"를 누르면 해당 묶음만 켜집니다.`, "e");
+  say($("#um"), f
+    ? `끝났습니다. 문항 ${Object.keys(RESULTS).length}개. 실패한 묶음이 ${f}개 있으니 "실패한 묶음만 다시"를 눌러보세요.`
+    : miss.length
+    ? `끝났습니다. 문항 ${Object.keys(RESULTS).length}개. 다만 ${miss.length}개 번호가 비어 있습니다 — "빠진 번호 찾기"를 눌러보세요.`
+    : `끝났습니다. 문항 ${Object.keys(RESULTS).length}개를 모았습니다.`, (f || miss.length) ? "err" : "ok");
+}
+$("#run").onclick      = () => go(false, false);  // PDF 그대로 추출
+$("#runImage").onclick = () => go(false, true);   // PDF를 이미지로 바꿔서 추출
+$("#retry").onclick    = () => go(true, FORCE_IMAGE_MODE); // 직전에 쓰던 방식 그대로 다시
+$("#stop").onclick     = () => { ABORT = true; $("#stop").disabled = true; };
+
+/* ── 미리보기 ── */
+/* 미리보기에서만 $…$ 껍질을 벗기고 아래첨자를 사람이 읽는 글자로 바꾼다.
+   뷰어는 KaTeX 로 제대로 그리니 저장값은 손대지 않는다 — 여기 표시만 읽기 좋게. */
+const PSUB = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋"};
+function plain(t){
+  return String(t || "")
+    .replace(/\$\$?([^$\n]+?)\$\$?/g, "$1")
+    .replace(/_\{([^}]{1,6})\}/g, (_, g) => [...g].map(c => PSUB[c] || c).join(""))
+    .replace(/_([0-9+\-])/g, (_, g) => PSUB[g] || g)
+    .replace(/\\times/g, "×").replace(/\\cdot/g, "·");
+}
+
+function preview(){
+  const qs = Object.values(RESULTS).sort((a,b)=>a.number-b.number);
+  $("#pv").style.display = qs.length ? "" : "none";
+  const nums = qs.map(q=>q.number);
+  const holes = [];
+  
+  // ★ 수정된 부분: 로컬(nums)과 저장소(DB_NUMBERS) 양쪽 모두를 비교해서 
+  // 진짜로 빈 구멍(어디에도 없는 번호)만 holes에 넣습니다.
+  const maxNum = Math.max(...nums, ...DB_NUMBERS, 0);
+  for(let i = 1; i <= maxNum; i++) {
+    if(!nums.includes(i) && !DB_NUMBERS.includes(i)) holes.push(i);
+  }
+
+  $("#pv").innerHTML =
+    (holes.length ? `<div class="q"><span class="bad">빠진 번호: ${holes.join(", ")}</span></div>` : "") +
+    qs.map(q => `<div class="q"><b>${q.number}</b> ${
+      plain(q.question_text||"").slice(0,60)}${
+      q.answer ? ` <span style="color:var(--ok)">· 답 ${q.answer}</span>` : ` <span class="bad">· 답 없음</span>`}${
+      (q.explanation_md||q.explanation_html) ? "" : ` <span class="bad">· 해설 없음</span>`}${
+      q.choices.length !== 4 ? ` <span class="bad">· 보기 ${q.choices.length}개</span>` : ""}</div>`).join("");
+}
+
+
+/* ── Supabase 업로드 ── */
+async function push(quiet){
+  const need = [["sname","과목명"],["scode","과목 코드"],["year","연도"],["sess","회차"]];
+  for(const [id,nm] of need) if(!$("#"+id).value.trim()){
+    if(!quiet) say($("#um"), nm + "을(를) 먼저 입력해 주세요.", "err");
+     fetchSavedNumbers(); // ★ 추가: 업로드 완료 후 DB 상태 갱신
+     return false;
+  }
+  const qs = Object.values(RESULTS).sort((a,b)=>a.number-b.number);
+  if(!qs.length) return false;
+
+  const {data, error} = await sb.rpc("upsert_exam_bundle", {
+    p_subject_name: $("#sname").value.trim(),
+    p_subject_code: $("#scode").value.trim(),
+    p_category: $("#scat").value.trim() || "기타",
+    /* 저장 함수는 연도·회차를 숫자로만 받는다. 그래서 적어 주신 글에서 첫 숫자만 뽑아
+       묶는 기준·순서로 쓰고, 사람이 읽을 이름은 아래에서 label 에 그대로 넣는다. */
+    p_year: firstNum($("#year").value), p_session: firstNum($("#sess").value),
+    p_questions: qs
+  });
+  if(error){ log("업로드 실패 — " + error.message, "e"); if(!quiet) say($("#um"), "업로드 실패 — " + error.message, "err"); return false; }
+
+  /* 화면에 보일 이름을 덮어쓴다 — 저장 함수는 «2020년 3회» 꼴만 만들 줄 안다.
+     exam_list 는 뷰라서 직접 update 가 안 되므로(cannot update view) 전용 함수를 부른다.
+     묶음마다 부르면 로그가 도배되니 한 회차에 한 번만 시도한다. */
+  const wantLabel = ($("#elabel").value.trim()) || autoLabelText();
+  const rawYear = $("#year").value.trim(), rawSess = $("#sess").value.trim();
+  if(LABEL_DONE !== data){
+    LABEL_DONE = data;
+    /* 저장 함수는 연도·회차를 숫자로만 받으므로 «2021~2026» 같은 글자는 잘려 들어간다.
+       그래서 저장 직후에 적어 주신 글 그대로 다시 덮어쓴다. */
+    const lr = await sb.rpc("set_exam_meta", {
+      p_exam_id: data, p_label: wantLabel || null,
+      p_year: rawYear || null, p_session: rawSess || null
+    });
+    if(lr.error){
+      log(/set_exam_meta|schema cache/i.test(lr.error.message)
+        ? `이름·연도를 «${wantLabel}» 로 넣으려면 supabase-회차이름.sql 을 한 번 돌려 주세요. (지금은 기본값으로 저장됐습니다)`
+        : "이름·연도를 넣지 못했습니다 — " + lr.error.message, "e");
+    }else{
+      log(`회차를 «${wantLabel || rawYear}» 로 정했습니다.`, "g");
+    }
+  }
+
+  /* 그림 주소는 회차 저장 함수(upsert_exam_bundle)가 모르는 항목이라 따로 붙인다.
+     함수를 고치는 것보다 안전하고, 그림이 있는 문항만 도니 몇 건에 그친다. */
+  const figs = qs.filter(q => q.figure_url);
+  if(figs.length){
+    let ok = 0;
+    for(const q of figs){
+      const r = await sb.from("questions")
+        .update({ figure_url:q.figure_url, figure_note:q.figure_note || null })
+        .eq("exam_id", data).eq("number", q.number);
+      if(!r.error) ok++;
+    }
+    log(`그림 ${ok}/${figs.length}개를 문항에 연결했습니다.`, ok === figs.length ? "g" : "e");
+  }
+  if(!quiet) say($("#um"), `${qs.length}문항을 회차 #${data} 에 저장했습니다. 뷰어를 새로고침하면 보입니다.`, "ok");
+  else log(`저장 완료 — 누적 ${qs.length}문항`, "g");
+  return true;
+}
+$("#up").onclick = () => push(false);
+$("#dl").onclick = () => {
+  const qs = Object.values(RESULTS).sort((a,b)=>a.number-b.number);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({questions:qs}, null, 2)], {type:"application/json"}));
+  a.download = `${$("#scode").value||"exam"}-${$("#year").value}-${$("#sess").value}.json`;
+  a.click();
+};
+
+addEventListener("beforeunload", e => { if(RUNNING){ e.preventDefault(); e.returnValue = ""; } });
+refresh().then(load).catch(err => showFatal("초기화 중 오류가 났습니다.", err.message));
+</script>
+<script>
+/* ── 블록 탭 전환 ──
+   실기 쪽은 처음 열 때 한 번만 불러온다(안 볼 수도 있는데 미리 받을 이유가 없다).
+   고른 탭은 기억해 둔다. */
+(function(){
+  const tabs = document.getElementById("btabs");
+  if(!tabs) return;
+  const fr = document.getElementById("pvFrame");
+  function go(name, remember){
+    tabs.querySelectorAll(".btab").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
+    document.getElementById("tab-written").hidden   = name !== "written";
+    document.getElementById("tab-practical").hidden = name !== "practical";
+    /* 로그인 전에는 실기 화면을 불러오지 않는다 — 가려 둔 곳에서 혼자 돌 이유가 없다 */
+    if(name === "practical" && fr && !fr.src && window.INGEST_UNLOCKED)
+      fr.src = "./practice.html?only=import";
+    if(remember !== false){ try{ localStorage.setItem("ingest-tab", name); }catch(e){} }
+  }
+  tabs.addEventListener("click", e => {
+    const b = e.target.closest(".btab"); if(!b) return;
+    go(b.dataset.tab);
+  });
+  /* 실기(서술형)를 기본으로 둔다 — 이 뷰어에서 실제로 넣는 자료가 그쪽이다 */
+  let saved = "practical";
+  try{ saved = localStorage.getItem("ingest-tab") || "practical"; }catch(e){}
+  go(saved, false);
+  /* 로그인이 끝난 뒤 다시 한 번 세운다 — 그때가 되어야 iframe 을 불러올 수 있다 */
+  window.ingestRetab = () => go(saved, false);
+})();
+</script>
+
+<!-- ══ AI 대화 상자 ══ config.js 의 AI_WORKER_URL 을 채워야 작동합니다 -->
+<script src="./ai-chat.js" defer></script>
+<script src="./ai-viewer.js" defer></script>
+<script src="./app-enhance.js?v=228" defer></script>
+<script src="./simple.js?v=228"></script>
+</body>
+</html>

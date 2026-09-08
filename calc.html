@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>공학용 계산기 · 기출 해설 노트</title>
+<link rel="stylesheet" href="./app-enhance.css?v=228">
+<style>
+:root{
+  --b1:#2a2a2c; --b2:#161617; --b3:#0b0b0c;
+  --key:#48484b; --key2:#313134; --keyt:#f2f4f6;
+  --grn:#7fb84a; --grn2:#5c9430;
+  --shift:#f2a71b; --alpha:#e2585c; --base:#a98be0;
+  --lcd:#c9d8c6; --lcd2:#b9cbb7; --lcdink:#0e1a10;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#0f172a;color:#e5e7eb;
+  font-family:system-ui,-apple-system,"Pretendard",sans-serif;min-height:100vh}
+.page{max-width:1200px;margin:0 auto;padding:12px 12px 60px;
+  display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){ .page{grid-template-columns:1fr;padding:10px 10px 70px} }
+
+/* ═══ 본체 ═══ */
+.dev{width:100%;max-width:400px;margin:0 auto;user-select:none;
+  background:linear-gradient(178deg,#3a3a3d 0%,#1c1c1e 8%,#131315 100%);
+  border:1px solid #000;border-radius:16px;padding:14px 13px 18px;
+  box-shadow:0 26px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.13)}
+.dev-top{display:flex;align-items:baseline;gap:8px;padding:0 2px 7px}
+.dev-casio{font:900 20px/1 system-ui;letter-spacing:.02em;color:#fafbfc;
+  text-shadow:0 1px 1px rgba(0,0,0,.7)}
+.dev-mod{margin-left:auto;font:700 13px/1 system-ui;color:#eceff2;letter-spacing:.01em}
+.dev-vpam{display:flex;align-items:baseline;padding:0 2px 9px;
+  border-bottom:1px solid #2c2c2f;margin-bottom:10px}
+.dev-vpam i{font:800 italic 12px/1 system-ui;letter-spacing:.06em;color:#dfe3e8}
+.dev-vpam small{margin-left:auto;font:700 8px/1 system-ui;color:#b9bfc6}
+
+/* ═══ 화면 ═══ */
+.lcd{background:linear-gradient(180deg,var(--lcd),var(--lcd2));border:1px solid #060806;
+  border-radius:5px;padding:5px 8px 6px;margin:0 0 11px;color:var(--lcdink);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.4);min-height:112px;display:flex;flex-direction:column}
+.lcd-st{display:flex;gap:6px;align-items:center;min-height:11px;
+  font:700 8.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.05em;color:#33422f}
+.lcd-st .st{opacity:.16}
+.lcd-st .st.on{opacity:1;color:#0b1408}
+.lcd-st .sp{flex:1}
+.lcd-expr{flex:1;margin-top:6px;font:500 19px/1.5 ui-monospace,"DejaVu Sans Mono",Menlo,monospace;
+  display:flex;align-items:center;min-height:44px;max-height:70px;overflow:auto;white-space:nowrap}
+@keyframes blink{50%{opacity:0}}
+/* ── 자연 표시 ─────────────────────────────────────────── */
+.lcd-expr{overflow:auto;white-space:nowrap}
+.lcd-expr .cs{display:inline-block;width:0;height:1.05em;vertical-align:-.18em}
+.lcd-expr .cs.on{border-left:2px solid #14231a;margin:0 -1px;animation:blink 1.05s step-end infinite}
+.lcd-expr .ph{display:inline-block;min-width:.72em;height:1em;vertical-align:-.16em;
+  border:1px dashed #4c6350;border-radius:2px;margin:0 1px}
+.lcd-expr .fr{display:inline-flex;flex-direction:column;align-items:center;
+  vertical-align:middle;margin:0 2px;line-height:1.05}
+.lcd-expr .fr>.nu{display:block;padding:0 3px 1px;border-bottom:1.4px solid var(--lcdink);font-size:.86em}
+.lcd-expr .fr>.de{display:block;padding:1px 3px 0;font-size:.86em}
+.lcd-expr sup.bx,.lcd-expr sub.bx{font-size:.66em;line-height:1}
+.lcd-expr .rt{display:inline-flex;align-items:flex-start;vertical-align:middle;margin:0 1px}
+.lcd-expr .rt>.rn{font-size:.6em;margin-right:-3px;margin-top:-.15em}
+.lcd-expr .rt>i{font-style:normal;font-size:1.06em;line-height:1}
+.lcd-expr .rt>.rb{border-top:1.4px solid var(--lcdink);padding:1px 3px 0;margin-left:-1px}
+.lcd-expr .ab>u{text-decoration:none;padding:0 2px}
+.lcd-expr .lb{display:inline-flex;align-items:flex-end}
+.lcd-expr .lb>sub{font-size:.62em;margin:0 1px 0 -1px}
+
+/* ── 자연 입력 줄 ── */
+.natrow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 0 12px}
+.nb{position:relative;height:31px;border-radius:5px;border:1px solid #0a0a0b;cursor:pointer;
+  background:linear-gradient(180deg,#4a5570,#252b3a);color:#eef2f8;
+  font:700 11px/1 system-ui;display:grid;place-items:center;padding:0 1px;
+  box-shadow:0 2px 0 #0b0b0d,0 3px 5px rgba(0,0,0,.4)}
+.nb:active{transform:translateY(2px);box-shadow:0 0 0 #0b0b0d}
+.nb .ic-fr{display:inline-flex;flex-direction:column;align-items:center;line-height:1}
+.nb .ic-fr i{font-style:normal;font-size:8px}
+.nb .ic-fr b{display:block;width:13px;height:1.4px;background:#eef2f8;margin:1.5px 0}
+.nb .ic-sp,.nb .ic-rt{font-size:10px;line-height:1}
+.nb .ic-rt u{text-decoration:overline;padding:0 1px}
+.nb sup,.nb sub{font-size:7.5px}
+.lcd-ask{font:600 11px/1.3 ui-monospace,Menlo,monospace;color:#1f3a22;margin-top:3px}
+.lcd-res{text-align:right;font:700 25px/1.1 ui-monospace,"DejaVu Sans Mono",Menlo,monospace;margin-top:3px;
+  word-break:break-all}
+.lcd-res.err{font-size:15px;color:#7c1f1f}
+
+/* ═══ 라벨 ═══ */
+.lb{position:absolute;top:-11px;font:700 7px/1 system-ui;white-space:nowrap;pointer-events:none;letter-spacing:-.01em}
+.lb.s{left:1px;color:var(--shift)}
+.lb.a{right:1px;color:var(--alpha)}
+.lb.c{left:50%;transform:translateX(-50%);color:var(--shift)}
+.lb.bs{right:1px;color:var(--base)}
+
+/* ═══ 둥근 키 ═══ */
+.rnd{display:grid;grid-template-columns:1fr 1fr 104px 1fr 1fr;align-items:center;
+  gap:8px;margin:0 0 16px}
+.rk{position:relative;width:40px;height:26px;justify-self:center;border-radius:50%;cursor:pointer;
+  background:radial-gradient(ellipse at 50% 28%,#5a5a5e,#232326 78%);
+  border:1px solid #0a0a0b;box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.16)}
+.rk:active{transform:translateY(1px)}
+.rk .lb{top:-11px}
+.rk.hot{box-shadow:0 0 0 2px #ffd98a,0 2px 4px rgba(0,0,0,.5)}
+.rep{position:relative;width:100px;height:66px;justify-self:center;grid-row:span 1}
+.rep .ring{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 30%,#55555a,#1e1e21 74%);
+  border:1px solid #0a0a0b;box-shadow:0 3px 7px rgba(0,0,0,.5)}
+.rep i{position:absolute;left:50%;top:50%;width:30px;height:20px;transform:translate(-50%,-50%);
+  border-radius:50%;background:linear-gradient(180deg,#3b3b3f,#212124);border:1px solid #0d0d0f}
+.rep b{position:absolute;width:26px;height:20px;display:grid;place-items:center;cursor:pointer;
+  font-size:9px;color:#e6eaee;border-radius:5px;z-index:2}
+.rep b:active{background:rgba(255,255,255,.14)}
+.rep .u{top:0;left:37px}.rep .d{bottom:0;left:37px}.rep .l{left:2px;top:23px}.rep .r{right:2px;top:23px}
+
+/* ═══ 사각 키 ═══ */
+.grid6,.grid5,.grid4{display:grid;column-gap:6px;row-gap:15px;margin-bottom:15px}
+.grid6{grid-template-columns:repeat(6,1fr)}
+.grid5{grid-template-columns:repeat(5,1fr)}
+.grid4{grid-template-columns:repeat(2,1fr) 104px repeat(2,1fr);column-gap:8px}
+.k{position:relative;height:29px;border-radius:5px;cursor:pointer;
+  border:1px solid #0a0a0b;color:var(--keyt);
+  background:linear-gradient(180deg,#53535a,#2a2a2e);
+  font:700 11px/1 system-ui;display:grid;place-items:center;padding:0 1px;
+  box-shadow:0 2px 0 #0b0b0d,0 3px 5px rgba(0,0,0,.4)}
+.k:active{transform:translateY(2px);box-shadow:0 0 0 #0b0b0d}
+.k.tiny{font-size:9.5px}
+.k.num{font-size:14px;font-weight:800}
+.k.del{background:linear-gradient(180deg,#8ec95a,var(--grn2));border-color:#3f6a1c;color:#0e1a05}
+.k.ac{background:linear-gradient(180deg,#9ad469,#6aa63a);border-color:#3f6a1c;color:#0e1a05}
+.k.eqk{background:linear-gradient(180deg,#53535a,#2a2a2e)}
+.k.hot{box-shadow:0 0 0 2px #ffd98a,0 2px 0 #0b0b0d}
+
+/* ═══ 옆 칸 ═══ */
+.side{display:flex;flex-direction:column;gap:10px}
+.card{background:#172033;border:1px solid #2c3850;border-radius:12px;padding:10px 11px}
+.card h2{margin:0 0 7px;font:800 12px/1 system-ui;color:#e8eefc}
+.card .sub{font:600 10px/1.45 system-ui;color:#94a3b8;margin:-4px 0 8px}
+.mems{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.mem{border:1px solid #2f3d57;background:#111a2b;color:#cbd5e1;border-radius:7px;
+  height:28px;font:700 10px/1 ui-monospace,monospace;cursor:pointer}
+.mem:hover{border-color:#3f7ae0;color:#fff}
+.hist{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto}
+.hist-item{border:1px solid #26314a;background:#111a2b;border-radius:8px;padding:6px 8px;cursor:pointer}
+.hist-item:hover{border-color:#3f7ae0}
+.hist-item .a{font:500 10.5px/1.3 ui-monospace,monospace;color:#94a3b8;word-break:break-all}
+.hist-item .b{font:800 12px/1.3 ui-monospace,monospace;color:#e8eefc;margin-top:2px}
+.hint{font:600 10px/1.55 system-ui;color:#8b98ab}
+.row{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.row select,.row button{height:28px;border:1px solid #2f3d57;background:#111a2b;color:#cbd5e1;
+  border-radius:7px;font:700 10.5px/1 system-ui;padding:0 8px;cursor:pointer}
+.row button.on{background:#2453ad;border-color:#3f7ae0;color:#fff}
+.row input{flex:1;min-width:120px;height:28px;border:1px solid #2f3d57;background:#0d1522;
+  color:#e8eefc;border-radius:7px;font:600 11px/1 ui-monospace,monospace;padding:0 8px}
+.kbdmap{font:600 9.5px/1.7 ui-monospace,monospace;color:#7d8ba1}
+
+body.calc-popup .nav3,body.calc-popup .app-network,body.calc-popup .app-float,
+body.calc-popup .app-mobile-nav,body.calc-popup .app-scroll-progress{display:none!important}
+body.calc-popup .page{grid-template-columns:1fr;padding:8px 8px 30px;max-width:430px}
+body.calc-popup .side{display:none}
+body.calc-popup .side.show{display:flex}
+.calc-popbar{display:none;position:sticky;top:0;z-index:50;align-items:center;gap:8px;
+  padding:6px 10px;background:rgba(15,23,42,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid #26314a;font:700 11px/1 system-ui;color:#94a3b8}
+body.calc-popup .calc-popbar{display:flex}
+.calc-popbar b{color:#e8eefc;font-size:12px}
+.calc-popbar .sp{flex:1}
+.calc-popbar button{border:1px solid #2f3d57;background:#111a2b;color:#cbd5e1;
+  border-radius:7px;padding:5px 10px;font:700 11px/1 system-ui;cursor:pointer}
+
+/* 어두운 바탕이라 위쪽 이동줄 글씨를 밝게 */
+.nav3{background:#111827!important;border-bottom:1px solid #1f2937}
+.nav3 a{color:#93a1b4!important;text-decoration:none}
+.nav3 a:hover{color:#fff!important;background:rgba(255,255,255,.07)}
+.nav3 a.on{color:#fff!important;background:rgba(255,255,255,.14)!important}
+</style></head><body>
+<nav class="nav3"><a href="./index.html">필기뷰어</a><a href="./practice.html">실기뷰어</a><a href="./calc.html" class="on">계산기</a><a href="./upload.html">기계</a><a href="./ingest.html">자동 변환</a><a href="./interview.html">면접</a><a href="./portfolio.html">포트폴리오</a></nav>
+
+<div class="calc-popbar"><b>fx-570ES PLUS</b><span class="sp"></span>
+  <button type="button" id="popSide">기록</button><button type="button" id="calcPopClose">닫기</button></div>
+
+<div class="page">
+<div class="dev">
+  <div class="dev-top"><span class="dev-casio">CASIO</span><span class="dev-mod">fx-570ES PLUS</span></div>
+  <div class="dev-vpam"><i>NATURAL-V.P.A.M.</i><small>2nd edition</small></div>
+
+  <div class="lcd">
+    <div class="lcd-st">
+      <span class="st" id="stS">S</span><span class="st" id="stA">A</span>
+      <span class="st" id="stH">hyp</span><span class="st" id="stM">M</span>
+      <span class="sp"></span>
+      <span class="st on" id="stAng">D</span><span class="st" id="stFmt">Math</span>
+    </div>
+    <div class="lcd-expr" id="expr"><span class="cs on"></span></div>
+    <div class="lcd-ask" id="ask" hidden></div>
+    <div class="lcd-res" id="result">0</div>
+  </div>
+
+  <!-- 자연 입력 : 칸(▯)에 직접 써 넣는다 -->
+  <div class="natrow">
+    <button class="nb" data-nat="frac" title="분수 (▯ 위 / ▯ 아래)">
+      <span class="ic-fr"><i>▯</i><b></b><i>▯</i></span></button>
+    <button class="nb" data-nat="sup" title="윗첨자 ▯^▯"><span class="ic-sp">▯<sup>▯</sup></span></button>
+    <button class="nb" data-nat="sub" title="아래첨자 ▯_▯"><span class="ic-sp">▯<sub>▯</sub></span></button>
+    <button class="nb" data-nat="sqrt" title="근호 √▯"><span class="ic-rt">√<u>▯</u></span></button>
+    <button class="nb" data-nat="root" title="거듭제곱근 ⁿ√▯"><span class="ic-rt"><sup>▯</sup>√<u>▯</u></span></button>
+    <button class="nb" data-nat="abs" title="절댓값 |▯|">|▯|</button>
+    <button class="nb" data-nat="par" title="괄호 (▯)">(▯)</button>
+  </div>
+
+  <!-- 둥근 키 + 리플레이 -->
+  <div class="rnd">
+    <button class="rk" id="kShift" title="SHIFT"><span class="lb c" style="top:-12px">SHIFT</span></button>
+    <button class="rk" id="kAlpha" title="ALPHA"><span class="lb c" style="top:-12px;color:var(--alpha)">ALPHA</span></button>
+    <div class="rep"><div class="ring"></div><i></i>
+      <b class="u" data-rep="u">▲</b><b class="d" data-rep="d">▼</b>
+      <b class="l" data-rep="l">◀</b><b class="r" data-rep="r">▶</b></div>
+    <button class="rk" id="kMode" title="MODE / SETUP"><span class="lb c" style="top:-12px;color:#e9edf1">MODE<span style="color:var(--shift)"> SETUP</span></span></button>
+    <button class="rk" id="kOn" title="ON"><span class="lb c" style="top:-12px;color:#e9edf1">ON</span></button>
+  </div>
+
+  <!-- CALC / ∫dx  |  x⁻¹ / log -->
+  <div class="grid4">
+    <button class="k tiny" data-k="calc"><span class="lb s">SOLVE =</span>CALC</button>
+    <button class="k tiny" data-k="integ"><span class="lb s">d/dx</span>∫▫dx</button>
+    <span></span>
+    <button class="k tiny" data-k="inv"><span class="lb s">x!</span>x⁻¹</button>
+    <button class="k tiny" data-k="logb"><span class="lb s">Σ</span>log▫▫</button>
+  </div>
+
+  <!-- 6열 함수부 -->
+  <div class="grid6">
+    <button class="k tiny" data-k="frac"><span class="lb s">▫/▫</span>▫⁄▫</button>
+    <button class="k tiny" data-k="sqrt"><span class="lb s">∛</span>√</button>
+    <button class="k tiny" data-k="sq"><span class="lb s">x³</span><span class="lb bs">DEC</span>x²</button>
+    <button class="k tiny" data-k="pow"><span class="lb s">ˣ√</span><span class="lb bs">HEX</span>x^</button>
+    <button class="k tiny" data-k="log"><span class="lb s">10ˣ</span><span class="lb bs">BIN</span>log</button>
+    <button class="k tiny" data-k="ln"><span class="lb s">eˣ</span><span class="lb bs">OCT</span>ln</button>
+
+    <button class="k tiny" data-k="neg"><span class="lb a">A</span>(−)</button>
+    <button class="k tiny" data-k="dms"><span class="lb a">B</span>°′″</button>
+    <button class="k tiny" data-k="hyp"><span class="lb s">Abs</span><span class="lb a">C</span>hyp</button>
+    <button class="k tiny" data-k="sin"><span class="lb s">sin⁻¹</span><span class="lb a">D</span>sin</button>
+    <button class="k tiny" data-k="cos"><span class="lb s">cos⁻¹</span><span class="lb a">E</span>cos</button>
+    <button class="k tiny" data-k="tan"><span class="lb s">tan⁻¹</span><span class="lb a">F</span>tan</button>
+
+    <button class="k tiny" data-k="rcl"><span class="lb s">STO</span>RCL</button>
+    <button class="k tiny" data-k="eng"><span class="lb s">←</span><span class="lb a">i</span>ENG</button>
+    <button class="k tiny" data-k="lpar"><span class="lb s">%</span>(</button>
+    <button class="k tiny" data-k="rpar"><span class="lb s">,</span><span class="lb a">X</span>)</button>
+    <button class="k tiny" data-k="sd"><span class="lb s">SCI</span><span class="lb a">Y</span>S⇔D</button>
+    <button class="k tiny" data-k="mplus"><span class="lb s">M−</span><span class="lb a">M</span>M+</button>
+  </div>
+
+  <!-- 5열 숫자부 -->
+  <div class="grid5">
+    <button class="k num" data-k="7"><span class="lb c">CONST</span>7</button>
+    <button class="k num" data-k="8"><span class="lb c">CONV</span>8</button>
+    <button class="k num" data-k="9"><span class="lb c">CLR</span>9</button>
+    <button class="k del tiny" data-k="del"><span class="lb c">INS</span>DEL</button>
+    <button class="k ac tiny" data-k="ac"><span class="lb c">OFF</span>AC</button>
+
+    <button class="k num" data-k="4"><span class="lb c" style="color:var(--alpha)">MATRIX</span>4</button>
+    <button class="k num" data-k="5"><span class="lb c" style="color:var(--alpha)">VECTOR</span>5</button>
+    <button class="k num" data-k="6">6</button>
+    <button class="k" data-k="mul"><span class="lb c">nPr</span>×</button>
+    <button class="k" data-k="div"><span class="lb c">nCr</span>÷</button>
+
+    <button class="k num" data-k="1"><span class="lb c" style="color:var(--alpha)">STAT</span>1</button>
+    <button class="k num" data-k="2"><span class="lb c" style="color:var(--alpha)">CMPLX</span>2</button>
+    <button class="k num" data-k="3"><span class="lb c" style="color:var(--alpha)">BASE</span>3</button>
+    <button class="k" data-k="add"><span class="lb c">Pol</span>+</button>
+    <button class="k" data-k="sub"><span class="lb c">Rec</span>−</button>
+
+    <button class="k num" data-k="0"><span class="lb c">Rnd</span>0</button>
+    <button class="k num" data-k="dot"><span class="lb c">Ran#</span>•</button>
+    <button class="k tiny" data-k="exp"><span class="lb s">π</span><span class="lb a">e</span>×10ˣ</button>
+    <button class="k tiny" data-k="ans"><span class="lb c">DRG▶</span>Ans</button>
+    <button class="k eqk" data-k="eq">=</button>
+  </div>
+</div>
+
+<div class="side" id="side">
+  <div class="card">
+    <h2>각도 · 표시</h2>
+    <div class="row">
+      <button type="button" data-ang="DEG" class="on">DEG</button>
+      <button type="button" data-ang="RAD">RAD</button>
+      <button type="button" data-ang="GRA">GRA</button>
+      <select id="fmtMode"><option value="auto">AUTO</option><option value="fix">FIX</option><option value="sci">SCI</option><option value="eng">ENG</option></select>
+      <select id="fixDigits"><option>2</option><option>4</option><option selected>6</option><option>8</option><option>10</option><option>12</option></select>
+      <button type="button" id="copyKey">답 복사</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>SOLVE · ∫dx · d/dx · Σ</h2>
+    <div class="sub">기기와 똑같이 씁니다 — 식을 넣고 <b>SHIFT → CALC</b> 면 SOLVE, <b>∫▫dx</b> 면 정적분,
+      <b>SHIFT → ∫▫dx</b> 면 미분, <b>SHIFT → log▫▫</b> 면 Σ. 물어보는 값을 숫자로 넣고 <b>=</b> 를 누르면 됩니다.</div>
+    <div class="row"><input id="solveExpr" value="x^2-2=0" spellcheck="false">
+      <button type="button" id="solveGo">해 찾기</button></div>
+    <div class="row" style="margin-top:5px"><span class="hint">초기값</span>
+      <button type="button" data-seed="0">0</button><button type="button" data-seed="1">1</button>
+      <button type="button" data-seed="10">10</button>
+      <button type="button" id="useExpr">화면 식 가져오기</button></div>
+    <div class="hint" id="solveOut" style="margin-top:7px"></div>
+  </div>
+
+  <div class="card">
+    <h2>메모리 (A–F · M)</h2>
+    <div class="sub">누르면 식에 넣고, 오른쪽 클릭하면 지금 값을 저장합니다. 기기에서는 RCL · SHIFT→RCL(STO).</div>
+    <div class="mems" id="mems"></div>
+  </div>
+
+  <div class="card"><h2>최근 계산</h2><div class="hist" id="hist"></div>
+    <div class="row" style="margin-top:7px"><button type="button" id="histClear">기록 지우기</button></div></div>
+
+  <div class="card"><h2>자판</h2>
+    <div class="kbdmap">0-9 . + - * / ( ) ^ 입력 · Enter 계산 · Backspace 지움 · Esc 초기화<br>
+      ← → 커서 · ↑ ↓ 지난 계산 · Ctrl+L 전체 지움 · S SOLVE</div></div>
+</div>
+</div>
+
+<script src="./app-enhance.js?v=228"></script>
+<script src="./calc-engine.js?v=228"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ══════════════════════════════════════════════════════════════
+   자연 표시 입력 — 식을 «글자 줄» 이 아니라 «칸이 달린 나무» 로 들고 있는다.
+   분수는 위·아래 칸, 첨자는 작은 칸, 근호는 덮개 달린 칸이 된다.
+   ◀ ▶ 는 그 칸들을 차례로 옮겨 다닌다. 570ES 의 자연입력과 같은 방식이다.
+   ══════════════════════════════════════════════════════════════ */
+const C=v=>({t:'c',v});
+const N={
+  frac:()=>({t:'frac',a:[],b:[]}),
+  sup :()=>({t:'sup',a:[]}),
+  sub :()=>({t:'sub',a:[]}),
+  sqrt:()=>({t:'sqrt',a:[]}),
+  root:()=>({t:'root',n:[],a:[]}),
+  abs :()=>({t:'abs',a:[]}),
+  par :()=>({t:'par',a:[]}),
+  fn  :name=>({t:'fn',name,a:[]}),
+  logb:()=>({t:'logb',n:[],a:[]})
+};
+let ROOT=[], CUR={row:ROOT,i:0};
+let ORDER=[], PARENT=new Map();     /* row → {node, prow, pi} */
+
+function esc(x){return String(x).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+const SHOW={'*':'×','/':'÷'};
+
+function cs(row,i){
+  ORDER.push({row,i});
+  return '<span class="cs'+((row===CUR.row&&i===CUR.i)?' on':'')+'"></span>';
+}
+function rrow(row,node,pkey){
+  if(node) PARENT.set(row,{node,pkey});
+  let h='';
+  for(let i=0;i<row.length;i++){ h+=cs(row,i)+rnode(row[i]); }
+  h+=cs(row,row.length);
+  return row.length ? h : '<span class="ph">'+h+'</span>';
+}
+function rnode(n){
+  switch(n.t){
+    case 'c':    return esc(SHOW[n.v]||n.v);
+    case 'frac': return '<span class="fr"><span class="nu">'+rrow(n.a,n,'a')+'</span>'
+                       +'<span class="de">'+rrow(n.b,n,'b')+'</span></span>';
+    case 'sup':  return '<sup class="bx">'+rrow(n.a,n,'a')+'</sup>';
+    case 'sub':  return '<sub class="bx">'+rrow(n.a,n,'a')+'</sub>';
+    case 'sqrt': return '<span class="rt"><i>√</i><span class="rb">'+rrow(n.a,n,'a')+'</span></span>';
+    case 'root': return '<span class="rt"><sup class="rn">'+rrow(n.n,n,'n')+'</sup><i>√</i>'
+                       +'<span class="rb">'+rrow(n.a,n,'a')+'</span></span>';
+    case 'abs':  return '<span class="ab">|<u>'+rrow(n.a,n,'a')+'</u>|</span>';
+    case 'par':  return '('+rrow(n.a,n,'a')+')';
+    case 'fn':   return esc(n.name)+'('+rrow(n.a,n,'a')+')';
+    case 'logb': return '<span class="lb">log<sub>'+rrow(n.n,n,'n')+'</sub></span>('+rrow(n.a,n,'a')+')';
+  }
+  return '';
+}
+function draw(){
+  ORDER=[]; PARENT=new Map();
+  const el=$('#expr');
+  el.innerHTML=rrow(ROOT,null,null);
+  const on=el.querySelector('.cs.on');
+  if(on&&on.scrollIntoView) try{ on.scrollIntoView({block:'nearest',inline:'nearest'}) }catch(e){}
+}
+
+/* ── 식을 계산기 엔진이 아는 «한 줄» 로 편다 ── */
+function lin(row){ return row.map(one).join('') }
+function one(n){
+  switch(n.t){
+    case 'c':    return n.v;
+    case 'frac': return '(('+(lin(n.a)||'0')+')/('+(lin(n.b)||'1')+'))';
+    case 'sup':  return '^('+(lin(n.a)||'1')+')';
+    case 'sub':  return lin(n.a);                    /* 첨자는 이름의 일부로 붙인다 */
+    case 'sqrt': return 'sqrt('+(lin(n.a)||'0')+')';
+    case 'root': return '(('+(lin(n.a)||'0')+')^(1/('+(lin(n.n)||'2')+')))';
+    case 'abs':  return 'abs('+(lin(n.a)||'0')+')';
+    case 'par':  return '('+lin(n.a)+')';
+    case 'fn':   return n.name+'('+(lin(n.a)||'0')+')';
+    case 'logb': return 'logb('+(lin(n.n)||'10')+','+(lin(n.a)||'0')+')';
+  }
+  return '';
+}
+const flat=()=>lin(ROOT);
+const empty=()=>ROOT.length===0;
+
+/* ── 커서 ── */
+function curIndex(){
+  for(let k=0;k<ORDER.length;k++) if(ORDER[k].row===CUR.row&&ORDER[k].i===CUR.i) return k;
+  return 0;
+}
+function move(d){
+  const k=curIndex()+d;
+  if(k<0||k>=ORDER.length) return;
+  CUR={row:ORDER[k].row,i:ORDER[k].i};
+  draw();
+}
+function ins(node){
+  CUR.row.splice(CUR.i,0,node); CUR.i++;
+  paint();
+}
+function insChars(str){ for(const ch of String(str)) CUR.row.splice(CUR.i++,0,C(ch)); paint(); }
+function insInto(node,key){
+  CUR.row.splice(CUR.i,0,node); CUR.i++;
+  draw();                                    /* PARENT 를 채우려면 한 번 그려야 한다 */
+  CUR={row:node[key],i:0};
+  paint();
+}
+function del(){
+  if(CUR.i>0){
+    CUR.row.splice(CUR.i-1,1); CUR.i--;
+    return paint();
+  }
+  const par=PARENT.get(CUR.row);
+  if(!par) return paint();
+  /* 칸 맨 앞에서 지우면 그 칸을 감싼 것(분수·근호…)을 통째로 벗긴다 */
+  const outer=findOuter(par.node);
+  if(!outer) return paint();
+  const inner=collect(par.node);
+  outer.row.splice(outer.i,1,...inner);
+  CUR={row:outer.row,i:outer.i};
+  paint();
+}
+function findOuter(node){
+  let found=null;
+  (function walk(row){
+    for(let i=0;i<row.length;i++){
+      if(row[i]===node){ found={row,i}; return true }
+      const kid=row[i];
+      for(const k of ['a','b','n']) if(kid[k]&&walk(kid[k])) return true;
+    }
+    return false;
+  })(ROOT);
+  return found;
+}
+function collect(node){
+  const out=[];
+  for(const k of ['n','a','b']) if(node[k]) out.push(...node[k]);
+  return out;
+}
+function clearAll(){ ROOT=[]; CUR={row:ROOT,i:0}; }
+
+/* ══ 상태 ══ */
+let ans=0, mem=0, angle='DEG';
+let shift=false, alpha=false, hyp=false;
+let vars={A:0,B:0,C:0,D:0,E:0,F:0};
+let hist=(()=>{try{return JSON.parse(localStorage.getItem('gichul:calc-history')||'[]')}catch(e){return[]}})();
+let hi=-1, ASK=null;
+
+const SKEY='gichul:calc-state';
+function save(){try{localStorage.setItem(SKEY,JSON.stringify({flat:flat(),ans,mem,angle,vars,
+  fmt:$('#fmtMode').value,digits:$('#fixDigits').value}));
+  localStorage.setItem('gichul:calc-history',JSON.stringify(hist.slice(0,60)))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'{}');
+  ans=Number.isFinite(+s.ans)?+s.ans:0; mem=Number.isFinite(+s.mem)?+s.mem:0;
+  angle=['DEG','RAD','GRA'].includes(s.angle)?s.angle:'DEG';
+  if(s.vars&&typeof s.vars==='object') vars=Object.assign(vars,s.vars);
+  if(['auto','fix','sci','eng'].includes(s.fmt)) $('#fmtMode').value=s.fmt;
+  if(s.digits) $('#fixDigits').value=String(s.digits);
+  if(s.flat) insChars(s.flat);
+}catch(e){}}
+
+function fmt(n){
+  if(!Number.isFinite(n)) throw new Error('Math ERROR');
+  if(Math.abs(n)<1e-12) n=0;
+  const mode=$('#fmtMode').value, d=Math.max(0,Math.min(12,Number($('#fixDigits').value||6)));
+  if(mode==='fix') return n.toFixed(d);
+  if(mode==='sci') return n.toExponential(d);
+  if(mode==='eng'){ if(n===0)return '0'; const p=Math.floor(Math.log10(Math.abs(n))/3)*3,m=n/10**p;
+    return `${m.toPrecision(8).replace(/\.?0+$/,'')}e${p>=0?'+':''}${p}` }
+  return (Math.abs(n)>=1e10||(Math.abs(n)<1e-8&&n!==0))?n.toExponential(9):String(+n.toPrecision(12));
+}
+function expandLogb(x){
+  let out=x,g=0;
+  while(out.includes('logb(')&&g++<30){
+    const i=out.indexOf('logb('); let d=0,j=i+5,comma=-1,end=-1;
+    for(;j<out.length;j++){const c=out[j];
+      if(c==='(')d++; else if(c===')'){ if(d===0){end=j;break} d--; }
+      else if(c===','&&d===0) comma=j;}
+    if(end<0||comma<0)break;
+    out=out.slice(0,i)+'(ln('+out.slice(comma+1,end)+')/ln('+out.slice(i+5,comma)+'))'+out.slice(end+1);
+  }
+  return out;
+}
+function evalExpr(raw,xVal){ return CalcEngine.evaluate(expandLogb(String(raw)),{ans,x:xVal,...vars},angle) }
+
+function paint(){
+  draw();
+  const r=$('#result'); r.classList.remove('err');
+  if(ASK){}
+  else if(empty()) r.textContent='0';
+  else { try{ r.textContent=fmt(evalExpr(flat())) }catch(e){ r.textContent='…' } }
+  $('#stAng').textContent = angle==='DEG'?'D':angle==='RAD'?'R':'G';
+  $('#stFmt').textContent = $('#fmtMode').value==='auto'?'Math':$('#fmtMode').value.toUpperCase();
+  $('#stFmt').classList.toggle('on',$('#fmtMode').value!=='auto');
+  $('#stS').classList.toggle('on',shift);
+  $('#stA').classList.toggle('on',alpha);
+  $('#stH').classList.toggle('on',hyp);
+  $('#stM').classList.toggle('on',Math.abs(mem)>1e-12);
+  $('#kShift').classList.toggle('hot',shift);
+  $('#kAlpha').classList.toggle('hot',alpha);
+  drawMem(); drawHist(); save();
+}
+function err(m){ const r=$('#result'); r.textContent=m||'Math ERROR'; r.classList.add('err') }
+function ac(){ clearAll(); hi=-1; ASK=null; $('#ask').hidden=true; hyp=false; paint(); }
+
+/* ══ 묻고 답하기 : SOLVE · ∫ · d/dx · Σ ══ */
+function askStart(kind){
+  const src=flat().trim();
+  if(!src){ err('Syntax ERROR'); return }
+  if(kind==='solve'){
+    if((src.match(/=/g)||[]).length!==1){ insChars('='); return }
+    ASK={kind,eq:src,steps:[{q:'Solve for X — 초기값',key:'seed'}],at:0,val:{},typed:''};
+  }
+  if(kind==='integ') ASK={kind,eq:src,steps:[{q:'∫ f(X)dX — 아래끝',key:'a'},{q:'∫ f(X)dX — 위끝',key:'b'}],at:0,val:{},typed:''};
+  if(kind==='diff')  ASK={kind,eq:src,steps:[{q:'d/dX f(X) — X 값',key:'x'}],at:0,val:{},typed:''};
+  if(kind==='sum')   ASK={kind,eq:src,steps:[{q:'Σ f(X) — 시작',key:'a'},{q:'Σ f(X) — 끝',key:'b'}],at:0,val:{},typed:''};
+  askPaint();
+}
+function askPaint(){
+  if(!ASK){ $('#ask').hidden=true; return }
+  const st=ASK.steps[ASK.at];
+  $('#ask').hidden=false;
+  $('#ask').textContent=`${st.q} = ${ASK.typed||'0'}   ( = 로 확정 )`;
+}
+function askNext(){
+  const st=ASK.steps[ASK.at], v=Number(ASK.typed===''?0:ASK.typed);
+  if(!Number.isFinite(v)){ err('Syntax ERROR'); ASK=null; $('#ask').hidden=true; return }
+  ASK.val[st.key]=v; ASK.typed=''; ASK.at++;
+  if(ASK.at<ASK.steps.length) return askPaint();
+  askRun();
+}
+function simpson(f,a,b){ if(a===b)return 0; let n=1000; if(n%2)n++;
+  const h=(b-a)/n; let s=f(a)+f(b);
+  for(let i=1;i<n;i++) s+=f(a+i*h)*(i%2?4:2);
+  return s*h/3 }
+function froot(f,a,b){let fa=f(a),fb=f(b);
+  if(!Number.isFinite(fa)||!Number.isFinite(fb))return null;
+  if(fa===0)return a; if(fb===0)return b; if(fa*fb>0)return null;
+  for(let i=0;i<160;i++){const m=(a+b)/2,fm=f(m); if(!Number.isFinite(fm))return null;
+    if(Math.abs(fm)<1e-12||Math.abs(b-a)<1e-11)return m;
+    if(fa*fm<=0){b=m;fb=fm}else{a=m;fa=fm}} return (a+b)/2}
+function secant(f,x0){let x1=(x0===0?1:x0*1.01),f0=f(x0);
+  for(let i=0;i<90;i++){const f1=f(x1),d=f1-f0; if(!Number.isFinite(f1)||Math.abs(d)<1e-14)break;
+    const x2=x1-f1*(x1-x0)/d; if(Math.abs(f1)<1e-11)return x1;
+    if(!Number.isFinite(x2)||Math.abs(x2)>1e9)break; x0=x1;f0=f1;x1=x2}
+  return Math.abs(f(x1))<1e-7?x1:null}
+function roots(eq,seed){
+  let [L,R]=eq.split('=');
+  L=(L||'').trim()||'0'; R=(R||'').trim()||'0';   /* «= 0» 을 생략해도 풀리게 */
+  const f=x=>evalExpr(L,x)-evalExpr(R,x);
+  let first=secant(f,seed||0);
+  if(first==null) for(let a=-100;a<100;a+=1){const r=froot(f,a,a+1); if(r!=null){first=r;break}}
+  if(first==null) return null;
+  const out=[]; const add=r=>{ if(!Number.isFinite(r)||Math.abs(f(r))>1e-7)return;
+    if(!out.some(x=>Math.abs(x-r)<1e-6))out.push(r) };
+  add(first);
+  for(let a=-100;a<100;a+=0.5){const r=froot(f,a,a+0.5); if(r!=null)add(r); if(out.length>=8)break}
+  out.sort((a,b)=>a-b); return {first,all:out,f};
+}
+function askRun(){
+  const A=ASK; ASK=null;
+  try{
+    if(A.kind==='solve'){
+      const r=roots(A.eq,A.val.seed); if(!r) throw new Error('no');
+      ans=r.first;
+      $('#ask').hidden=false;
+      $('#ask').textContent=`X = ${fmt(r.first)}   L−R = ${fmt(Math.abs(r.f(r.first)))}`;
+      $('#result').textContent=fmt(r.first); $('#result').classList.remove('err');
+      $('#solveOut').innerHTML='<b>근 '+r.all.length+'개</b><br>'+
+        r.all.map((v,i)=>`x${r.all.length>1?(i+1):''} = ${esc(fmt(v))}`).join('<br>');
+      hist.unshift({e:A.eq,r:'X='+fmt(r.first),t:0});
+    }else{
+      const f=x=>evalExpr(A.eq,x); let v,lab;
+      if(A.kind==='integ'){ v=simpson(f,A.val.a,A.val.b); lab=`∫[${fmt(A.val.a)},${fmt(A.val.b)}]` }
+      if(A.kind==='diff'){ const h=1e-5*Math.max(1,Math.abs(A.val.x));
+        v=(f(A.val.x+h)-f(A.val.x-h))/(2*h); lab=`d/dx @${fmt(A.val.x)}` }
+      if(A.kind==='sum'){ v=0; const a=Math.round(A.val.a),b=Math.round(A.val.b);
+        if(b-a>200000) throw new Error('range');
+        for(let i=a;i<=b;i++) v+=f(i); lab=`Σ[${a},${b}]` }
+      if(!Number.isFinite(v)) throw new Error('nan');
+      ans=v;
+      $('#ask').hidden=false; $('#ask').textContent=`${lab} ${A.eq}`;
+      $('#result').textContent=fmt(v); $('#result').classList.remove('err');
+      hist.unshift({e:`${lab} ${A.eq}`,r:fmt(v),t:0});
+    }
+    hist=hist.slice(0,60); save(); drawHist();
+  }catch(e){
+    $('#ask').hidden=false; $('#ask').textContent='Can’t Solve — 값을 바꿔 보세요';
+    err('Math ERROR');
+  }
+}
+function equal(){
+  if(ASK) return askNext();
+  if(empty()) return;
+  const src=flat();
+  if(src.includes('=')) return askStart('solve');
+  try{ const v=evalExpr(src); ans=v;
+    hist.unshift({e:src,r:fmt(v),t:0}); hist=hist.slice(0,60);
+    clearAll(); insChars(fmt(v)); hi=-1; $('#ask').hidden=true; paint();
+  }catch(e){ err(/Math/.test(e.message)?'Math ERROR':'Syntax ERROR') }
+}
+
+/* ══ 키 ══ */
+const CH={ neg:'-', lpar:'(', rpar:')', mul:'*', div:'/', add:'+', sub:'-', dot:'.', exp:'e',
+  ans:'ans', '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9' };
+const SH_CH={ lpar:'%', rpar:',', mul:'P', div:'C', add:'!', dot:'rand()', exp:'pi' };
+const AL={ neg:'A', dms:'B', hyp:'C', sin:'D', cos:'E', tan:'F', rpar:'x', exp:'e', mplus:'M' };
+
+function nat(kind){
+  if(kind==='frac') return insInto(N.frac(),'a');
+  if(kind==='sup')  return insInto(N.sup(),'a');
+  if(kind==='sub')  return insInto(N.sub(),'a');
+  if(kind==='sqrt') return insInto(N.sqrt(),'a');
+  if(kind==='root') return insInto(N.root(),'n');
+  if(kind==='abs')  return insInto(N.abs(),'a');
+  if(kind==='par')  return insInto(N.par(),'a');
+}
+$$('[data-nat]').forEach(b=>b.onclick=()=>{ if(ASK) return; nat(b.dataset.nat); });
+
+function press(k){
+  const sh=shift, al=alpha; shift=false; alpha=false;
+
+  if(ASK){
+    if(/^[0-9]$/.test(k)){ ASK.typed=(ASK.typed||'')+k; return askPaint() }
+    if(k==='dot'){ ASK.typed=(ASK.typed||'')+'.'; return askPaint() }
+    if(k==='neg'){ ASK.typed=(ASK.typed||'').startsWith('-')?ASK.typed.slice(1):'-'+(ASK.typed||''); return askPaint() }
+    if(k==='del'){ ASK.typed=(ASK.typed||'').slice(0,-1); return askPaint() }
+    if(k==='eq')  return askNext();
+    if(k==='ac')  return ac();
+    return;
+  }
+
+  switch(k){
+    case 'eq':  return equal();
+    case 'ac':  return ac();
+    case 'del': return del();
+    case 'calc':  return sh ? askStart('solve') : equal();
+    case 'integ': return askStart(sh?'diff':'integ');
+    case 'logb':  return sh ? askStart('sum') : insInto(N.logb(),'n');
+
+    /* ── 자연 표시로 들어가는 키들 ── */
+    case 'frac': return insInto(N.frac(),'a');
+    case 'sqrt': if(sh){ const r=N.root(); r.n=[C('3')]; return insInto(r,'a'); } return insInto(N.sqrt(),'a');
+    case 'sq':   if(sh){ const s3=N.sup(); s3.a=[C('3')]; return ins(s3); }
+                 { const s2=N.sup(); s2.a=[C('2')]; return ins(s2); }
+    case 'pow':  if(sh) return insInto(N.root(),'n');
+                 return insInto(N.sup(),'a');
+    case 'inv':  if(sh) return insChars('!');
+                 { const si=N.sup(); si.a=[C('-'),C('1')]; return ins(si); }
+    case 'log':  if(sh){ insChars('10'); const s=N.sup(); return insInto(s,'a'); }
+                 return insInto(N.fn('log'),'a');
+    case 'ln':   if(sh) return insInto(N.fn('exp'),'a');
+                 return insInto(N.fn('ln'),'a');
+    case 'sin': case 'cos': case 'tan': {
+      if(al) return insChars(AL[k]);
+      const base = sh ? ({sin:'asin',cos:'acos',tan:'atan'})[k] : (hyp?({sin:'sinh',cos:'cosh',tan:'tanh'})[k]:k);
+      hyp=false;
+      return insInto(N.fn(base),'a');
+    }
+    case 'dms': if(al) return insChars('B'); if(sh) return insInto(N.abs(),'a'); return;
+    case 'hyp': if(al) return insChars('C'); hyp=!hyp; return paint();
+    case 'sd':  if(al) return; $('#fmtMode').value = sh?'sci':($('#fmtMode').value==='auto'?'fix':'auto'); return paint();
+    case 'eng': $('#fmtMode').value = sh?'fix':'eng'; return paint();
+    case 'mplus':
+      if(al) return insChars(fmt(mem));
+      try{ const v=empty()?0:evalExpr(flat()); mem = sh? mem-v : mem+v }catch(e){ return err('Syntax ERROR') }
+      return paint();
+    case 'rcl':
+      if(sh){ try{ vars.A=empty()?0:evalExpr(flat()) }catch(e){} return paint() }
+      return insChars('A');
+    case 'ans': if(sh){ const o=['DEG','RAD','GRA']; angle=o[(o.indexOf(angle)+1)%3]; syncAng(); return paint() }
+                return insChars('ans');
+  }
+  if(al && AL[k]) return insChars(AL[k]);
+  const t = sh ? (SH_CH[k]!=null?SH_CH[k]:CH[k]) : CH[k];
+  if(t!=null) return insChars(t);
+  paint();
+}
+$$('.k').forEach(b=>b.onclick=()=>press(b.dataset.k));
+$('#kShift').onclick=()=>{shift=!shift;alpha=false;paint()};
+$('#kAlpha').onclick=()=>{alpha=!alpha;shift=false;paint()};
+$('#kOn').onclick=()=>ac();
+$('#kMode').onclick=()=>{const o=['DEG','RAD','GRA'];angle=o[(o.indexOf(angle)+1)%3];syncAng();paint()};
+$$('.rep b').forEach(b=>b.onclick=()=>{const d=b.dataset.rep;
+  if(d==='l') return move(-1);
+  if(d==='r') return move(1);
+  if(d==='u'&&hist.length){hi=Math.min(hist.length-1,hi+1);clearAll();insChars(hist[hi].e);return}
+  if(d==='d'){ if(hi>0){hi--;clearAll();insChars(hist[hi].e)}else{hi=-1;ac()} }
+});
+
+function syncAng(){$$('[data-ang]').forEach(x=>x.classList.toggle('on',x.dataset.ang===angle))}
+$$('[data-ang]').forEach(b=>b.onclick=()=>{angle=b.dataset.ang;syncAng();paint()});
+$('#fmtMode').onchange=paint; $('#fixDigits').onchange=paint;
+$('#copyKey').onclick=()=>{try{navigator.clipboard.writeText($('#result').textContent||'')}catch(e){}};
+
+$('#solveGo').onclick=()=>sideSolve(0);
+$$('[data-seed]').forEach(b=>b.onclick=()=>sideSolve(+b.dataset.seed));
+function sideSolve(seed){
+  const eq=$('#solveExpr').value.trim();
+  if((eq.match(/=/g)||[]).length!==1){ $('#solveOut').textContent='등호(=)를 하나만 넣어 주세요.'; return }
+  try{ const r=roots(eq,seed); if(!r) throw new Error('no');
+    ans=r.first;
+    $('#solveOut').innerHTML='<b>근 '+r.all.length+'개</b><br>'+
+      r.all.map((v,i)=>`x${r.all.length>1?(i+1):''} = ${esc(fmt(v))}`).join('<br>');
+    $('#ask').hidden=false; $('#ask').textContent='X = '+fmt(r.first);
+    $('#result').textContent=fmt(r.first); $('#result').classList.remove('err');
+  }catch(e){ $('#solveOut').textContent='해를 찾지 못했습니다. 초기값을 바꿔 보세요.' }
+}
+$('#useExpr').onclick=()=>{$('#solveExpr').value=flat()||'x^2-2=0'};
+
+function shortNum(n){try{const s=fmt(n);return s.length>9?String(+(+n).toPrecision(4)):s}catch(e){return '0'}}
+function drawMem(){
+  $('#mems').innerHTML=Object.keys(vars).map(k=>`<button class="mem" data-m="${k}">${k}: ${esc(shortNum(vars[k]))}</button>`).join('')
+    +`<button class="mem" data-m="M">M: ${esc(shortNum(mem))}</button>`;
+  $$('#mems .mem').forEach(b=>{
+    b.title='누르면 식에 넣고, 오른쪽 클릭하면 지금 값을 저장합니다';
+    b.onclick=()=>{ b.dataset.m==='M'?insChars(fmt(mem)):insChars(b.dataset.m) };
+    b.oncontextmenu=e=>{e.preventDefault();
+      try{const v=empty()?0:evalExpr(flat()); if(b.dataset.m==='M')mem=v; else vars[b.dataset.m]=v; paint()}catch(x){}};
+  });
+}
+function drawHist(){
+  if(!hist.length){ $('#hist').innerHTML='<div class="hint">아직 계산 기록이 없습니다.</div>'; return }
+  $('#hist').innerHTML=hist.slice(0,20).map((h,i)=>
+    `<div class="hist-item" data-hi="${i}"><div class="a">${esc(h.e)}</div><div class="b">= ${esc(h.r)}</div></div>`).join('');
+  $$('.hist-item').forEach(el=>el.onclick=()=>{clearAll();insChars(hist[+el.dataset.hi].e)});
+}
+$('#histClear').onclick=()=>{hist=[];save();drawHist()};
+
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.ctrlKey&&e.key.toLowerCase()==='l'){e.preventDefault();return ac()}
+  if(e.key==='Enter'){e.preventDefault();return equal()}
+  if(e.key==='Escape'){e.preventDefault();return ac()}
+  if(e.key==='Backspace'){e.preventDefault();return ASK?press('del'):del()}
+  if(e.key==='ArrowLeft'){e.preventDefault();return move(-1)}
+  if(e.key==='ArrowRight'){e.preventDefault();return move(1)}
+  if(e.key==='ArrowUp'){e.preventDefault();if(hist.length){hi=Math.min(hist.length-1,hi+1);clearAll();insChars(hist[hi].e)}return}
+  if(e.key==='ArrowDown'){e.preventDefault();if(hi>0){hi--;clearAll();insChars(hist[hi].e)}else{hi=-1;ac()}return}
+  if(ASK && /^[0-9]$/.test(e.key)){e.preventDefault();return press(e.key)}
+  if(e.key==='/'){e.preventDefault();return nat('frac')}
+  if(e.key==='^'){e.preventDefault();return nat('sup')}
+  if(e.key==='_'){e.preventDefault();return nat('sub')}
+  if(e.key.toLowerCase()==='s'&&!ASK){e.preventDefault();return askStart('solve')}
+  if(/^[0-9.()+\-*=,%!]$/.test(e.key)){e.preventDefault();return insChars(e.key)}
+});
+
+(function(){
+  const pop=/[?&]popup=1/.test(location.search)||(window.opener&&window.opener!==window);
+  if(!pop) return;
+  document.body.classList.add('calc-popup'); document.title='계산기';
+  $('#calcPopClose').onclick=()=>{try{window.close()}catch(e){}};
+  $('#popSide').onclick=()=>$('#side').classList.toggle('show');
+})();
+
+load(); syncAng(); paint();
+window.__calc={ flat, ins:insChars, nat, press, ac, ROOTof:()=>ROOT };
+})();
+
+</script>
+</body></html>
