@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>면접 · 기출 해설 노트</title>
+<link rel="icon" href="./favicon.ico?v=267" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=267">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=267">
+<link rel="manifest" href="./manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <style>
@@ -359,7 +363,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #flash.err{background:var(--stamp)}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
-<link rel="stylesheet" href="./app-enhance.css?v=228">
+<link rel="stylesheet" href="./app-enhance.css?v=232">
 </head>
 <body data-data-domain="interview">
 <nav class="nav3">
@@ -2860,10 +2864,22 @@ try{ showPane(localStorage.getItem("iv-pane") || "prep"); }catch(e){ showPane("p
 
 /* 다른 탭에서 로그인·로그아웃하면 여기도 따라간다.
    supabase-js 는 처음 붙을 때도 한 번 알려 주므로, 그 한 번은 흘려보낸다. */
-let AUTH_READY = false;
-sb.auth.onAuthStateChange(() => { if(AUTH_READY) boot(); });
+/* ★ v234 — 토큰 자동 갱신(TOKEN_REFRESHED)까지 여기로 들어온다.
+   탭을 비웠다 돌아올 때마다 boot() 이 돌아 화면이 처음으로 돌아가던 원인이었다.
+   «사람이 바뀌었을 때» 만 다시 세운다. */
+let AUTH_READY = false, IV_UID = null;
+sb.auth.onAuthStateChange((evt, session) => {
+  if(!AUTH_READY) return;
+  const uid = session?.user?.id || null;
+  if(evt === "SIGNED_OUT"){ IV_UID = null; return void boot(); }
+  if(uid === IV_UID) return;                /* 토큰만 새로 받은 것 — 그대로 둔다 */
+  IV_UID = uid; boot();
+});
 
-boot().then(() => { AUTH_READY = true; }).catch(e => {
+boot().then(async () => {
+  AUTH_READY = true;
+  try{ IV_UID = (await sb.auth.getSession())?.data?.session?.user?.id || null; }catch(e){}
+}).catch(e => {
   /* 여기서 터지면 예전처럼 화면이 텅 빈다. 무슨 일인지 눈에 보이게 적어 둔다. */
   const g = $("#gate"); if(g) g.className = "gate";
   say("화면을 세우지 못했습니다 — " + (e.message || e), "err");
@@ -2872,10 +2888,18 @@ boot().then(() => { AUTH_READY = true; }).catch(e => {
 </script>
 
 <!-- ══ AI 대화 상자 ══ config.js 의 AI_WORKER_URL 을 채워야 작동합니다 -->
-<script src="./ai-chat.js" defer></script>
+<script src="./ai-chat.js?v=251" defer></script>
 <script src="./ai-viewer.js" defer></script>
 <script src="./music.js" defer></script>
 <!-- DATA ISOLATION CONTRACT: interview data uses iv-/iv: namespace only. Never import practice/written mistakes. -->
-<script src="./app-enhance.js?v=228" defer></script>
+<script src="./app-enhance.js?v=232" defer></script>
+<script>
+/* ★ v235 — 서비스워커(그림 캐시)를 이 화면에서도 켠다.
+   여태 index.html 에서만 켰다. 그런데 주소창에 바로 /practice 를 치고 들어오면
+   서비스워커가 아예 안 붙어, 애써 만든 그림 캐시가 한 번도 안 돌았다.
+   같은 문제 그림을 들어올 때마다 Supabase 에서 새로 받고 있었던 것. */
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=251").catch(() => {}));
+</script>
 </body>
 </html>

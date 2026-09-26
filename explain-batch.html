@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>해설 배치 · 기출 해설 노트</title>
+<link rel="icon" href="./favicon.ico?v=267" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=267">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=267">
+<link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -104,10 +108,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
           <option value="missing">해설 없는 것만 (권장)</option>
           <option value="all">전부 다시 (있는 해설도 덮어씀)</option>
         </select></div>
-        <div><label for="fEffort">사고량</label><select id="fEffort">
-          <option value="low">낮음 (권장 · 가장 쌈)</option>
-          <option value="mid">보통</option>
-          <option value="high">높음</option>
+        <div><label for="fEffort">해설 상세도</label><select id="fEffort">
+          <option value="mid" selected>상세 (비전공자용 · 권장)</option>
+          <option value="high">아주 상세 (가장 길고 비쌈)</option>
+          <option value="low">짧게 (가장 쌈)</option>
         </select></div>
         <div><label for="fConc">동시 처리</label><select id="fConc">
           <option>2</option><option selected>3</option><option>4</option><option>6</option>
@@ -161,6 +165,8 @@ const APPKEY = CFG.CLAUDE_APP_KEY || "";
 
 const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
 
+/* ★ v252 — 사고량 고르개를 «해설을 얼마나 자세히 적을까» 로도 씀 */
+const DEPTH_OF = { low:"mid", mid:"full", high:"full" };
 let ROWS = [], TARGET = [], FAILED = [], RUNNING = false, STOP = false;
 /* v209 — 열쇠·설정이 잘못되면 1257개가 «전부» 같은 오류로 순식간에 탄다.
    실제로 581개가 1초 만에 실패했다. 그래서 처음 5개가 연달아 같은 이유로
@@ -254,12 +260,20 @@ async function fetchRows(sid){
   return out;
 }
 
+/* ★ v267 — 실기 화면에서 «🔒 쉬운해설 고정» 한 문항은 여기서도 건드리지 않는다.
+   ez_lock 칸이 없으면(SQL 전) 그 기기에 적어 둔 목록을 본다. */
+const ezFixed = r => {
+  if(r && r.ez_lock) return true;
+  try{ return (JSON.parse(localStorage.getItem("prac:ezfix:v1") || "[]") || []).map(String).includes(String(r.id)); }
+  catch(e){ return false; }
+};
 function applyFilters(){
   const y = $("#fYear").value, s = $("#fSess").value, mode = $("#fMode").value;
   return ROWS.filter(r => {
     if(y && String(r.year) !== y) return false;
     if(s && String(r.session) !== s) return false;
     if(!r.a_url && !r.a_text) return false;                 // 답 없는 문항은 대상 아님
+    if(ezFixed(r)) return false;                            // ★ v267 — 쉬운해설 고정
     if(mode === "missing" && r.easy_md) return false;
     return true;
   });
@@ -282,12 +296,14 @@ $("#btnScan").addEventListener("click", async () => {
 
     TARGET = applyFilters();
     const noAns = ROWS.filter(r => !r.a_url && !r.a_text).length;
+    const fixN = ROWS.filter(r => (r.a_url || r.a_text) && ezFixed(r)).length;
     N.total = TARGET.length; N.done = N.bad = N.skip = N.tin = N.tout = 0;
     FAILED = []; paint();
     $("#btnRun").disabled = TARGET.length === 0;
     $("#scanMsg").innerHTML =
       `전체 <b>${ROWS.length}</b>문항 · 이번에 돌릴 대상 <b>${TARGET.length}</b>문항` +
-      (noAns ? ` · <span class="pill">답 없어서 제외 ${noAns}</span>` : "");
+      (noAns ? ` · <span class="pill">답 없어서 제외 ${noAns}</span>` : "") +
+      (fixN ? ` · <span class="pill">🔒 고정이라 제외 ${fixN}</span>` : "");
   }catch(e){
     $("#scanMsg").textContent = "불러오지 못했습니다 — " + (e.message || e);
   }finally{ $("#btnScan").disabled = false; }
@@ -304,27 +320,258 @@ $("#btnScan").addEventListener("click", async () => {
 /* ── 해설 JSON → 마크다운 ─────────────────────────── */
 function toMd(sol){
   const L = [];
-  if(sol.gist) L.push(`**${sol.gist}**`, "");
-  if(sol.given?.length){
-    L.push("**주어진 값**", "");
-    sol.given.forEach(g => L.push(`- ${g}`));
+  /* ★ v256 — 목록 칸을 «['가','나']» 처럼 통째로 한 덩어리로 적어 보내는 일이 있다.
+     그대로 찍으면 대괄호·따옴표가 화면에 그대로 나온다. 풀어서 줄로 나눈다. */
+  /* ★ v257 — 칸을 못 채우고 «<item>…</item>» 같은 표를 통째로 적어 보내는 일이 있다.
+     그대로 찍으면 태그가 화면에 그대로 나온다. 태그를 걷어내고 줄로 나눈다. */
+  const XML = /<\/?(item|step|symbol|sym|mean|unit|val|say|math|calc|plain|read|why|eq|steps|symbols|given|background|also|tags|tag|check|trap|memo|answer|gist|write_solution|why_answer)\s*\/?>/gi;
+  const unxml = t => String(t == null ? "" : t)
+    .replace(/<\/?item\s*\/?>/gi, "\n")
+    .replace(XML, " ")
+    .replace(/<[^<>\n]{1,30}>/g, " ")
+    .replace(/[ \t]{2,}/g, " ").trim();
+  const arr = v => {
+    if(Array.isArray(v)) return v.flatMap(x => (x && typeof x === "object") ? [x] : arr(x));
+    let t = String(v == null ? "" : v).trim();
+    if(!t) return [];
+    if(/<\w+[^>]*>/.test(t))
+      return unxml(t).split("\n").map(x => x.replace(/^[-·•\s]+/, "").trim()).filter(Boolean);
+    /* ★ v280 — 칸을 «JSON 글자» 로 적어 보내는 일이 있다 (steps 가 '[{"say":…},{…}]' 인 글자).
+       수식의 백슬래시(\\dfrac)·줄바꿈 때문에 JSON.parse 가 깨지면, 예전에는 쉼표로 쪼개다가
+       단계가 통째로 날아갔다 (소문항 둘 중 하나만 남음). 손봐서 다시 읽는다. */
+    const loose = x => {
+      const fixBs = y => y.replace(/\\\\|\\(?:(?=[A-Za-z]{2,})(?!u[0-9a-fA-F]{4})|(?!["\\/bfnrtu]))/g, m => m.length === 2 ? m : "\\\\");   /* \times·\dfrac 처럼 수식 명령 앞 백슬래시를 살림 */
+      for(const y of [x, fixBs(x), fixBs(x).replace(/\r?\n/g, " "), fixBs(x).replace(/\r?\n/g, " ").replace(/,\s*([\]}])/g, "$1")]){
+        try{ return JSON.parse(y); }catch(e){}
+      }
+      return undefined;
+    };
+    if(/^\{[\s\S]*\}$/.test(t)){                     /* {…} 하나, 또는 {…},{…} 여럿 */
+      const j = loose(t); if(j && typeof j === "object") return Array.isArray(j) ? j : [j];
+      const k = loose("[" + t + "]"); if(Array.isArray(k)) return k;
+    }
+    if(/^\[[\s\S]*\]$/.test(t)){
+      const j = loose(t); if(Array.isArray(j)) return j;
+      try{ const j2 = JSON.parse(t.replace(/'/g, '"')); if(Array.isArray(j2)) return j2; }catch(e){}
+      /* 객체가 들어 있던 글자면 쉼표로 쪼개지 않는다 — 쪼개면 조각난 글자가 화면에 그대로 나온다 */
+      if(/^\[\s*\{/.test(t)){
+        const objs = [];
+        t.slice(1, -1).split(/\}\s*,\s*\{/).forEach((p, i, a) => {
+          const q = (i ? "{" : "") + p + (i < a.length - 1 ? "}" : "");
+          const o = loose(q); if(o && typeof o === "object") objs.push(o);
+        });
+        if(objs.length) return objs;
+      }
+      return t.slice(1, -1).split(/['"]\s*,\s*['"]/)
+        .map(x => x.replace(/^['"]|['"]$/g, "").trim()).filter(Boolean);
+    }
+    return [t];
+  };
+  /* 수식 손질
+     · 천 단위 쉼표(6,600)는 KaTeX 에서 뒤가 휑하게 벌어진다 → {,} 로 붙인다
+     · \quad · \; · \hspace 같은 빈칸 명령이 들어오면 사이가 벌어진다 → 걷어낸다
+     · 한글이 섞인 식은 수식으로 그리면 깨진다 → 글줄로 내보낸다 */
+  const HAN = /[가-힣]/;
+  const tex = t => {
+    let x = String(t == null ? "" : t).trim();
+    if(!x) return null;
+    x = x.replace(/^\$+|\$+$/g, "").trim();
+    x = x.replace(/(\d),(?=\d{3})/g, "$1{,}");
+    x = x.replace(/\\(?:qquad|quad|hspace\{[^}]*\}|[;:!])/g, " ");
+    x = x.replace(/\\ /g, " ").replace(/[ \t]{2,}/g, " ").trim();
+    return x || null;
+  };
+  /* 맨 글자로 들어온 한글은 \text{} 로 감싼다 — 안 감싸면 수식이 깨진다 */
+  const wrapHan = x => {
+    if(!HAN.test(x)) return x;
+    const keep = [];
+    let y = x.replace(/\\(?:text|mathrm|mathbf)\{[^{}]*\}/g, m => {
+      keep.push(m); return "\u0000" + (keep.length - 1) + "\u0000";
+    });
+    y = y.replace(/[가-힣][가-힣0-9 ·()]*[가-힣]|[가-힣]/g, m => `\\text{${m.trim()}}`);
+    return y.replace(/\u0000(\d+)\u0000/g, (_, i) => keep[+i]);
+  };
+  /* ★ v258 — 같은 식을 여러 꼴로 이어 쓸 때 «=» 를 세로로 맞춰 그린다 */
+  const eqBlock = list => {
+    const rows = (Array.isArray(list) ? list : [list]).map(tex).filter(Boolean).map(wrapHan);
+    if(!rows.length) return;
+    if(rows.length === 1) return void L.push(`$$${rows[0]}$$`, "");
+    const body = rows.map(r => {
+      if(/^=/.test(r)) return `&= ${r.replace(/^=\s*/, "")}`;
+      /* 줄마다 «첫 등호» 를 맞춤자리로 삼는다 — 기호식과 한글식의 = 가 세로로 선다.
+         \xrightarrow{X=0} 안의 등호는 중괄호 안이므로 건너뛴다. */
+      let d = 0, k = -1;
+      for(let i = 0; i < r.length; i++){
+        const c = r[i];
+        if(c === "{") d++;
+        else if(c === "}") d--;
+        else if(c === "=" && d === 0 && r[i-1] !== "<" && r[i-1] !== ">" && r[i+1] !== "="){ k = i; break; }
+      }
+      return k > 0 ? `${r.slice(0, k).trim()} &= ${r.slice(k + 1).trim()}` : `& ${r}`;
+    }).join(" \\\\ ");
+    L.push(`$$\\begin{aligned} ${body} \\end{aligned}$$`, "");
+  };
+  const eqLine = t => eqBlock(t);
+  const inlineTex = t => {
+    const x = String(t || "").trim();
+    if(!x) return "";
+    return /[\\^_{]/.test(x) ? `$${tex(x)}$` : x;
+  };
+
+  /* ★ v263 — 글 칸(검산·흔한 실수·왜)에 수식을 넣으면 백슬래시가 떨어져 나간 채로 와서
+     «dfrac155 times ...» 처럼 글자가 흩어진다. 떨어진 백슬래시를 되살리고,
+     그래도 못 살릴 만큼 깨진 것은 수식 표시를 벗겨 글로 읽히게 둔다. */
+  const CMD = /(dfrac|tfrac|frac|sqrt|times|div|cdot|approx|fallingdotseq|leqq|geqq|leq|geq|neq|Omega|omega|theta|alpha|beta|rho|mu|Delta|sum|mathrm|text|left|right|tan|cos|sin|log|ln|xrightarrow|quad|pi)/g;
+  const fixMath = t => String(t == null ? "" : t).replace(/\$([^$\n]{1,400})\$/g, (m, body) => {
+    /* ① \t · \f 는 JSON 에서 «탭 · 페이지넘김» 으로 읽혀 버린다.
+       그래서 \times 가 [탭]imes, \fallingdotseq 가 [넘김]allingdotseq 로 도착한다.
+       그 자리에 백슬래시를 도로 꽂아 준다. */
+    const BACK = { "\t":"\\t", "\f":"\\f", "\b":"\\b", "\v":"\\v", "\r":"\\r" };
+    let b = body.replace(/[\t\f\v\b\r]/g, c => BACK[c] || "\\");
+    /* ② 백슬래시가 떨어져 나간 명령말 앞에 도로 붙인다.
+       \times\dfrac 처럼 붙어 있던 것이 \timesdfrac 로 와도 갈라 준다.
+       이미 백슬래시가 앞에 있는 것은 건드리지 않는다. */
+    b = b.replace(CMD, (w, _g, off, str) => (off > 0 && str[off - 1] === "\\") ? w : "\\" + w);
+    return "$" + b + "$";
+  });
+  const line = t => fixMath(unxml(String(t == null ? "" : t))).replace(/\n{2,}/g, "\n").trim();
+
+  if(sol.gist) L.push(`**${line(sol.gist)}**`, "");
+
+  if(arr(sol.background).length){
+    L.push("**먼저 알아야 할 것**", "");
+    arr(sol.background).forEach(b => L.push(`- ${b}`));
     L.push("");
   }
-  if(sol.formula?.length){
-    L.push("**쓰는 식**", "");
-    sol.formula.forEach(f => L.push(`$$${f}$$`, ""));
+  if(arr(sol.read).length){
+    L.push("**문제를 이렇게 읽음**", "");
+    arr(sol.read).forEach(b => L.push(`- ${b}`));
+    L.push("");
   }
-  if(sol.steps?.length){
-    L.push("**풀이**", "");
-    sol.steps.forEach((s, i) => {
-      L.push(`${i+1}. ${s.say || ""}`);
-      if(s.math) L.push("", `$$${s.math}$$`, "");
+  if(arr(sol.given).length){
+    L.push("**주어진 값**", "");
+    arr(sol.given).forEach(g => L.push(`- ${g}`));
+    L.push("");
+  }
+  if(arr(sol.symbols).length){
+    L.push("**부호**", "");
+    arr(sol.symbols).forEach(x => {
+      if(typeof x === "string") return void L.push(`- ${x}`);
+      const u = x.unit ? ` · 단위 ${inlineTex(x.unit)}` : "";
+      const v = x.val  ? ` · 이 문제: ${inlineTex(x.val)}` : "";
+      const sy = HAN.test(String(x.sym||"")) ? String(x.sym||"") : `$${tex(x.sym)||""}$`;
+      /* ★ v277 — 읽는 발음 «브이 에스» 를 기호 옆에 */
+      const pr = x.say ? ` «${String(x.say).replace(/[«»\n]/g, "").trim()}»` : "";
+      L.push(`- ${sy}${pr} — ${x.mean || ""}${u}${v}`);
     });
     L.push("");
   }
-  L.push("**답**", "", `> ${sol.answer || ""}${sol.unit ? " " + sol.unit : ""}`, "");
-  if(sol.trap) L.push("**흔한 실수**", "", sol.trap, "");
-  return L.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  /* 옛 워커(v232)는 «쓰는 식» 을 따로 보낸다. 새 워커는 안 보낸다 — 풀이 안에서 세운다 */
+  if(arr(sol.formula).length){
+    L.push("**쓰는 식**", "");
+    arr(sol.formula).forEach(f => {
+      if(typeof f === "string") return void eqLine(f);
+      eqLine(f.tex);
+      if(f.read) L.push(`- 읽기: ${f.read}`, "");
+      if(f.why)  L.push(`- 왜: ${f.why}`, "");
+    });
+  }
+  if(arr(sol.steps).length){
+    L.push("**풀이**", "");
+    arr(sol.steps).forEach((s, i) => {
+      if(typeof s === "string") return void L.push(`${i+1}. ${s}`, "");
+      /* 소문항 번호로 시작하면 «1. (1)» 처럼 번호가 겹치지 않게 둔다 */
+      const sy0 = line(s.say);
+      L.push(/^\s*(\(\d+\)|[①-⑳]|\d+\s*[).])/.test(sy0) ? `${sy0}` : `${i+1}. ${sy0}`, "");
+      /* ★ v277 — 소문항 답은 그 단계 바로 밑에 먼저 (단답·서술은 «답 → 왜» 순서) */
+      if(s.ans) L.push(`> ${line(s.ans).replace(/\n+/g, " ")}`, "");
+      /* 새 판 — 등호로 이은 한 줄(여럿이면 줄마다) */
+      /* ★ v260 — 한 단계는 다섯 줄. 순서를 화면에서 못 박는다.
+         ①부호식 ②해설식 ③숫자대입식 ④읽기식 ⑤왜 */
+      const eqs = Array.isArray(s.eq) ? s.eq : (s.eq ? [s.eq] : []);
+      if(s.sym || s.plain || s.num || s.unit){
+        if(s.sym)   eqBlock(s.sym);
+        if(s.plain) eqBlock(s.plain);
+        if(s.num)   eqBlock(s.num);
+        if(s.unit)  eqBlock(s.unit);   /* 단위만 넣어 결과 단위를 맞춰 보는 식 */
+      }
+      else if(eqs.length) eqs.forEach(e => eqBlock(e));
+      else eqBlock([s.math, s.calc].filter(Boolean));   /* 옛 판 대비 */
+      if(s.read) L.push(`- 읽기: “${line(s.read).replace(/^["“]|["”]$/g, "")}”`, "");
+      if(s.why)  L.push(`- 왜: ${line(s.why)}`, "");
+      L.push("");
+    });
+  }
+  /* 답에 이미 단위가 붙어 온 경우 또 붙이지 않는다 (70[mm^2]mm^2 처럼 되던 것) */
+  const ansT = line(sol.answer).trim();
+  const unitT = String(sol.unit || "").trim();
+  /* ★ v277 — «(2)» 앞에서 줄을 나눈다 (띄어쓰기가 없어도) */
+  const ansLines = ansT.split(/\n+|(?=\(\d{1,2}\))/).map(x => x.trim()).filter(Boolean);
+  const many = ansLines.length > 1;                 /* 소문항이 여럿인 답 */
+  const dup = unitT && (/[,，·]/.test(unitT) || ansT.includes(unitT) || ansT.includes(unitT.replace(/[\[\]]/g, "")));
+  const stepAns = arr(sol.steps).some(s => s && typeof s === "object" && String(s.ans || "").trim());
+  /* ★ v276 — 나열형 «항목» · 서술형 «채점 포인트» */
+  if(arr(sol.items).length){
+    L.push("**항목**", "");
+    arr(sol.items).forEach(it => {
+      if(typeof it === "string") return void L.push(`- ${line(it)}`);
+      const w = line(it.word || it.name || it.item || "");
+      const m = line(it.mean || it.desc || "");
+      L.push(`- **${w}**${m ? " — " + m : ""}`);
+      if(it.why) L.push(`- 왜: ${line(it.why)}`);
+    });
+    L.push("");
+  }
+  if(arr(sol.keys).length){
+    L.push("**채점 포인트**", "");
+    arr(sol.keys).forEach(k => L.push(`- ${line(k)}`));
+    L.push("");
+  }
+  /* ★ v277 — 소문항 답을 단계마다 적었으면 맨 아래 «답» 몰아 쓰기는 뺀다 */
+  if(!stepAns && ansT){
+    L.push("**답**", "");
+    if(many) ansLines.forEach(x => L.push(`> ${x}`, ""));
+    else L.push(`> ${ansT}${unitT && !dup ? " " + unitT : ""}`, "");
+  }
+  if(sol.why_answer) L.push("**왜 이 답인가**", "", line(sol.why_answer), "");
+  if(sol.check)      L.push("**검산**", "", line(sol.check), "");
+  if(sol.memo)       L.push("**외우기**", "", line(sol.memo), "");
+  /* ★ v276 — 두문자 : 첫 줄 `글자` · 줄마다 «글자 — 항목» (화면에서 고쳐 쓸 수 있음) */
+  /* ★ v283 — 소문항마다 두문자 묶음 (mnemos 배열). 예전 mnemo 하나도 그대로 받음.
+     묶음이 둘 이상이면 «(1) 장점» 같은 이름 줄을 앞에 붙인다 */
+  const MNS = (Array.isArray(sol.mnemos) && sol.mnemos.length) ? sol.mnemos
+            : (Array.isArray(sol.mnemo) ? sol.mnemo : (sol.mnemo && typeof sol.mnemo === "object" ? [sol.mnemo] : []));
+  const MNG = MNS.filter(M => M && typeof M === "object" && (M.code || arr(M.map).length));
+  if(MNG.length){
+    L.push("**두문자**", "");
+    MNG.forEach((MN, gi) => {
+      let lb = String(MN.label || MN.q || "").replace(/[\n`*]/g, " ").replace(/\s+/g, " ").trim();
+      if(MNG.length > 1 || lb){
+        if(!lb) lb = `(${gi + 1})`;
+        else if(!/^\(\d{1,2}\)/.test(lb)) lb = `(${gi + 1}) ${lb.replace(/^\d{1,2}[.)]\s*/, "")}`;
+        L.push(lb, "");
+      }
+      const code = String(MN.code || arr(MN.map).map(m => (m && (m.h || m.head)) || "").join("")).replace(/[`\n]/g, "").trim();
+      if(code) L.push("`" + code + "`", "");
+      arr(MN.map).forEach(m => {
+        if(typeof m === "string") return void L.push(`- ${line(m)}`);
+        L.push(`- ${String(m.h || m.head || "").replace(/[—\n]/g, "").trim()} — ${line(m.word || m.w || "")}`);
+      });
+      L.push("");
+      if(MN.say) L.push(line(MN.say), "");
+    });
+  }
+  if(sol.trap)       L.push("**흔한 실수**", "", line(sol.trap), "");
+  if(arr(sol.also).length){
+    L.push("**같이 알아 두기**", "");
+    arr(sol.also).forEach(x => L.push(`- ${x}`));
+    L.push("");
+  }
+  const TG = [sol.kind ? String(sol.kind).replace(/형$/, "") + "형" : null, ...arr(sol.tags)].filter(Boolean);
+  if(TG.length) L.push("", `\`${TG.join("` `")}\``);
+  /* ★ v277 — 형광펜 표시 ==핵심== → 〖핵심〗. «==» 는 글자→수식 바꾸기가 수식 기호로 삼켜 버려서 */
+  return L.map(x => /^\s*\$\$/.test(x) ? x : x.replace(/==([^=\n]{1,120}?)==/g, "〖$1〗"))
+          .join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /* ── 한 문항 ──────────────────────────────────────── */
@@ -336,7 +583,8 @@ async function one(r){
     body: JSON.stringify({
       q_url:r.q_url, q_text:r.q_text, a_url:r.a_url, a_text:r.a_text,
       year:r.year, session:r.session, no:r.no, points:r.points,
-      effort: $("#fEffort").value
+      effort: $("#fEffort").value,
+      depth: DEPTH_OF[$("#fEffort").value] || "full"
     })
   });
   const d = await res.json().catch(() => ({}));
@@ -346,9 +594,17 @@ async function one(r){
     throw new Error(d.error || ("HTTP " + res.status));
   }
   if(d.usage){ N.tin += d.usage.input_tokens || 0; N.tout += d.usage.output_tokens || 0; }
+  /* ★ v255 — 새 워커는 depth 를 되돌려 준다. 없으면 옛 판이라 옛 모양으로 나온다 */
+  if(!d.depth && !window.__oldSaid){
+    window.__oldSaid = true;
+    log("⚠ 워커가 옛 판입니다 — gichul-ai 워커에 새 index.js 를 배포하세요", "bad");
+  }
 
   const md = toMd(d.sol || {});
   if(!md || md.length < 20) throw new Error("해설이 비어서 왔습니다");
+  /* ★ v297 — 워커가 두 번 더 받아도 원칙 미달이면: 있던 해설은 그대로 두고 실패로 셈 */
+  const probs = Array.isArray(d.problems) ? d.problems : [];
+  if(probs.length && r.easy_md) throw new Error("원칙 미달 · 있던 해설 유지 — " + probs[0]);
 
   /* v204 — 해설 칸이 생겼으므로 상태·판번호도 같이 남긴다.
      st_sol 은 raw — 기계가 만든 것이라 사람이 검수 화면에서 한 번 봐야 draft 가 된다.
@@ -363,7 +619,7 @@ async function one(r){
   if(up.error) throw new Error("저장 실패 — " + up.error.message);
 
   N.done++;
-  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""}`, "ok");
+  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""}` + (probs.length ? `  ⚠ 원칙 미달 ${probs.length}곳 — ${probs[0]}` : ""), probs.length ? "bad" : "ok");
 }
 
 /* ── 동시 처리 ────────────────────────────────────── */

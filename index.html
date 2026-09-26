@@ -1,23 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script>
-/* ★ 낡은 서비스 워커가 이 페이지를 물고 있으면 스스로 지우고 한 번만 새로고침한다.
-   "강력 새로고침 해주세요" "Unregister 눌러주세요" 안내를 계속 반복할 필요가 없도록. */
-(function(){
-  if('serviceWorker' in navigator && navigator.serviceWorker.controller && !sessionStorage.getItem('sw-cleared-v3')){
-    sessionStorage.setItem('sw-cleared-v3','1');
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      return Promise.all(regs.map(function(r){ return r.unregister(); }));
-    }).then(function(){ location.reload(); });
-  }
-})();
-</script>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#E9ECE6">
 <title>기출 해설 노트</title>
+<link rel="icon" href="./favicon.ico?v=267" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=267">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=267">
 <link rel="manifest" href="./manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1097,7 +1088,7 @@ mark.st{
 .nav3 a.on::before,.nav3 a.on + a::before{background:transparent}
 .nav3 a:not(.on):hover{color:var(--paper)}
 </style>
-<link rel="stylesheet" href="./app-enhance.css?v=228">
+<link rel="stylesheet" href="./app-enhance.css?v=232">
 </head>
 <body>
 <nav class="nav3">
@@ -5093,7 +5084,7 @@ route();
 
 /* 홈 화면 설치 + 오프라인 */
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))
-  addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=228").catch(()=>{}));
+  addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=298").catch(()=>{}));
 </script>
 <script>
 /* ══════════════════════════════════════════════════════════════
@@ -5453,12 +5444,12 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http"))
 </script>
 
 <!-- ══ AI 대화 상자 ══ config.js 의 AI_WORKER_URL 을 채워야 작동합니다 -->
-<script src="./ai-chat.js" defer></script>
+<script src="./ai-chat.js?v=264" defer></script>
 <script src="./ai-viewer.js" defer></script>
 <!-- 끌어서 고른 자리를 AI 가 풀어 준다 -->
 <script src="./ai-explain.js" defer></script>
 <script src="./music.js" defer></script>
-<script src="./app-enhance.js?v=228" defer></script>
+<script src="./app-enhance.js?v=232" defer></script>
 
 <!-- ══════════════════════════════════════════════════════════════
      v89 · 필기뷰어 진도율 · 문항줄 좌우 단추
@@ -5737,5 +5728,112 @@ body{font-size:13px!important;line-height:1.45!important}
 .wprog{padding:5px 11px!important}
 </style>
 
+<script>
+/* ══════════════════════════════════════════════════════════════
+   v265 · 해설 줄 나눔 — 문장이 끝나면, 또 너무 길어지면 알아서 줄을 바꾼다
+
+   여태 «쉬운 풀이» 의 글 칸(왜 · 검산 · 외우기 · 흔한 실수)은 아무리 길어도
+   한 덩어리로 흘렀다. 화면 너비에 맞춰 저절로 접힐 뿐이라, 문장이 어디서
+   끝나는지 눈으로 잡히지 않았다.
+   이 조각은 «그려내기 직전» 에만 줄을 나눈다 — 저장된 글(easy_md)은 손대지
+   않으므로, 고치기 창에는 원래 글이 그대로 뜬다. 어떤 모형(sonnet · opus)이
+   써 준 해설이든, 이미 저장해 둔 옛 해설이든 똑같이 나뉜다.
+
+   나누는 자리
+     ① 문장이 끝난 자리 — 마침표 · 물음표 · 느낌표 뒤.
+        숫자 사이의 점(2.7 · KEC 241.17)은 문장 끝이 아니므로 건드리지 않는다.
+     ② 한 문장이 MAX 글자를 넘으면 — 쉼표 · 가운뎃점 자리에서 한 번 더.
+   손대지 않는 줄
+     소제목(**…**) · 머리글(#) · 표(|) · 수식만 있는 줄($$) · 코드칸 · 상자표시 ·
+     짧은 줄(MIN 미만) · 이미 <br> 가 들어 있는 줄.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+var MIN = 34;    /* 이보다 짧은 줄은 그냥 둔다 */
+var MAX = 58;    /* 한 조각이 이보다 길면 쉼표 자리에서 한 번 더 나눈다 */
+
+var BR  = '\u0001';   /* 줄 나눔 자리표 — esc() 를 그냥 지나간다 */
+var K0  = '\u0002';   /* 수식·코드 보관 자리표 */
+
+/* 줄 앞머리(- · 1. · > )는 떼어 두고 뒷글만 나눈다 */
+var HEAD = /^(\s*(?:[-*]\s+|\d+\.\s+|>\s+|\(\d+\)\s*|[①-⑳]\s*)?)([\s\S]*)$/;
+
+function skip(t){
+  var x = t.trim();
+  if(!x) return true;
+  if(x.length < MIN) return true;
+  if(x.indexOf('<br') >= 0) return true;
+  if(/^(#{1,6}\s|[-*_]{3,}$|\||<!--|\[\[|```|\$\$)/.test(x)) return true;
+  if(/^\*\*[^*]*\*\*$/.test(x)) return true;          /* 소제목 줄 */
+  return false;
+}
+
+/* 한 줄을 조각으로 나눈다 */
+function chop(body){
+  var keep = [];
+  var s = String(body).replace(/\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$[^$\n]*\$|`[^`]*`/g, function(m){
+    return K0 + (keep.push(m) - 1) + K0;
+  });
+
+  /* ① 문장 끝 — 앞 글자가 숫자면(2.7 · 241.17) 문장 끝이 아니다 */
+  s = s.replace(/([^\s0-9])([.!?…])(\s+)(?=\S)/g, function(_, a, p){ return a + p + BR; });
+
+  /* ② 너무 긴 조각은 쉼표 자리에서 한 번 더 */
+  s = s.split(BR).map(function(seg){
+    seg = seg.trim();
+    if(seg.length <= MAX) return seg;
+    var bits = seg.replace(/([,;·])\s+/g, function(_, c){ return c + BR; }).split(BR);
+    var lines = [], cur = '';
+    bits.forEach(function(b){
+      b = b.trim(); if(!b) return;
+      if(!cur){ cur = b; return; }
+      if((cur + ' ' + b).length > MAX){ lines.push(cur); cur = b; }
+      else cur += ' ' + b;
+    });
+    if(cur) lines.push(cur);
+    return lines.join(BR);
+  }).join(BR);
+
+  return s.replace(new RegExp(K0 + '(\\d+)' + K0, 'g'), function(_, i){ return keep[+i]; });
+}
+
+function prep(md){
+  var src = String(md == null ? '' : md);
+  if(!src) return src;
+  var lines = src.split('\n'), fence = false, box = false, out = [];
+  for(var i = 0; i < lines.length; i++){
+    var l = lines[i], x = l.trim();
+    if(/^```/.test(x)){ fence = !fence; out.push(l); continue; }
+    if(/^\[\[\s*\/?\s*(?:box|박스)\s*\]\]$/i.test(x)){ box = /^\[\[\s*(?:box|박스)/i.test(x); out.push(l); continue; }
+    if(fence || box || skip(l)){ out.push(l); continue; }
+    var m = l.match(HEAD);
+    var head = m ? m[1] : '', body = m ? m[2] : l;
+    if(body.trim().length < MIN){ out.push(l); continue; }
+    out.push(head + chop(body));
+  }
+  return out.join('\n');
+}
+
+/* 그려낸 HTML 에서 자리표를 진짜 줄 나눔으로 바꾼다 */
+function paint(html){
+  var h = String(html == null ? '' : html);
+  return h.indexOf(BR) < 0 ? h : h.split(BR).join('<br class="sbr">');
+}
+
+['mdLite', 'md'].forEach(function(name){
+  var fn = window[name];
+  if(typeof fn !== 'function' || fn.__sbr) return;
+  var w = function(t){ return paint(fn.call(this, prep(t))); };
+  w.__sbr = 1; w.__tbl = fn.__tbl; w.__img = fn.__img; w.__tex = fn.__tex; w.__sci = fn.__sci;
+  window[name] = w;
+});
+
+/* 손으로 끄고 켤 수 있게 열어 둔다 — sbrOff() · sbrOn() · sbrSet(최소, 최대) */
+window.sbrSet = function(min, max){ if(min > 0) MIN = min; if(max > 0) MAX = max; };
+window.sbrOff = function(){ MIN = 1e9; };
+window.sbrOn  = function(){ MIN = 34; };
+})();
+</script>
 </body>
 </html>

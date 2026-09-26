@@ -3,7 +3,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <title>공학용 계산기 · 기출 해설 노트</title>
-<link rel="stylesheet" href="./app-enhance.css?v=228">
+<link rel="icon" href="./favicon.ico?v=267" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=267">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=267">
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./app-enhance.css?v=232">
 <style>
 :root{
   --b1:#2a2a2c; --b2:#161617; --b3:#0b0b0c;
@@ -317,8 +321,8 @@ body.calc-popup .calc-popbar{display:flex}
 </div>
 </div>
 
-<script src="./app-enhance.js?v=228"></script>
-<script src="./calc-engine.js?v=228"></script>
+<script src="./app-enhance.js?v=232"></script>
+<script src="./calc-engine.js?v=232"></script>
 <script>
 (function(){
 'use strict';
@@ -777,5 +781,13 @@ load(); syncAng(); paint();
 window.__calc={ flat, ins:insChars, nat, press, ac, ROOTof:()=>ROOT };
 })();
 
+</script>
+<script>
+/* ★ v235 — 서비스워커(그림 캐시)를 이 화면에서도 켠다.
+   여태 index.html 에서만 켰다. 그런데 주소창에 바로 /practice 를 치고 들어오면
+   서비스워커가 아예 안 붙어, 애써 만든 그림 캐시가 한 번도 안 돌았다.
+   같은 문제 그림을 들어올 때마다 Supabase 에서 새로 받고 있었던 것. */
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=251").catch(() => {}));
 </script>
 </body></html>

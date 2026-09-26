@@ -10,7 +10,7 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://nfyyctinvlytykucbgzk.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_tRyg8GTus9I2_wt-VSmaRA_6gbU-lt5",
   APP_TITLE: "기출 해설 노트",
-  CONFIG_VERSION: "v228",
+  CONFIG_VERSION: "v264",
 
   WORKER_URL:        "https://gichul-ai.amirbatikunari.workers.dev",
   WORKER_BACKUP_URL: "",

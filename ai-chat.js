@@ -394,6 +394,29 @@ const TIER = [
 ];
 
 
+/* ★ v255 — «자동» 이 질문 성격을 보고 모델을 바꾸는 바람에,
+   같은 자리에서 답이 왔다 갔다 했다. 직접 골라 못 박을 수 있게 한다.
+   여기 적은 id 를 워커에 그대로 보내므로 등급표(/ai/models)와 상관없이 먹는다. */
+const PIN = {
+
+  opus: {
+    id: "claude-opus-5",
+    label: "Opus 5"
+  },
+
+  sonnet: {
+    id: "claude-sonnet-5",
+    label: "Sonnet 5"
+  },
+
+  haiku: {
+    id: "claude-haiku-4-5-20251001",
+    label: "Haiku 4.5"
+  }
+
+};
+
+
 /* ═══════════════════════════════════════════════════════════════════════
    state
    ═══════════════════════════════════════════════════════════════════════ */
@@ -1115,6 +1138,30 @@ function resolveModel(
   text
 ) {
 
+  /* ★ v255 — 손으로 고른 모델이 있으면 그것만 쓴다. 자동 판단을 건너뛴다. */
+  if (
+    PIN[state.mode]
+  ) {
+
+    return {
+
+      provider:
+        "openai",
+
+      model:
+        PIN[state.mode].id,
+
+      tier:
+        PIN[state.mode].label,
+
+      pinned:
+        true
+
+    };
+
+  }
+
+
   if (
     !MODELS_READY
   ) {
@@ -1547,6 +1594,49 @@ const CSS = `
   padding:5px 3px 0
 }
 
+/* ── 내보내기 띠 (v236) ── */
+.aic-exp{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  padding:7px 3px 0;
+  border-top:1px solid var(--line,#e6eaf0);
+  margin-top:7px
+}
+.aic-exp b{
+  font:700 10.5px/1 var(--font-d,system-ui);
+  color:var(--ink-2,#8894a5);
+  margin-right:2px
+}
+.aic-exp button{
+  height:27px;
+  padding:0 10px;
+  border:1px solid var(--line,#e2e8f0);
+  border-radius:8px;
+  background:var(--surface,#fff);
+  color:var(--ink,#0f172a);
+  cursor:pointer;
+  font:700 11px/1 var(--font-d,system-ui)
+}
+.aic-exp button:hover{
+  background:var(--surface-2,#f7f9fc)
+}
+.aic-exp button.notion{
+  border-color:#cbd5e1;
+  background:#0f172a;
+  color:#fff
+}
+.aic-exp button:disabled{
+  opacity:.45;
+  cursor:default
+}
+html[data-theme="dark"] .aic-exp button{
+  background:#1e293b;
+  color:#e2e8f0;
+  border-color:#334155
+}
+
 .aic-err{
   margin:6px 12px;
   padding:8px 11px;
@@ -1772,6 +1862,15 @@ function build() {
 
         <div class="aic-hint"></div>
 
+        <div class="aic-exp">
+          <b>내보내기</b>
+          <button data-exp="copy"   title="이 대화를 마크다운으로 복사합니다">복사</button>
+          <button data-exp="md"     title="이 대화를 .md 파일로 내려받습니다">Markdown</button>
+          <button data-exp="txt"    title="이 대화를 .txt 파일로 내려받습니다">텍스트</button>
+          <button data-exp="notion" class="notion"
+            title="정해 둔 노션 페이지 밑에 이 대화를 새 페이지로 넣습니다&#10;(워커에 NOTION_TOKEN 이 아직 없으면 «복사 + 페이지 열기» 로 대신합니다)&#10;Shift 를 누른 채 누르면 저장할 페이지를 다시 정합니다">노션에 저장</button>
+        </div>
+
       </div>
 
       <input
@@ -1915,6 +2014,349 @@ function build() {
   ).onclick =
     () =>
       el.file.click();
+
+
+  /* ══════════════════════════════════════════════════════════
+     내보내기 (v236)
+
+     대화를 마크다운으로 뽑아 «복사 · .md · .txt · 노션» 으로 보낸다.
+
+     ★ 노션은 브라우저에서 바로 글을 넣을 수 없다.
+       노션 서버가 다른 사이트의 요청을 막아 두었기 때문이다(CORS).
+       그래서 여기서는 «마크다운을 복사하고 정해 둔 노션 페이지를 여는» 방식으로 한다.
+       노션은 붙여넣기(Ctrl+V) 하면 마크다운을 제목·표·목록으로 알아서 풀어 준다.
+       단추 한 번 + 붙여넣기 한 번이면 끝이고, 토큰·설정이 필요 없다.
+     ══════════════════════════════════════════════════════════ */
+  const expBtns =
+    [...wrap.querySelectorAll("[data-exp]")];
+
+
+  function expMd() {
+
+    const when =
+      new Date().toLocaleString(
+        "ko-KR",
+        { hour12: false }
+      );
+
+    const head =
+      `# AI 대화 — ${when}\n`;
+
+    const body =
+      (state.msgs || [])
+        .filter(
+          m =>
+            m &&
+            (m.role === "user" ||
+             m.role === "assistant") &&
+            String(m.content || "").trim()
+        )
+        .map(m => {
+
+          const who =
+            m.role === "user"
+              ? "나"
+              : "AI";
+
+          const files =
+            (m.files || [])
+              .map(f => f && (f.name || f.filename))
+              .filter(Boolean);
+
+          return `\n## ${who}\n\n`
+            + (files.length
+                ? `> 붙인 파일: ${files.join(", ")}\n\n`
+                : "")
+            /* 답 속의 제목은 한 칸 낮춘다 — «## AI» 와 같은 높이면 노션에서 뒤엉킨다 */
+            + String(m.content).trim().replace(/^(#{1,5})\s/gm, "#$1 ")
+            + "\n";
+
+        })
+        .join("\n");
+
+    return head + body;
+
+  }
+
+
+  function expTxt() {
+
+    /* 표·수식 기호를 걷어낸 «그냥 글» */
+    return expMd()
+      .replace(/^#{1,6}\s*/gm, "")
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/`{1,3}/g, "")
+      .replace(/\$\$?/g, "");
+
+  }
+
+
+  async function expCopy(text) {
+
+    try {
+
+      await navigator.clipboard.writeText(text);
+
+      return true;
+
+    } catch (e) {
+
+      /* 권한이 막힌 브라우저를 위한 예전 방식 */
+      try {
+
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;left:-9999px;top:0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+
+      } catch (e2) {
+
+        return false;
+
+      }
+
+    }
+
+  }
+
+
+  function expSave(text, ext) {
+
+    const d = new Date();
+    const p2 = n => String(n).padStart(2, "0");
+
+    const name =
+      `AI대화_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}`
+      + `_${p2(d.getHours())}${p2(d.getMinutes())}.${ext}`;
+
+    const a = document.createElement("a");
+    a.href =
+      URL.createObjectURL(
+        new Blob(
+          [text],
+          { type: "text/plain;charset=utf-8" }
+        )
+      );
+    a.download = name;
+    a.click();
+
+    setTimeout(
+      () => URL.revokeObjectURL(a.href),
+      4000
+    );
+
+    return name;
+
+  }
+
+
+  function expSay(msg) {
+
+    try {
+
+      if (window.AppUI && window.AppUI.toast) {
+
+        window.AppUI.toast(msg, "ok");
+
+        return;
+
+      }
+
+    } catch (e) {}
+
+
+    if (el.hint) {
+
+      const was = el.hint.textContent;
+      el.hint.textContent = msg;
+
+      setTimeout(
+        () => {
+          if (el.hint.textContent === msg)
+            el.hint.textContent = was;
+        },
+        3500
+      );
+
+    }
+
+  }
+
+
+  const NOTION_KEY = "ai:notion-url";
+
+
+  function notionUrl(reset) {
+
+    let u = "";
+
+    try {
+      u = localStorage.getItem(NOTION_KEY) || "";
+    } catch (e) {}
+
+
+    if (u && !reset) return u;
+
+
+    u = prompt(
+      "대화를 저장할 노션 페이지 주소를 한 번만 정해 주세요.\n"
+      + "노션에서 그 페이지를 열고 주소창을 그대로 붙여 넣으면 됩니다.\n"
+      + "(그 페이지 밑에 대화가 새 페이지로 들어갑니다)",
+      u || "https://www.notion.so/"
+    );
+
+    if (!u) return "";
+
+    u = u.trim();
+
+    try {
+      localStorage.setItem(NOTION_KEY, u);
+    } catch (e) {}
+
+    return u;
+
+  }
+
+
+  expBtns.forEach(b => {
+
+    b.onclick = async ev => {
+
+      if (!(state.msgs || []).length) {
+
+        expSay("아직 주고받은 이야기가 없습니다.");
+
+        return;
+
+      }
+
+
+      const kind = b.dataset.exp;
+
+
+      if (kind === "copy") {
+
+        expSay(
+          await expCopy(expMd())
+            ? "대화를 마크다운으로 복사했습니다."
+            : "복사하지 못했습니다 — 주소창 왼쪽 자물쇠에서 «클립보드» 를 허용해 주세요."
+        );
+
+        return;
+
+      }
+
+
+      if (kind === "md") {
+
+        expSay(expSave(expMd(), "md") + " 로 내려받았습니다.");
+
+        return;
+
+      }
+
+
+      if (kind === "txt") {
+
+        expSay(expSave(expTxt(), "txt") + " 로 내려받았습니다.");
+
+        return;
+
+      }
+
+
+      if (kind === "notion") {
+
+        const url = notionUrl(ev.shiftKey);
+
+        if (!url) return;
+
+
+        const was = b.textContent;
+        b.disabled = true;
+        b.textContent = "보내는 중…";
+
+
+        let done = false;
+
+
+        /* ① 진짜로 넣어 보기 — 워커에 NOTION_TOKEN 이 있으면 여기서 끝난다 */
+        if (BASE) {
+
+          try {
+
+            const res = await fetch(
+              BASE + "/notion",
+              {
+                method: "POST",
+                headers: Object.assign(
+                  { "Content-Type": "application/json" },
+                  KEY ? { "x-app-key": KEY } : {}
+                ),
+                body: JSON.stringify({
+                  parent: url,
+                  title:
+                    (String(
+                      (state.msgs.find(m => m.role === "user") || {}).content || "AI 대화"
+                    ).trim().split("\n")[0] || "AI 대화").slice(0, 60),
+                  markdown: expMd()
+                })
+              }
+            );
+
+            const d = await res.json().catch(() => ({}));
+
+
+            if (d && d.ok) {
+
+              done = true;
+
+              expSay("노션에 저장했습니다.");
+
+              if (d.url) window.open(d.url, "_blank", "noopener");
+
+            } else if (d && d.need !== "token" && d.error) {
+
+              expSay("노션이 거절했습니다 — " + d.error);
+
+              /* 설정은 돼 있는데 거절당한 것이므로 붙여넣기로 넘어가지 않는다 */
+              done = true;
+
+            }
+
+          } catch (e) {}
+
+        }
+
+
+        /* ② 아직 워커에 토큰이 없으면 예전 방식 — 복사하고 페이지를 열어 준다 */
+        if (!done) {
+
+          const ok = await expCopy(expMd());
+
+          window.open(url, "_blank", "noopener");
+
+          expSay(
+            ok
+              ? "마크다운을 복사했습니다 — 노션에서 붙여넣기(Ctrl+V) 하세요."
+              : "노션을 열었습니다. 복사가 막혀 있어 «복사» 를 한 번 눌러 주세요."
+          );
+
+        }
+
+
+        b.disabled = false;
+        b.textContent = was;
+
+      }
+
+    };
+
+  });
 
 
   el.file.onchange =
@@ -2104,12 +2546,24 @@ function renderModelBar() {
     ],
 
     [
-      "openai",
-      "Claude"
+      "opus",
+      "Opus 5"
+    ],
+
+    [
+      "sonnet",
+      "Sonnet 5"
+    ],
+
+    [
+      "haiku",
+      "Haiku 4.5"
     ]
 
     /* v202 — Gemini 탭 제거. 중계 워커가 전부 Claude 로 보내므로
-       고를 것이 없고, 이름만 남으면 헷갈린다. */
+       고를 것이 없고, 이름만 남으면 헷갈린다.
+       ★ v255 — «Claude» 한 칸을 모델 이름 세 칸으로 갈랐다.
+         고른 것은 ai:mode 로 저장되어 다음에 열어도 그대로 있다. */
 
   ];
 
@@ -2134,8 +2588,8 @@ function renderModelBar() {
 
 
   if (
-    state.mode !==
-    "auto"
+    state.mode ===
+    "openai"
   ) {
 
     html +=
@@ -2293,12 +2747,16 @@ function renderHint() {
 
 
   el.hint.textContent =
-    state.mode ===
-      "auto"
+    p.pinned
 
-      ? `자동 — ${current}`
+      ? `${PIN[state.mode].label} 로 고정됨`
 
-      : current;
+      : state.mode ===
+        "auto"
+
+        ? `자동 — ${current}`
+
+        : current;
 
 }
 
