@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>해설 배치 · 기출 해설 노트</title>
+<link rel="icon" href="./favicon.ico?v=267" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=267">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=267">
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb; --card:#fff; --ink:#0e1726; --mut:#5c6b84; --line:#dce3ed;
+  --ac:#1f6feb; --ok:#12946b; --bad:#d2453c; --warn:#c6851b; --sunk:#eef2f8;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0b1220; --card:#131d2e; --ink:#e4eaf3; --mut:#8798b2; --line:#22304a;
+  --ac:#55a0ff; --ok:#35be8d; --bad:#ff6b61; --warn:#e5ac45; --sunk:#0f1827;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Pretendard,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:20px;margin:0 0 4px;font-weight:700}
+.sub{color:var(--mut);font-size:13.5px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:700}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+select,input,button,textarea{font:inherit;color:inherit}
+select,input[type=text],input[type=password],input[type=email],input[type=number]{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+  background:var(--sunk);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:130px}
+button{padding:10px 16px;border-radius:7px;border:1px solid var(--line);
+  background:var(--sunk);cursor:pointer;font-weight:600;font-size:14px}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btns>button{flex:none}
+.stat{display:flex;gap:6px 22px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.stat b{color:var(--ink)}
+.bar{height:7px;background:var(--sunk);border-radius:4px;overflow:hidden;margin:12px 0 10px}
+.bar>i{display:block;height:100%;background:var(--ac);width:0;transition:width .25s}
+.log{max-height:340px;overflow:auto;background:var(--sunk);border:1px solid var(--line);
+  border-radius:7px;padding:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.7}
+.log div{white-space:pre-wrap;word-break:break-all}
+.log .ok{color:var(--ok)} .log .bad{color:var(--bad)} .log .skip{color:var(--warn)}
+.note{font-size:12.5px;color:var(--mut);margin-top:10px}
+.hide{display:none!important}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+</style>
+<style>
+.subnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  max-width:1100px;margin:14px auto 0;padding:8px 12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.subnav-t{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  color:var(--faint);margin-right:6px;white-space:nowrap}
+.subnav a{font-size:13px;font-weight:600;text-decoration:none;padding:7px 11px;
+  border-radius:7px;color:var(--mut);white-space:nowrap}
+.subnav a:hover{background:var(--acs);color:var(--ac)}
+.subnav a.on{background:var(--ac);color:#fff}
+</style>
+</head>
+<body>
+<div class="subnav">
+  <span class="subnav-t">자료 만들기</span>
+  <a href="./ingest.html">PDF 자동 변환</a>
+  <a href="./review.html">검수</a>
+  <a href="./explain-batch.html" class="on">해설 배치</a>
+  <a href="./storage-clean.html">저장소 정리</a>
+  <a href="./practice.html" style="margin-left:auto">← 실기뷰어</a>
+</div>
+
+<div class="wrap">
+  <h1>해설 배치</h1>
+  <p class="sub">답이 있는 문항만 골라서 해설을 한 번에 돌림. 중간에 멈춰도 이어서 할 수 있음.</p>
+
+  <!-- 로그인 -->
+  <div class="card" id="loginCard">
+    <h2>로그인</h2>
+    <div class="row">
+      <div><label for="em">이메일</label><input id="em" type="email" autocomplete="username"></div>
+      <div><label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="btns"><button class="pri" id="btnLogin">들어가기</button></div>
+    <p class="note" id="loginMsg"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <!-- 대상 -->
+    <div class="card">
+      <h2>어느 것을 돌릴까</h2>
+      <div class="row">
+        <div><label for="fSub">과목</label><select id="fSub"></select></div>
+        <div><label for="fYear">연도</label><select id="fYear"><option value="">전체</option></select></div>
+        <div><label for="fSess">회차</label><select id="fSess"><option value="">전체</option></select></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label for="fMode">범위</label><select id="fMode">
+          <option value="missing">해설 없는 것만 (권장)</option>
+          <option value="all">전부 다시 (있는 해설도 덮어씀)</option>
+        </select></div>
+        <div><label for="fEffort">해설 상세도</label><select id="fEffort">
+          <option value="mid" selected>상세 (비전공자용 · 권장)</option>
+          <option value="high">아주 상세 (가장 길고 비쌈)</option>
+          <option value="low">짧게 (가장 쌈)</option>
+        </select></div>
+        <div><label for="fConc">동시 처리</label><select id="fConc">
+          <option>2</option><option selected>3</option><option>4</option><option>6</option>
+        </select></div>
+      </div>
+      <div class="btns">
+        <button id="btnScan">대상 세어보기</button>
+      </div>
+      <p class="note" id="scanMsg">과목을 고르고 «대상 세어보기»를 누르세요.</p>
+    </div>
+
+    <!-- 실행 -->
+    <div class="card">
+      <h2>진행</h2>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="stat">
+        <span>대상 <b id="sTotal">0</b></span>
+        <span>완료 <b id="sDone">0</b></span>
+        <span>실패 <b id="sBad">0</b></span>
+        <span>건너뜀 <b id="sSkip">0</b></span>
+        <span>입력토큰 <b id="sIn">0</b></span>
+        <span>출력토큰 <b id="sOut">0</b></span>
+      </div>
+      <div class="btns">
+        <button class="pri" id="btnRun" disabled>돌리기</button>
+        <button id="btnStop" disabled>멈추기</button>
+        <button id="btnRetry" disabled>실패한 것만 다시</button>
+      </div>
+      <p class="note">브라우저를 닫으면 멈춤. 다시 열고 «해설 없는 것만»으로 돌리면 남은 것부터 이어짐.</p>
+    </div>
+
+    <div class="card">
+      <h2>기록</h2>
+      <div class="log" id="log"><div class="mut">아직 없음</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script>
+(function(){
+"use strict";
+const CFG = window.APP_CONFIG || {};
+const $ = s => document.querySelector(s);
+
+/* 워커 주소 — config.js 에 CLAUDE_WORKER_URL 을 넣어 두면 그걸 씀.
+   없으면 아래 기본값. 배포한 gichul-ai 주소로 바꿔 주세요. */
+const WORKER = (CFG.CLAUDE_WORKER_URL || "https://gichul-ai.amirbatikunari.workers.dev").replace(/\/$/,"");
+const APPKEY = CFG.CLAUDE_APP_KEY || "";
+
+const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+
+/* ★ v252 — 사고량 고르개를 «해설을 얼마나 자세히 적을까» 로도 씀 */
+const DEPTH_OF = { low:"mid", mid:"full", high:"full" };
+let ROWS = [], TARGET = [], FAILED = [], RUNNING = false, STOP = false;
+/* v209 — 열쇠·설정이 잘못되면 1257개가 «전부» 같은 오류로 순식간에 탄다.
+   실제로 581개가 1초 만에 실패했다. 그래서 처음 5개가 연달아 같은 이유로
+   실패하면 스스로 멈추고 그 이유를 한 번만 크게 보여 준다. */
+let RUNBAD = 0, LASTWHY = "";
+const N = { total:0, done:0, bad:0, skip:0, tin:0, tout:0 };
+
+/* ── 기록 ─────────────────────────────────────────── */
+function log(msg, cls){
+  const box = $("#log");
+  if(box.dataset.clean !== "1"){ box.innerHTML = ""; box.dataset.clean = "1"; }
+  const d = document.createElement("div");
+  if(cls) d.className = cls;
+  d.textContent = new Date().toLocaleTimeString("ko-KR",{hour12:false}) + "  " + msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+/* 오류 문구를 보고 «무엇을 고쳐야 하는지» 를 짚어 준다 */
+function hint(why){
+  const box = $("#scanMsg");
+  let tip = "";
+  if(/403|forbidden|not allowed/i.test(why))
+    tip = `<b>Anthropic 이 요청 자체를 막았습니다.</b> 워커의
+           <code>/selftest</code> 를 브라우저로 열어 보세요 —
+           <code>https://gichul-ai.amirbatikunari.workers.dev/selftest</code><br>
+           거기 나오는 <code>upstream</code> 이 진짜 이유입니다.
+           보통 ① API 키가 잘못 붙여넣어졌거나 ② 결제·크레딧이 없거나
+           ③ 키가 해지된 경우입니다.`;
+  else if(/401|authentication/i.test(why))
+    tip = "API 키가 맞지 않습니다. 워커 설정에서 <b>ANTHROPIC_API_KEY</b> 를 다시 넣어 주세요.";
+  else if(/credit|balance/i.test(why))
+    tip = "Anthropic 계정에 잔액이 없습니다. 콘솔에서 결제 수단·크레딧을 확인해 주세요.";
+  else if(/model/i.test(why))
+    tip = "모델 이름이 맞지 않습니다. 워커 변수 <b>MODEL</b> 을 <code>claude-opus-5</code> 로 맞춰 주세요.";
+  else if(/CLAUDE_WORKER_URL|Failed to fetch|NetworkError/i.test(why))
+    tip = "워커에 닿지 못했습니다. <code>config.js</code> 의 <b>CLAUDE_WORKER_URL</b> 주소를 확인해 주세요.";
+  else tip = "위 기록의 첫 줄이 실제 이유입니다.";
+  box.innerHTML = `<span style="color:var(--bad)">멈췄습니다.</span> ${tip}`;
+}
+
+function paint(){
+  $("#sTotal").textContent = N.total;
+  $("#sDone").textContent  = N.done;
+  $("#sBad").textContent   = N.bad;
+  $("#sSkip").textContent  = N.skip;
+  $("#sIn").textContent    = N.tin.toLocaleString();
+  $("#sOut").textContent   = N.tout.toLocaleString();
+  const seen = N.done + N.bad + N.skip;
+  $("#barFill").style.width = N.total ? Math.round(seen / N.total * 100) + "%" : "0%";
+}
+
+/* ── 로그인 ───────────────────────────────────────── */
+async function gate(){
+  const { data } = await sb.auth.getSession();
+  if(data?.session){ $("#loginCard").classList.add("hide"); $("#main").classList.remove("hide"); return true; }
+  return false;
+}
+$("#btnLogin").addEventListener("click", async () => {
+  const email = $("#em").value.trim(), password = $("#pw").value;
+  if(!email || !password) return void ($("#loginMsg").textContent = "이메일과 비밀번호를 넣으세요.");
+  $("#btnLogin").disabled = true; $("#loginMsg").textContent = "확인 중…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("#btnLogin").disabled = false;
+  if(error) return void ($("#loginMsg").textContent = "들어가지 못했습니다 — " + error.message);
+  $("#loginMsg").textContent = "";
+  await gate(); await loadSubjects();
+});
+
+/* ── 과목·회차 ────────────────────────────────────── */
+async function loadSubjects(){
+  const { data, error } = await sb.from("practical_subjects").select("*").order("sort_order").order("id");
+  if(error){ $("#scanMsg").textContent = "과목을 불러오지 못했습니다 — " + error.message; return; }
+  $("#fSub").innerHTML = (data||[]).map(s => `<option value="${s.id}">${s.name}</option>`).join("")
+    || `<option value="">과목이 없습니다</option>`;
+  const keep = localStorage.getItem("prac:sub");
+  if(keep && (data||[]).some(s => String(s.id) === keep)) $("#fSub").value = keep;
+}
+
+async function fetchRows(sid){
+  const out = [];
+  for(let from = 0; from < 20000; from += 1000){
+    const { data, error } = await sb.from("practicals")
+      .select("*")
+      .eq("subject_id", sid)
+      .order("year",{ascending:false}).order("session",{ascending:false}).order("no")
+      .range(from, from + 999);
+    if(error) throw error;
+    out.push(...(data||[]));
+    if(!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+/* ★ v267 — 실기 화면에서 «🔒 쉬운해설 고정» 한 문항은 여기서도 건드리지 않는다.
+   ez_lock 칸이 없으면(SQL 전) 그 기기에 적어 둔 목록을 본다. */
+const ezFixed = r => {
+  if(r && r.ez_lock) return true;
+  try{ return (JSON.parse(localStorage.getItem("prac:ezfix:v1") || "[]") || []).map(String).includes(String(r.id)); }
+  catch(e){ return false; }
+};
+function applyFilters(){
+  const y = $("#fYear").value, s = $("#fSess").value, mode = $("#fMode").value;
+  return ROWS.filter(r => {
+    if(y && String(r.year) !== y) return false;
+    if(s && String(r.session) !== s) return false;
+    if(!r.a_url && !r.a_text) return false;                 // 답 없는 문항은 대상 아님
+    if(ezFixed(r)) return false;                            // ★ v267 — 쉬운해설 고정
+    if(mode === "missing" && r.easy_md) return false;
+    return true;
+  });
+}
+
+$("#btnScan").addEventListener("click", async () => {
+  const sid = +$("#fSub").value;
+  if(!sid) return void ($("#scanMsg").textContent = "과목을 먼저 고르세요.");
+  localStorage.setItem("prac:sub", String(sid));
+  $("#btnScan").disabled = true; $("#scanMsg").textContent = "불러오는 중…";
+  try{
+    ROWS = await fetchRows(sid);
+    const years = [...new Set(ROWS.map(r => r.year))].sort((a,b)=>b-a);
+    const sess  = [...new Set(ROWS.map(r => r.session))].sort();
+    const ky = $("#fYear").value, ks = $("#fSess").value;
+    $("#fYear").innerHTML = `<option value="">전체</option>` + years.map(v=>`<option>${v}</option>`).join("");
+    $("#fSess").innerHTML = `<option value="">전체</option>` + sess.map(v=>`<option value="${v}">제${v}회</option>`).join("");
+    if(ky) $("#fYear").value = ky;
+    if(ks) $("#fSess").value = ks;
+
+    TARGET = applyFilters();
+    const noAns = ROWS.filter(r => !r.a_url && !r.a_text).length;
+    const fixN = ROWS.filter(r => (r.a_url || r.a_text) && ezFixed(r)).length;
+    N.total = TARGET.length; N.done = N.bad = N.skip = N.tin = N.tout = 0;
+    FAILED = []; paint();
+    $("#btnRun").disabled = TARGET.length === 0;
+    $("#scanMsg").innerHTML =
+      `전체 <b>${ROWS.length}</b>문항 · 이번에 돌릴 대상 <b>${TARGET.length}</b>문항` +
+      (noAns ? ` · <span class="pill">답 없어서 제외 ${noAns}</span>` : "") +
+      (fixN ? ` · <span class="pill">🔒 고정이라 제외 ${fixN}</span>` : "");
+  }catch(e){
+    $("#scanMsg").textContent = "불러오지 못했습니다 — " + (e.message || e);
+  }finally{ $("#btnScan").disabled = false; }
+});
+
+["#fYear","#fSess","#fMode"].forEach(sel => $(sel).addEventListener("change", () => {
+  if(!ROWS.length) return;
+  TARGET = applyFilters(); N.total = TARGET.length;
+  N.done = N.bad = N.skip = 0; FAILED = []; paint();
+  $("#btnRun").disabled = TARGET.length === 0;
+  $("#scanMsg").innerHTML = `이번에 돌릴 대상 <b>${TARGET.length}</b>문항`;
+}));
+
+/* ── 해설 JSON → 마크다운 ─────────────────────────── */
+function toMd(sol){
+  const L = [];
+  /* ★ v256 — 목록 칸을 «['가','나']» 처럼 통째로 한 덩어리로 적어 보내는 일이 있다.
+     그대로 찍으면 대괄호·따옴표가 화면에 그대로 나온다. 풀어서 줄로 나눈다. */
+  /* ★ v257 — 칸을 못 채우고 «<item>…</item>» 같은 표를 통째로 적어 보내는 일이 있다.
+     그대로 찍으면 태그가 화면에 그대로 나온다. 태그를 걷어내고 줄로 나눈다. */
+  const XML = /<\/?(item|step|symbol|sym|mean|unit|val|say|math|calc|plain|read|why|eq|steps|symbols|given|background|also|tags|tag|check|trap|memo|answer|gist|write_solution|why_answer|easy|min_ans|must|terms|formula_why|pairs)\s*\/?>/gi;
+  const unxml = t => String(t == null ? "" : t)
+    .replace(/<\/?item\s*\/?>/gi, "\n")
+    .replace(XML, " ")
+    .replace(/<[^<>\n]{1,30}>/g, " ")
+    .replace(/[ \t]{2,}/g, " ").trim();
+  const arr = v => {
+    if(Array.isArray(v)) return v.flatMap(x => (x && typeof x === "object") ? [x] : arr(x));
+    let t = String(v == null ? "" : v).trim();
+    if(!t) return [];
+    if(/<\w+[^>]*>/.test(t))
+      return unxml(t).split("\n").map(x => x.replace(/^[-·•\s]+/, "").trim()).filter(Boolean);
+    /* ★ v280 — 칸을 «JSON 글자» 로 적어 보내는 일이 있다 (steps 가 '[{"say":…},{…}]' 인 글자).
+       수식의 백슬래시(\\dfrac)·줄바꿈 때문에 JSON.parse 가 깨지면, 예전에는 쉼표로 쪼개다가
+       단계가 통째로 날아갔다 (소문항 둘 중 하나만 남음). 손봐서 다시 읽는다. */
+    const loose = x => {
+      const fixBs = y => y.replace(/\\\\|\\(?:(?=[A-Za-z]{2,})(?!u[0-9a-fA-F]{4})|(?!["\\/bfnrtu]))/g, m => m.length === 2 ? m : "\\\\");   /* \times·\dfrac 처럼 수식 명령 앞 백슬래시를 살림 */
+      for(const y of [x, fixBs(x), fixBs(x).replace(/\r?\n/g, " "), fixBs(x).replace(/\r?\n/g, " ").replace(/,\s*([\]}])/g, "$1")]){
+        try{ return JSON.parse(y); }catch(e){}
+      }
+      return undefined;
+    };
+    if(/^\{[\s\S]*\}$/.test(t)){                     /* {…} 하나, 또는 {…},{…} 여럿 */
+      const j = loose(t); if(j && typeof j === "object") return Array.isArray(j) ? j : [j];
+      const k = loose("[" + t + "]"); if(Array.isArray(k)) return k;
+    }
+    if(/^\[[\s\S]*\]$/.test(t)){
+      const j = loose(t); if(Array.isArray(j)) return j;
+      try{ const j2 = JSON.parse(t.replace(/'/g, '"')); if(Array.isArray(j2)) return j2; }catch(e){}
+      /* 객체가 들어 있던 글자면 쉼표로 쪼개지 않는다 — 쪼개면 조각난 글자가 화면에 그대로 나온다 */
+      if(/^\[\s*\{/.test(t)){
+        const objs = [];
+        t.slice(1, -1).split(/\}\s*,\s*\{/).forEach((p, i, a) => {
+          const q = (i ? "{" : "") + p + (i < a.length - 1 ? "}" : "");
+          const o = loose(q); if(o && typeof o === "object") objs.push(o);
+        });
+        if(objs.length) return objs;
+      }
+      return t.slice(1, -1).split(/['"]\s*,\s*['"]/)
+        .map(x => x.replace(/^['"]|['"]$/g, "").trim()).filter(Boolean);
+    }
+    return [t];
+  };
+  /* 수식 손질
+     · 천 단위 쉼표(6,600)는 KaTeX 에서 뒤가 휑하게 벌어진다 → {,} 로 붙인다
+     · \quad · \; · \hspace 같은 빈칸 명령이 들어오면 사이가 벌어진다 → 걷어낸다
+     · 한글이 섞인 식은 수식으로 그리면 깨진다 → 글줄로 내보낸다 */
+  const HAN = /[가-힣]/;
+  const tex = t => {
+    let x = String(t == null ? "" : t).trim();
+    if(!x) return null;
+    x = x.replace(/^\$+|\$+$/g, "").trim();
+    x = x.replace(/(\d),(?=\d{3})/g, "$1{,}");
+    x = x.replace(/\\(?:qquad|quad|hspace\{[^}]*\}|[;:!])/g, " ");
+    x = x.replace(/\\ /g, " ").replace(/[ \t]{2,}/g, " ").trim();
+    return x || null;
+  };
+  /* 맨 글자로 들어온 한글은 \text{} 로 감싼다 — 안 감싸면 수식이 깨진다 */
+  const wrapHan = x => {
+    if(!HAN.test(x)) return x;
+    const keep = [];
+    let y = x.replace(/\\(?:text|mathrm|mathbf)\{[^{}]*\}/g, m => {
+      keep.push(m); return "\u0000" + (keep.length - 1) + "\u0000";
+    });
+    y = y.replace(/[가-힣][가-힣0-9 ·()]*[가-힣]|[가-힣]/g, m => `\\text{${m.trim()}}`);
+    return y.replace(/\u0000(\d+)\u0000/g, (_, i) => keep[+i]);
+  };
+  /* ★ v258 — 같은 식을 여러 꼴로 이어 쓸 때 «=» 를 세로로 맞춰 그린다 */
+  const eqBlock = list => {
+    const rows = (Array.isArray(list) ? list : [list]).map(tex).filter(Boolean).map(wrapHan);
+    if(!rows.length) return;
+    if(rows.length === 1) return void L.push(`$$${rows[0]}$$`, "");
+    const body = rows.map(r => {
+      if(/^=/.test(r)) return `&= ${r.replace(/^=\s*/, "")}`;
+      /* 줄마다 «첫 등호» 를 맞춤자리로 삼는다 — 기호식과 한글식의 = 가 세로로 선다.
+         \xrightarrow{X=0} 안의 등호는 중괄호 안이므로 건너뛴다. */
+      let d = 0, k = -1;
+      for(let i = 0; i < r.length; i++){
+        const c = r[i];
+        if(c === "{") d++;
+        else if(c === "}") d--;
+        else if(c === "=" && d === 0 && r[i-1] !== "<" && r[i-1] !== ">" && r[i+1] !== "="){ k = i; break; }
+      }
+      return k > 0 ? `${r.slice(0, k).trim()} &= ${r.slice(k + 1).trim()}` : `& ${r}`;
+    }).join(" \\\\ ");
+    L.push(`$$\\begin{aligned} ${body} \\end{aligned}$$`, "");
+  };
+  const eqLine = t => eqBlock(t);
+  const inlineTex = t => {
+    const x = String(t || "").trim();
+    if(!x) return "";
+    return /[\\^_{]/.test(x) ? `$${tex(x)}$` : x;
+  };
+
+  /* ★ v263 — 글 칸(검산·흔한 실수·왜)에 수식을 넣으면 백슬래시가 떨어져 나간 채로 와서
+     «dfrac155 times ...» 처럼 글자가 흩어진다. 떨어진 백슬래시를 되살리고,
+     그래도 못 살릴 만큼 깨진 것은 수식 표시를 벗겨 글로 읽히게 둔다. */
+  const CMD = /(dfrac|tfrac|frac|sqrt|times|div|cdot|approx|fallingdotseq|leqq|geqq|leq|geq|neq|Omega|omega|theta|alpha|beta|rho|mu|Delta|sum|mathrm|text|left|right|tan|cos|sin|log|ln|xrightarrow|quad|pi)/g;
+  const fixMath = t => String(t == null ? "" : t).replace(/\$([^$\n]{1,400})\$/g, (m, body) => {
+    /* ① \t · \f 는 JSON 에서 «탭 · 페이지넘김» 으로 읽혀 버린다.
+       그래서 \times 가 [탭]imes, \fallingdotseq 가 [넘김]allingdotseq 로 도착한다.
+       그 자리에 백슬래시를 도로 꽂아 준다. */
+    const BACK = { "\t":"\\t", "\f":"\\f", "\b":"\\b", "\v":"\\v", "\r":"\\r" };
+    let b = body.replace(/[\t\f\v\b\r]/g, c => BACK[c] || "\\");
+    /* ② 백슬래시가 떨어져 나간 명령말 앞에 도로 붙인다.
+       \times\dfrac 처럼 붙어 있던 것이 \timesdfrac 로 와도 갈라 준다.
+       이미 백슬래시가 앞에 있는 것은 건드리지 않는다. */
+    b = b.replace(CMD, (w, _g, off, str) => (off > 0 && str[off - 1] === "\\") ? w : "\\" + w);
+    return "$" + b + "$";
+  });
+  const line = t => fixMath(unxml(String(t == null ? "" : t))).replace(/\n{2,}/g, "\n").trim();
+
+  if(sol.gist) L.push(`**${line(sol.gist)}**`, "");
+  /* ★ v309 — 비전공자용 «쉽게 말하면» */
+  if(arr(sol.easy).length){
+    L.push("**쉽게 말하면**", "");
+    arr(sol.easy).forEach(e => L.push(`- ${line(typeof e === "string" ? e : (e && (e.text || e.say)) || "")}`));
+    L.push("");
+  }
+
+  if(arr(sol.background).length){
+    L.push("**먼저 알아야 할 것**", "");
+    arr(sol.background).forEach(b => L.push(`- ${b}`));
+    L.push("");
+  }
+  if(arr(sol.read).length){
+    L.push("**문제를 이렇게 읽음**", "");
+    arr(sol.read).forEach(b => L.push(`- ${b}`));
+    L.push("");
+  }
+  if(arr(sol.given).length){
+    L.push("**주어진 값**", "");
+    arr(sol.given).forEach(g => L.push(`- ${g}`));
+    L.push("");
+  }
+  if(arr(sol.symbols).length){
+    L.push("**부호**", "");
+    arr(sol.symbols).forEach(x => {
+      if(typeof x === "string") return void L.push(`- ${x}`);
+      const u = x.unit ? ` · 단위 ${inlineTex(x.unit)}` : "";
+      const v = x.val  ? ` · 이 문제: ${inlineTex(x.val)}` : "";
+      const sy = HAN.test(String(x.sym||"")) ? String(x.sym||"") : `$${tex(x.sym)||""}$`;
+      /* ★ v277 — 읽는 발음 «브이 에스» 를 기호 옆에 */
+      const pr = x.say ? ` «${String(x.say).replace(/[«»\n]/g, "").trim()}»` : "";
+      L.push(`- ${sy}${pr} — ${x.mean || ""}${u}${v}`);
+    });
+    L.push("");
+  }
+  /* 옛 워커(v232)는 «쓰는 식» 을 따로 보낸다. 새 워커는 안 보낸다 — 풀이 안에서 세운다 */
+  if(arr(sol.formula).length){
+    L.push("**쓰는 식**", "");
+    arr(sol.formula).forEach(f => {
+      if(typeof f === "string") return void eqLine(f);
+      eqLine(f.tex);
+      if(f.read) L.push(`- 읽기: ${f.read}`, "");
+      if(f.why)  L.push(`- 왜: ${f.why}`, "");
+    });
+  }
+  if(arr(sol.steps).length){
+    L.push("**풀이**", "");
+    arr(sol.steps).forEach((s, i) => {
+      if(typeof s === "string") return void L.push(`${i+1}. ${s}`, "");
+      /* 소문항 번호로 시작하면 «1. (1)» 처럼 번호가 겹치지 않게 둔다 */
+      const sy0 = line(s.say);
+      L.push(/^\s*(\(\d+\)|[①-⑳]|\d+\s*[).])/.test(sy0) ? `${sy0}` : `${i+1}. ${sy0}`, "");
+      /* ★ v277 — 소문항 답은 그 단계 바로 밑에 먼저 (단답·서술은 «답 → 왜» 순서) */
+      if(s.ans) L.push(`> ${line(s.ans).replace(/\n+/g, " ")}`, "");
+      /* 새 판 — 등호로 이은 한 줄(여럿이면 줄마다) */
+      /* ★ v260 — 한 단계는 다섯 줄. 순서를 화면에서 못 박는다.
+         ①부호식 ②해설식 ③숫자대입식 ④읽기식 ⑤왜 */
+      const eqs = Array.isArray(s.eq) ? s.eq : (s.eq ? [s.eq] : []);
+      if(s.sym || s.plain || s.num || s.unit){
+        if(s.sym)   eqBlock(s.sym);
+        if(s.plain) eqBlock(s.plain);
+        if(s.num)   eqBlock(s.num);
+        if(s.unit)  eqBlock(s.unit);   /* 단위만 넣어 결과 단위를 맞춰 보는 식 */
+      }
+      else if(eqs.length) eqs.forEach(e => eqBlock(e));
+      else eqBlock([s.math, s.calc].filter(Boolean));   /* 옛 판 대비 */
+      if(s.read) L.push(`- 읽기: “${line(s.read).replace(/^["“]|["”]$/g, "")}”`, "");
+      if(s.why)  L.push(`- 왜: ${line(s.why)}`, "");
+      L.push("");
+    });
+  }
+  /* 답에 이미 단위가 붙어 온 경우 또 붙이지 않는다 (70[mm^2]mm^2 처럼 되던 것) */
+  const ansT = line(sol.answer).trim();
+  const unitT = String(sol.unit || "").trim();
+  /* ★ v277 — «(2)» 앞에서 줄을 나눈다 (띄어쓰기가 없어도) */
+  const ansLines = ansT.split(/\n+|(?=\(\d{1,2}\))/).map(x => x.trim()).filter(Boolean);
+  const many = ansLines.length > 1;                 /* 소문항이 여럿인 답 */
+  const dup = unitT && (/[,，·]/.test(unitT) || ansT.includes(unitT) || ansT.includes(unitT.replace(/[\[\]]/g, "")));
+  const stepAns = arr(sol.steps).some(s => s && typeof s === "object" && String(s.ans || "").trim());
+  /* ★ v309 — 단답·서술·나열형 «최소 답안» : 이만큼만 써도 만점 + 필수 핵심어 형광펜 */
+  const MINA = arr(sol.min_ans).filter(x => x && typeof x === "object" && String(x.text || "").trim());
+  if(MINA.length){
+    L.push("**최소 답안 — 이만큼은 꼭**", "");
+    MINA.forEach(x => {
+      const must = arr(x.must).map(w => String(w || "").replace(/==/g, "").trim()).filter(Boolean);
+      let t = line(x.text).replace(/\n+/g, " ");
+      /* 필수어가 형광펜 없이 왔으면 첫 자리에 칠해 준다 */
+      must.forEach(w => {
+        if(t.includes("==" + w + "==")) return;
+        const i = t.indexOf(w); if(i < 0) return;
+        const pre = t.slice(0, i); if(((pre.match(/==/g) || []).length) % 2) return;
+        t = pre + "==" + w + "==" + t.slice(i + w.length);
+      });
+      const q = String(x.q || "").trim();
+      L.push(`> ${q && !t.startsWith(q) ? q + " " : ""}${t}`, "");
+      if(must.length) L.push(`- 필수: ${must.map(w => "★ ==" + w + "==").join(" · ")}`, "");
+    });
+  }
+  /* ★ v276 — 나열형 «항목» · 서술형 «채점 포인트» */
+  if(arr(sol.items).length){
+    L.push("**항목**", "");
+    arr(sol.items).forEach(it => {
+      if(typeof it === "string") return void L.push(`- ${line(it)}`);
+      const w = line(it.word || it.name || it.item || "");
+      const m = line(it.mean || it.desc || "");
+      L.push(`- **${w}**${m ? " — " + m : ""}`);
+      if(it.why) L.push(`- 왜: ${line(it.why)}`);
+    });
+    L.push("");
+  }
+  if(arr(sol.keys).length){
+    L.push("**채점 포인트**", "");
+    arr(sol.keys).forEach(k => L.push(`- ${line(k)}`));
+    L.push("");
+  }
+  /* ★ v277 — 소문항 답을 단계마다 적었으면 맨 아래 «답» 몰아 쓰기는 뺀다 */
+  if(!stepAns && ansT){
+    L.push("**답**", "");
+    if(many) ansLines.forEach(x => L.push(`> ${x}`, ""));
+    else L.push(`> ${ansT}${unitT && !dup ? " " + unitT : ""}`, "");
+  }
+  if(sol.why_answer) L.push("**왜 이 답인가**", "", line(sol.why_answer), "");
+  if(sol.check)      L.push("**검산**", "", line(sol.check), "");
+  if(sol.memo)       L.push("**외우기**", "", line(sol.memo), "");
+  /* ★ v276 — 두문자 : 첫 줄 `글자` · 줄마다 «글자 — 항목» (화면에서 고쳐 쓸 수 있음) */
+  /* ★ v283 — 소문항마다 두문자 묶음 (mnemos 배열). 예전 mnemo 하나도 그대로 받음.
+     묶음이 둘 이상이면 «(1) 장점» 같은 이름 줄을 앞에 붙인다 */
+  const MNS = (Array.isArray(sol.mnemos) && sol.mnemos.length) ? sol.mnemos
+            : (Array.isArray(sol.mnemo) ? sol.mnemo : (sol.mnemo && typeof sol.mnemo === "object" ? [sol.mnemo] : []));
+  const MNG = MNS.filter(M => M && typeof M === "object" && (M.code || arr(M.map).length));
+  if(MNG.length){
+    L.push("**두문자**", "");
+    MNG.forEach((MN, gi) => {
+      let lb = String(MN.label || MN.q || "").replace(/[\n`*]/g, " ").replace(/\s+/g, " ").trim();
+      if(MNG.length > 1 || lb){
+        if(!lb) lb = `(${gi + 1})`;
+        else if(!/^\(\d{1,2}\)/.test(lb)) lb = `(${gi + 1}) ${lb.replace(/^\d{1,2}[.)]\s*/, "")}`;
+        L.push(lb, "");
+      }
+      const code = String(MN.code || arr(MN.map).map(m => (m && (m.h || m.head)) || "").join("")).replace(/[`\n]/g, "").trim();
+      if(code) L.push("`" + code + "`", "");
+      arr(MN.map).forEach(m => {
+        if(typeof m === "string") return void L.push(`- ${line(m)}`);
+        L.push(`- ${String(m.h || m.head || "").replace(/[—\n]/g, "").trim()} — ${line(m.word || m.w || "")}`);
+      });
+      L.push("");
+      if(MN.say) L.push(line(MN.say), "");
+    });
+  }
+  if(sol.trap)       L.push("**흔한 실수**", "", line(sol.trap), "");
+  if(arr(sol.also).length){
+    L.push("**같이 알아 두기**", "");
+    arr(sol.also).forEach(x => L.push(`- ${x}`));
+    L.push("");
+  }
+  /* ★ v310 — 비전공자용 표 세 가지 (맨 아래) : 용어 풀이 · 공식이 왜 · 헷갈리는 짝 */
+  const cel = t => line(t).replace(/\n+/g, " ").replace(/\|/g, "∣").trim() || " ";
+  const TMS = arr(sol.terms).filter(x => x && typeof x === "object" && String(x.word || "").trim());
+  if(TMS.length){
+    const hasLike = TMS.some(x => String(x.like || "").trim());
+    L.push("**용어 풀이**", "", hasLike ? "| 용어 | 쉬운 뜻 | 비유·예 |" : "| 용어 | 쉬운 뜻 |", hasLike ? "|---|---|---|" : "|---|---|");
+    TMS.forEach(x => L.push(`| **${cel(x.word)}** | ${cel(x.easy)} |` + (hasLike ? ` ${cel(x.like)} |` : "")));
+    L.push("");
+  }
+  const FWS = arr(sol.formula_why).filter(x => x && typeof x === "object" && String(x.why || "").trim());
+  if(FWS.length){
+    L.push("**공식이 왜 이렇게 생겼나**", "", "| 식의 부분 | 왜 붙나 |", "|---|---|");
+    FWS.forEach(x => {
+      const p0 = String(x.part || "").trim();
+      const p = !p0 ? " " : HAN.test(p0) && !/[\\^_{]/.test(p0) ? cel(p0) : `$${(tex(p0) || "").replace(/\|/g, "\\vert ")}$`;
+      L.push(`| ${p} | ${cel(x.why)} |`);
+    });
+    L.push("");
+  }
+  const PRS = arr(sol.pairs).filter(x => x && typeof x === "object" && String(x.a || "").trim() && arr(x.rows).length);
+  if(PRS.length){
+    L.push("**헷갈리는 짝**", "");
+    PRS.forEach(P => {
+      L.push(`| 구분 | ${cel(P.a)} | ${cel(P.b)} |`, "|---|---|---|");
+      arr(P.rows).forEach(r => { if(r && typeof r === "object") L.push(`| ${cel(r.k)} | ${cel(r.a)} | ${cel(r.b)} |`); });
+      L.push("");
+    });
+  }
+  const TG = [sol.kind ? String(sol.kind).replace(/형$/, "") + "형" : null, ...arr(sol.tags)].filter(Boolean);
+  if(TG.length) L.push("", `\`${TG.join("` `")}\``);
+  /* ★ v277 — 형광펜 표시 ==핵심== → 〖핵심〗. «==» 는 글자→수식 바꾸기가 수식 기호로 삼켜 버려서 */
+  return L.map(x => /^\s*\$\$/.test(x) ? x : x.replace(/==([^=\n]{1,120}?)==/g, "〖$1〗"))
+          .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/* ── 한 문항 ──────────────────────────────────────── */
+async function one(r){
+  const tag = `${r.year}-${r.session} ${String(r.no).padStart(2,"0")}번`;
+  const res = await fetch(WORKER + "/explain", {
+    method:"POST",
+    headers: Object.assign({"Content-Type":"application/json"}, APPKEY ? {"x-app-key":APPKEY} : {}),
+    body: JSON.stringify({
+      q_url:r.q_url, q_text:r.q_text, a_url:r.a_url, a_text:r.a_text,
+      year:r.year, session:r.session, no:r.no, points:r.points,
+      effort: $("#fEffort").value,
+      depth: DEPTH_OF[$("#fEffort").value] || "full"
+    })
+  });
+  const d = await res.json().catch(() => ({}));
+
+  if(!res.ok){
+    if(d.code === "NO_ANSWER"){ N.skip++; log(`${tag} 건너뜀 — 답 없음`, "skip"); return; }
+    throw new Error(d.error || ("HTTP " + res.status));
+  }
+  if(d.usage){ N.tin += d.usage.input_tokens || 0; N.tout += d.usage.output_tokens || 0; }
+  /* ★ v255 — 새 워커는 depth 를 되돌려 준다. 없으면 옛 판이라 옛 모양으로 나온다 */
+  if(!d.depth && !window.__oldSaid){
+    window.__oldSaid = true;
+    log("⚠ 워커가 옛 판입니다 — gichul-ai 워커에 새 index.js 를 배포하세요", "bad");
+  }
+
+  const md = toMd(d.sol || {});
+  if(!md || md.length < 20) throw new Error("해설이 비어서 왔습니다");
+  /* ★ v297 — 워커가 두 번 더 받아도 원칙 미달이면: 있던 해설은 그대로 두고 실패로 셈 */
+  const probs = Array.isArray(d.problems) ? d.problems : [];
+  if(probs.length && r.easy_md) throw new Error("원칙 미달 · 있던 해설 유지 — " + probs[0]);
+
+  /* v204 — 해설 칸이 생겼으므로 상태·판번호도 같이 남긴다.
+     st_sol 은 raw — 기계가 만든 것이라 사람이 검수 화면에서 한 번 봐야 draft 가 된다.
+     sol_ver 를 올려 두면 나중에 «몇 판째인지» 를 알 수 있다.
+     옛 표(칸이 없는 상태)에서도 돌아가게, 실패하면 easy_md 만 다시 넣는다. */
+  const patch = { easy_md: md, st_sol: "raw", sol_by: d.model || null,
+                  sol_ver: (r.sol_ver || 0) + 1 };
+  let up = await sb.from("practicals").update(patch).eq("id", r.id);
+  if(up.error && /st_sol|sol_ver|sol_by|column|schema cache/i.test(up.error.message)){
+    up = await sb.from("practicals").update({ easy_md: md }).eq("id", r.id);
+  }
+  if(up.error) throw new Error("저장 실패 — " + up.error.message);
+
+  N.done++;
+  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""}` + (probs.length ? `  ⚠ 원칙 미달 ${probs.length}곳 — ${probs[0]}` : ""), probs.length ? "bad" : "ok");
+}
+
+/* ── 동시 처리 ────────────────────────────────────── */
+async function run(list){
+  RUNNING = true; STOP = false;
+  $("#btnRun").disabled = true; $("#btnScan").disabled = true;
+  $("#btnStop").disabled = false; $("#btnRetry").disabled = true;
+
+  const conc = +$("#fConc").value || 3;
+  let i = 0;
+  FAILED = [];
+
+  async function worker(){
+    while(!STOP){
+      const idx = i++;
+      if(idx >= list.length) return;
+      const r = list[idx];
+      try{ await one(r); }
+      catch(e){
+        N.bad++; FAILED.push(r);
+        const why = String(e.message || e).slice(0, 120);
+        log(`${r.year}-${r.session} ${String(r.no).padStart(2,"0")}번 실패 — ${why}`, "bad");
+        if(N.done === 0){
+          RUNBAD = (why === LASTWHY) ? RUNBAD + 1 : 1;
+          LASTWHY = why;
+          if(RUNBAD >= 5 && !STOP){
+            STOP = true;
+            log("같은 이유로 연달아 실패해서 멈췄습니다 — 설정 문제로 보입니다", "bad");
+            hint(why);
+          }
+        }
+      }
+      paint();
+    }
+  }
+  await Promise.all(Array.from({length:conc}, worker));
+
+  RUNNING = false;
+  $("#btnStop").disabled = true; $("#btnScan").disabled = false;
+  $("#btnRun").disabled = false;
+  $("#btnRetry").disabled = FAILED.length === 0;
+  log(STOP ? `멈춤 — 완료 ${N.done} · 실패 ${N.bad}` : `끝 — 완료 ${N.done} · 실패 ${N.bad} · 건너뜀 ${N.skip}`);
+}
+
+$("#btnRun").addEventListener("click", () => {
+  if(RUNNING || !TARGET.length) return;
+  N.done = N.bad = N.skip = N.tin = N.tout = 0; N.total = TARGET.length;
+  RUNBAD = 0; LASTWHY = ""; paint();
+  log(`시작 — ${TARGET.length}문항 · 사고량 ${$("#fEffort").value} · 동시 ${$("#fConc").value}`);
+  run(TARGET.slice());
+});
+$("#btnStop").addEventListener("click", () => { STOP = true; $("#btnStop").disabled = true; log("멈추는 중… 진행 중인 것은 끝내고 섭니다"); });
+$("#btnRetry").addEventListener("click", () => {
+  if(RUNNING || !FAILED.length) return;
+  const again = FAILED.slice();
+  N.total = again.length; N.done = N.bad = N.skip = 0; paint();
+  log(`실패한 ${again.length}문항 다시`);
+  run(again);
+});
+
+window.addEventListener("beforeunload", e => { if(RUNNING){ e.preventDefault(); e.returnValue = ""; } });
+
+/* ── 시작 ─────────────────────────────────────────── */
+(async function boot(){
+  if(!CFG.SUPABASE_URL){ $("#loginMsg").textContent = "config.js 를 찾지 못했습니다."; return; }
+  if(await gate()) await loadSubjects();
+  sb.auth.onAuthStateChange?.(() => {});
+})();
+})();
+</script>
+</body>
+</html>
