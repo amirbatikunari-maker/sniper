@@ -9,7 +9,7 @@
      그게 한 달 전송량 12GB 의 원인이었다.
      IMG 캐시는 앱 판번호를 올려도 지우지 않는다 — 파일명이 고정이라
      내용이 바뀔 일이 없기 때문. (그림을 갈아끼웠으면 아래 IMG 를 img-v2 로.) */
-const SHELL = "shell-v298", DATA = "data-v3", IMG = "img-v1";
+const SHELL = "shell-v331", DATA = "data-v3", IMG = "img-v1";
 const FILES = ["./","./index.html","./config.js","./ai-chat.js","./ai-viewer.js","./ai-explain.js","./ncs-gijun.js","./music.js","./manifest.json","./icon.svg","./favicon.ico","./favicon-32.png","./apple-touch-icon.png","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./practice.html","./calc.html","./upload.html","./ingest.html","./interview.html","./portfolio.html","./app-enhance.css","./app-enhance.js","./calc-engine.js","./explain-batch.html","./storage-clean.html","./review.html","./simple.js"];
 
 /* ★ v235 — 한 파일이라도 못 받으면 addAll 은 통째로 실패하고,

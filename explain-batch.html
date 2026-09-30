@@ -172,6 +172,9 @@ let ROWS = [], TARGET = [], FAILED = [], RUNNING = false, STOP = false;
    실제로 581개가 1초 만에 실패했다. 그래서 처음 5개가 연달아 같은 이유로
    실패하면 스스로 멈추고 그 이유를 한 번만 크게 보여 준다. */
 let RUNBAD = 0, LASTWHY = "";
+/* ★ v328 — 문항마다 «몇 자 · 얼마» · 돌린 합계 (워커가 다시 받기까지 합쳐 계산해 보냄) */
+let SPENT = 0;
+const billTxt = b => b && b.calls > 0 ? ` · 약 ${(b.krw|0).toLocaleString()}원 (호출 ${b.calls}번 · 입력 ${(b.in_tokens/1000).toFixed(1)}k/출력 ${(b.out_tokens/1000).toFixed(1)}k 토큰)` : "";
 const N = { total:0, done:0, bad:0, skip:0, tin:0, tout:0 };
 
 /* ── 기록 ─────────────────────────────────────────── */
@@ -324,7 +327,7 @@ function toMd(sol){
      그대로 찍으면 대괄호·따옴표가 화면에 그대로 나온다. 풀어서 줄로 나눈다. */
   /* ★ v257 — 칸을 못 채우고 «<item>…</item>» 같은 표를 통째로 적어 보내는 일이 있다.
      그대로 찍으면 태그가 화면에 그대로 나온다. 태그를 걷어내고 줄로 나눈다. */
-  const XML = /<\/?(item|step|symbol|sym|mean|unit|val|say|math|calc|plain|read|why|eq|steps|symbols|given|background|also|tags|tag|check|trap|memo|answer|gist|write_solution|why_answer)\s*\/?>/gi;
+  const XML = /<\/?(item|step|symbol|sym|mean|unit|val|say|math|calc|plain|read|why|eq|steps|symbols|given|background|also|tags|tag|check|trap|memo|answer|gist|write_solution|why_answer|easy|min_ans|must|terms|formula_why|pairs|derive|gates|truth|logic)\s*\/?>/gi;
   const unxml = t => String(t == null ? "" : t)
     .replace(/<\/?item\s*\/?>/gi, "\n")
     .replace(XML, " ")
@@ -434,35 +437,80 @@ function toMd(sol){
     b = b.replace(CMD, (w, _g, off, str) => (off > 0 && str[off - 1] === "\\") ? w : "\\" + w);
     return "$" + b + "$";
   });
-  const line = t => fixMath(unxml(String(t == null ? "" : t))).replace(/\n{2,}/g, "\n").trim();
+  /* ★ v330 — 글 칸에 «C바» 처럼 읽는 말로 온 식 → $\overline{C}$ · 맨 글자로 쓴 논리식(S = ABC + D) → $…$ 로 감쌈 */
+  const oTxt = o => {
+    if(o == null) return "";
+    if(typeof o !== "object") return String(o);
+    if(Array.isArray(o)) return o.map(oTxt).filter(Boolean).join(" · ");
+    const pk = ks => { for(const k of ks){ const v = o[k]; if(v != null && typeof v !== "object" && String(v).trim()) return String(v).trim(); } return ""; };
+    const hd = pk(["name","term","word","label","item","key","k","title","sym","what","concept","q","h"]);
+    const va = pk(["value","val","v","num","amount"]);
+    const un = pk(["unit"]);
+    const de = pk(["desc","mean","meaning","text","say","note","why","easy","detail","explain","content","body","info","def","a"]);
+    let s = hd;
+    if(va) s += (s ? " = " : "") + va + (un && !va.includes(un) ? " " + un : "");
+    if(de) s += (s ? " — " : "") + de;
+    return s || Object.values(o).filter(x => x != null && typeof x !== "object" && String(x).trim()).join(" · ");
+  };
+  const LGW = /^(AND|OR|NOT|NAND|NOR|XOR|EX|MC|MCF|MCR|THR|PB|PL|RL|GL|YL|WL|OCR|OVR|UVR|OCGR|SGR|DGR|CT|PT|ZCT|GPT|KEC|TR|ELB|MCCB|ACB|VCB|LA|SA|UPS|LED|DC|AC|PF|VA|KVA|KW|HP|OFF|IDC|HIV|PVC)$/;
+  const mathify = t => String(t == null ? "" : t).split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/).map((seg, si) => {
+    if(si % 2) return seg;
+    const K = [], P = m => { K.push(m); return "\u0001" + (K.length - 1) + "\u0002"; };
+    let x = seg;
+    /* (A+B)바 · (A+B) 바 */
+    x = x.replace(/\(([A-Z][A-Z0-9+·' ]*)\)\s?바(?!탕|람|닥|깥|꾸|꿔|뀌|뀐|이패스|로 (?:옆|뒤|앞|아래|위))/g, (m, e) => P("\\overline{" + e.replace(/·/g, "\\cdot ").trim() + "}"));
+    /* C바 (붙여 씀) · C 바( / C 바, / C 바 끝 (띄어 씀은 뒤가 조사·괄호·문장부호일 때만) */
+    x = x.replace(/(?<![a-z0-9_\\])([A-Z])바(?!탕|람|닥|깥|꾸|꿔|뀌|뀐|이패스)/g, (m, v) => P("\\overline{" + v + "}"));
+    x = x.replace(/(^|[^A-Za-z0-9_\\])([A-Z]) 바(?=$|[\s(),.·:;]|[와과는를가의도만](?![가-힣]))/g, (m, a, v) => a + P("\\overline{" + v + "}"));
+    /* 맨 글자 논리식: 글자(·부정)끼리 + = · 로 이은 것 */
+    const T = "(?:\\(?(?:[A-Z]|\\u0001\\d+\\u0002)+'?\\)?)+";
+    const RE = new RegExp("(^|[^A-Za-z0-9_.=/^×÷√\\\\\\u0002])(" + T + "(?:\\s*[+=]\\s*" + T + "|·" + T + ")+)(?![A-Za-z0-9_=/^×÷√\\u0001])", "g");
+    x = x.replace(RE, (m, a, e) => {
+      const bare = e.replace(/\u0001\d+\u0002/g, " ");
+      const words = bare.match(/[A-Z]{2,}/g) || [];
+      if(words.some(w => LGW.test(w))) return m;
+      if(!/[+=·]/.test(e)) return m;
+      return a + P(e.replace(/\u0001(\d+)\u0002/g, (_, i) => K[+i]).replace(/·/g, " \\cdot ").replace(/\s+/g, " ").trim());
+    });
+    /* 남은 부정 하나짜리 — 한 덩어리로 붙은 것끼리 합쳐 $…$ 하나로 */
+    x = x.replace(/(?:\u0001\d+\u0002|(?<=\u0002)[A-Z]|[A-Z](?=\u0001))+/g, m => "$" + m.replace(/\u0001(\d+)\u0002/g, (_, i) => K[+i]) + "$");
+    return x.replace(/\u0001(\d+)\u0002/g, (_, i) => "$" + K[+i] + "$").replace(/\$\$(?=\S)/g, "$ $");
+  }).join("");
+  const line = t => fixMath(mathify(unxml(oTxt(t)))).replace(/\n{2,}/g, "\n").trim();
 
   if(sol.gist) L.push(`**${line(sol.gist)}**`, "");
+  /* ★ v309 — 비전공자용 «쉽게 말하면» */
+  if(arr(sol.easy).length){
+    L.push("**쉽게 말하면**", "");
+    arr(sol.easy).forEach(e => L.push(`- ${line(e)}`));
+    L.push("");
+  }
 
   if(arr(sol.background).length){
     L.push("**먼저 알아야 할 것**", "");
-    arr(sol.background).forEach(b => L.push(`- ${b}`));
+    arr(sol.background).forEach(b => L.push(`- ${line(b)}`));   /* ★ v330 — 객체로 오면 [object Object] 로 나오던 것 */
     L.push("");
   }
   if(arr(sol.read).length){
     L.push("**문제를 이렇게 읽음**", "");
-    arr(sol.read).forEach(b => L.push(`- ${b}`));
+    arr(sol.read).forEach(b => L.push(`- ${line(b)}`));
     L.push("");
   }
   if(arr(sol.given).length){
     L.push("**주어진 값**", "");
-    arr(sol.given).forEach(g => L.push(`- ${g}`));
+    arr(sol.given).forEach(g => L.push(`- ${line(g)}`));
     L.push("");
   }
   if(arr(sol.symbols).length){
     L.push("**부호**", "");
     arr(sol.symbols).forEach(x => {
-      if(typeof x === "string") return void L.push(`- ${x}`);
+      if(typeof x === "string") return void L.push(`- ${line(x)}`);
       const u = x.unit ? ` · 단위 ${inlineTex(x.unit)}` : "";
       const v = x.val  ? ` · 이 문제: ${inlineTex(x.val)}` : "";
       const sy = HAN.test(String(x.sym||"")) ? String(x.sym||"") : `$${tex(x.sym)||""}$`;
       /* ★ v277 — 읽는 발음 «브이 에스» 를 기호 옆에 */
       const pr = x.say ? ` «${String(x.say).replace(/[«»\n]/g, "").trim()}»` : "";
-      L.push(`- ${sy}${pr} — ${x.mean || ""}${u}${v}`);
+      L.push(`- ${sy}${pr} — ${line(x.mean || "")}${u}${v}`);
     });
     L.push("");
   }
@@ -476,6 +524,26 @@ function toMd(sol){
       if(f.why)  L.push(`- 왜: ${f.why}`, "");
     });
   }
+  /* ★ v329 — 논리식 변환·게이트 표를 맨 바깥 logic 칸에서 받음 — 그 소문항 풀이 바로 밑에 붙임 (번호가 없으면 풀이 끝에) */
+  const lgCl = t => line(t).replace(/\n+/g, " ").replace(/\|/g, "∣").trim() || " ";
+  const lgUp = x => x.replace(/(^|[^\\a-zA-Z{])(NAND|NOR|XOR|NOT|AND|OR)(?![a-zA-Z])/g, "$1\\mathrm{$2}");
+  const lgMath = t => { const x = tex(String(t || "")); return x ? "$" + lgUp(x).replace(/\|/g, "\\vert ") + "$" : " "; };
+  const lgTables = g => {
+    const DV = arr(g.derive).filter(d => d && typeof d === "object" && String(d.eq || "").trim());
+    if(DV.length){
+      L.push("| | 식 | 이 줄에서 한 것 |", "|---|---|---|");
+      DV.forEach((d, k) => L.push(`| ${"①②③④⑤⑥⑦⑧⑨⑩⑪⑫"[k] || (k + 1)} | ${lgMath(d.eq)} | ${lgCl(d.law || "")} |`));
+      L.push("");
+    }
+    const GT = arr(g.gates).filter(x => x && typeof x === "object" && String(x.type || x.g || "").trim());
+    if(GT.length){
+      L.push("| 게이트 | 종류 | 입력 | 출력 | 하는 일 |", "|---|---|---|---|---|");
+      GT.forEach(x => L.push(`| **${lgCl(x.g || "")}** | ${lgCl(x.type || "")} | ${/[\\^_{]/.test(String(x.in || "")) ? lgMath(x.in) : lgCl(x.in || "")} | ${/[\\^_{]/.test(String(x.out || "")) ? lgMath(x.out) : lgCl(x.out || "")} | ${lgCl(x.role || "")} |`));
+      L.push("");
+    }
+  };
+  const LGX = arr(sol.logic).filter(g => g && typeof g === "object" && (arr(g.derive).length || arr(g.gates).length))
+    .map(g => ({ g, n: (String(g.q || "").match(/\(\s*(\d{1,2})\s*\)/) || [])[1] || "", used: false }));
   if(arr(sol.steps).length){
     L.push("**풀이**", "");
     arr(sol.steps).forEach((s, i) => {
@@ -485,6 +553,17 @@ function toMd(sol){
       L.push(/^\s*(\(\d+\)|[①-⑳]|\d+\s*[).])/.test(sy0) ? `${sy0}` : `${i+1}. ${sy0}`, "");
       /* ★ v277 — 소문항 답은 그 단계 바로 밑에 먼저 (단답·서술은 «답 → 왜» 순서) */
       if(s.ans) L.push(`> ${line(s.ans).replace(/\n+/g, " ")}`, "");
+      /* ★ v327 — 식 바꾸는 과정 «한 줄에 법칙 하나» (논리식 드모르간 등) — 표: 번호 · 식 · 이 줄에서 한 것 */
+      const tcl = t => line(t).replace(/\n+/g, " ").replace(/\|/g, "∣").trim() || " ";
+      /* ★ v328 — 식 안의 게이트 이름(NAND·NOR…)은 변수처럼 기울지 않게 똑바른 글씨로 */
+      const gateUp = x => x.replace(/(^|[^\\a-zA-Z{])(NAND|NOR|XOR|NOT|AND|OR)(?![a-zA-Z])/g, "$1\\mathrm{$2}");
+      const tmath = t => { const x = tex(String(t || "")); return x ? "$" + gateUp(x).replace(/\|/g, "\\vert ") + "$" : " "; };
+      const DV = arr(s.derive).filter(d => d && typeof d === "object" && String(d.eq || "").trim());
+      if(DV.length){
+        L.push("| | 식 | 이 줄에서 한 것 |", "|---|---|---|");
+        DV.forEach((d, k) => L.push(`| ${"①②③④⑤⑥⑦⑧⑨⑩⑪⑫"[k] || (k + 1)} | ${tmath(d.eq)} | ${tcl(d.law || "")} |`));
+        L.push("");
+      }
       /* 새 판 — 등호로 이은 한 줄(여럿이면 줄마다) */
       /* ★ v260 — 한 단계는 다섯 줄. 순서를 화면에서 못 박는다.
          ①부호식 ②해설식 ③숫자대입식 ④읽기식 ⑤왜 */
@@ -497,10 +576,25 @@ function toMd(sol){
       }
       else if(eqs.length) eqs.forEach(e => eqBlock(e));
       else eqBlock([s.math, s.calc].filter(Boolean));   /* 옛 판 대비 */
+      /* ★ v327 — 게이트 연결표: 이 표만 보고 답안 그림을 따라 그릴 수 있게 */
+      const GT = arr(s.gates).filter(g => g && typeof g === "object" && String(g.type || g.g || "").trim());
+      if(GT.length){
+        L.push("| 게이트 | 종류 | 입력 | 출력 | 하는 일 |", "|---|---|---|---|---|");
+        GT.forEach(g => L.push(`| **${tcl(g.g || "")}** | ${tcl(g.type || "")} | ${/[\\^_{]/.test(String(g.in || "")) ? tmath(g.in) : tcl(g.in || "")} | ${/[\\^_{]/.test(String(g.out || "")) ? tmath(g.out) : tcl(g.out || "")} | ${tcl(g.role || "")} |`));
+        L.push("");
+      }
       if(s.read) L.push(`- 읽기: “${line(s.read).replace(/^["“]|["”]$/g, "")}”`, "");
       if(s.why)  L.push(`- 왜: ${line(s.why)}`, "");
       L.push("");
+      /* ★ v329 — 이 소문항 번호의 논리식 표 (그 번호가 처음 나온 단계 밑에 한 번) */
+      const sn = (String(s.say || "").match(/^\s*\(\s*(\d{1,2})\s*\)/) || [])[1];
+      if(sn) LGX.filter(x => !x.used && x.n === sn).forEach(x => { x.used = true; if(x.g.q) L.push(`▸ ${lgCl(x.g.q)}`, ""); lgTables(x.g); });
     });
+  }
+  const LGR = LGX.filter(x => !x.used);
+  if(LGR.length){
+    L.push("**식 바꾸기 · 게이트 연결**", "");
+    LGR.forEach(x => { x.used = true; if(x.g.q) L.push(`▸ ${lgCl(x.g.q)}`, ""); lgTables(x.g); });
   }
   /* 답에 이미 단위가 붙어 온 경우 또 붙이지 않는다 (70[mm^2]mm^2 처럼 되던 것) */
   const ansT = line(sol.answer).trim();
@@ -508,8 +602,30 @@ function toMd(sol){
   /* ★ v277 — «(2)» 앞에서 줄을 나눈다 (띄어쓰기가 없어도) */
   const ansLines = ansT.split(/\n+|(?=\(\d{1,2}\))/).map(x => x.trim()).filter(Boolean);
   const many = ansLines.length > 1;                 /* 소문항이 여럿인 답 */
-  const dup = unitT && (/[,，·]/.test(unitT) || ansT.includes(unitT) || ansT.includes(unitT.replace(/[\[\]]/g, "")));
+  /* ★ v316 — «1[m]» + 단위 «\\mathrm{m}» 처럼 모양만 달라도 같은 단위면 또 안 붙임 (1[m]m 로 나오던 것) */
+  const uN = t => String(t || "").replace(/\\(?:mathrm|text|rm|mathit)\s*\{([^{}]*)\}/g, "$1").replace(/\\[,;:! ]|\\quad/g, "").replace(/[\s$\[\]{}()\\]/g, "").toLowerCase();
+  const dup = unitT && (/[,，·]/.test(unitT) || ansT.includes(unitT) || ansT.includes(unitT.replace(/[\[\]]/g, ""))
+                        || (uN(unitT) && uN(ansT).endsWith(uN(unitT))));
   const stepAns = arr(sol.steps).some(s => s && typeof s === "object" && String(s.ans || "").trim());
+  /* ★ v309 — 단답·서술·나열형 «최소 답안» : 이만큼만 써도 만점 + 필수 핵심어 형광펜 */
+  const MINA = arr(sol.min_ans).filter(x => x && typeof x === "object" && String(x.text || "").trim());
+  if(MINA.length){
+    L.push("**최소 답안 — 이만큼은 꼭**", "");
+    MINA.forEach(x => {
+      const must = arr(x.must).map(w => String(w || "").replace(/==/g, "").trim()).filter(Boolean);
+      let t = line(x.text).replace(/\n+/g, " ");
+      /* 필수어가 형광펜 없이 왔으면 첫 자리에 칠해 준다 */
+      must.forEach(w => {
+        if(t.includes("==" + w + "==")) return;
+        const i = t.indexOf(w); if(i < 0) return;
+        const pre = t.slice(0, i); if(((pre.match(/==/g) || []).length) % 2) return;
+        t = pre + "==" + w + "==" + t.slice(i + w.length);
+      });
+      const q = String(x.q || "").trim();
+      L.push(`> ${q && !t.startsWith(q) ? q + " " : ""}${t}`, "");
+      if(must.length) L.push(`- 필수: ${must.map(w => "★ ==" + w + "==").join(" · ")}`, "");
+    });
+  }
   /* ★ v276 — 나열형 «항목» · 서술형 «채점 포인트» */
   if(arr(sol.items).length){
     L.push("**항목**", "");
@@ -535,6 +651,14 @@ function toMd(sol){
   }
   if(sol.why_answer) L.push("**왜 이 답인가**", "", line(sol.why_answer), "");
   if(sol.check)      L.push("**검산**", "", line(sol.check), "");
+  /* ★ v327 — 진리표 검산 (입력 조합 전부 · 원래 식과 바꾼 회로 출력 나란히) */
+  const TR = sol.truth && typeof sol.truth === "object" ? sol.truth : null;
+  if(TR && arr(TR.cols).length && arr(TR.rows).length){
+    const cc = arr(TR.cols).map(c => String(c == null ? "" : c).replace(/[|\n]/g, " ").trim() || " ");
+    L.push("**진리표 검산**", "", "| " + cc.join(" | ") + " |", "|" + cc.map(() => "---").join("|") + "|");
+    arr(TR.rows).forEach(r => { const v = Array.isArray(r) ? r : arr(r); L.push("| " + cc.map((_, k) => String(v[k] == null ? "" : v[k]).replace(/[|\n]/g, " ").trim() || " ").join(" | ") + " |"); });
+    L.push("");
+  }
   if(sol.memo)       L.push("**외우기**", "", line(sol.memo), "");
   /* ★ v276 — 두문자 : 첫 줄 `글자` · 줄마다 «글자 — 항목» (화면에서 고쳐 쓸 수 있음) */
   /* ★ v283 — 소문항마다 두문자 묶음 (mnemos 배열). 예전 mnemo 하나도 그대로 받음.
@@ -564,8 +688,36 @@ function toMd(sol){
   if(sol.trap)       L.push("**흔한 실수**", "", line(sol.trap), "");
   if(arr(sol.also).length){
     L.push("**같이 알아 두기**", "");
-    arr(sol.also).forEach(x => L.push(`- ${x}`));
+    arr(sol.also).forEach(x => L.push(`- ${line(x)}`));
     L.push("");
+  }
+  /* ★ v310 — 비전공자용 표 세 가지 (맨 아래) : 용어 풀이 · 공식이 왜 · 헷갈리는 짝 */
+  const cel = t => line(t).replace(/\n+/g, " ").replace(/\|/g, "∣").trim() || " ";
+  const TMS = arr(sol.terms).filter(x => x && typeof x === "object" && String(x.word || "").trim());
+  if(TMS.length){
+    const hasLike = TMS.some(x => String(x.like || "").trim());
+    L.push("**용어 풀이**", "", hasLike ? "| 용어 | 쉬운 뜻 | 비유·예 |" : "| 용어 | 쉬운 뜻 |", hasLike ? "|---|---|---|" : "|---|---|");
+    TMS.forEach(x => L.push(`| **${cel(x.word)}** | ${cel(x.easy)} |` + (hasLike ? ` ${cel(x.like)} |` : "")));
+    L.push("");
+  }
+  const FWS = arr(sol.formula_why).filter(x => x && typeof x === "object" && String(x.why || "").trim());
+  if(FWS.length){
+    L.push("**공식이 왜 이렇게 생겼나**", "", "| 식의 부분 | 왜 붙나 |", "|---|---|");
+    FWS.forEach(x => {
+      const p0 = String(x.part || "").trim();
+      const p = !p0 ? " " : HAN.test(p0) && !/[\\^_{]/.test(p0) ? cel(p0) : `$${(tex(p0) || "").replace(/\|/g, "\\vert ")}$`;
+      L.push(`| ${p} | ${cel(x.why)} |`);
+    });
+    L.push("");
+  }
+  const PRS = arr(sol.pairs).filter(x => x && typeof x === "object" && String(x.a || "").trim() && arr(x.rows).length);
+  if(PRS.length){
+    L.push("**헷갈리는 짝**", "");
+    PRS.forEach(P => {
+      L.push(`| 구분 | ${cel(P.a)} | ${cel(P.b)} |`, "|---|---|---|");
+      arr(P.rows).forEach(r => { if(r && typeof r === "object") L.push(`| ${cel(r.k)} | ${cel(r.a)} | ${cel(r.b)} |`); });
+      L.push("");
+    });
   }
   const TG = [sol.kind ? String(sol.kind).replace(/형$/, "") + "형" : null, ...arr(sol.tags)].filter(Boolean);
   if(TG.length) L.push("", `\`${TG.join("` `")}\``);
@@ -604,7 +756,8 @@ async function one(r){
   if(!md || md.length < 20) throw new Error("해설이 비어서 왔습니다");
   /* ★ v297 — 워커가 두 번 더 받아도 원칙 미달이면: 있던 해설은 그대로 두고 실패로 셈 */
   const probs = Array.isArray(d.problems) ? d.problems : [];
-  if(probs.length && r.easy_md) throw new Error("원칙 미달 · 있던 해설 유지 — " + probs[0]);
+  if(d.bill) SPENT += d.bill.krw|0;
+  if(probs.length && r.easy_md) throw new Error("원칙 미달 · 있던 해설 유지 — " + probs[0] + (d.bill ? " · 쓴 돈" + billTxt(d.bill).replace(/^ · /, " ") : ""));
 
   /* v204 — 해설 칸이 생겼으므로 상태·판번호도 같이 남긴다.
      st_sol 은 raw — 기계가 만든 것이라 사람이 검수 화면에서 한 번 봐야 draft 가 된다.
@@ -619,7 +772,7 @@ async function one(r){
   if(up.error) throw new Error("저장 실패 — " + up.error.message);
 
   N.done++;
-  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""}` + (probs.length ? `  ⚠ 원칙 미달 ${probs.length}곳 — ${probs[0]}` : ""), probs.length ? "bad" : "ok");
+  log(`${tag} 완료  ${(d.sol.answer||"")}${d.sol.unit ? " "+d.sol.unit : ""} · ${md.length.toLocaleString()}자${billTxt(d.bill)}` + (probs.length ? `  ⚠ 원칙 미달 ${probs.length}곳 — ${probs[0]}` : ""), probs.length ? "bad" : "ok");
 }
 
 /* ── 동시 처리 ────────────────────────────────────── */
@@ -661,7 +814,7 @@ async function run(list){
   $("#btnStop").disabled = true; $("#btnScan").disabled = false;
   $("#btnRun").disabled = false;
   $("#btnRetry").disabled = FAILED.length === 0;
-  log(STOP ? `멈춤 — 완료 ${N.done} · 실패 ${N.bad}` : `끝 — 완료 ${N.done} · 실패 ${N.bad} · 건너뜀 ${N.skip}`);
+  log((STOP ? `멈춤 — 완료 ${N.done} · 실패 ${N.bad}` : `끝 — 완료 ${N.done} · 실패 ${N.bad} · 건너뜀 ${N.skip}`) + ` · 쓴 돈 약 ${SPENT.toLocaleString()}원`);
 }
 
 $("#btnRun").addEventListener("click", () => {
