@@ -529,7 +529,7 @@ const TOOL = {
                       plain: { type: "string", description: "②해설식 — ①과 «생김새가 똑같은 식». 기호 자리에만 한글 이름을 넣는다. ①이 분수면 여기도 \\dfrac, ①이 \\times 면 여기도 \\times, ①이 \\sqrt{} 면 여기도 \\sqrt{}. '나누기'·'곱하기'·'루트3'·'그 다음'·'~를 곱함' 같은 말로 풀어쓴 «문장» 은 절대 금지 — 그건 why 칸이 할 일. 한글은 \\text{} 안에. KaTeX, $ 없이" },
                       num:   { type: "string", description: "③숫자대입식 — 숫자를 넣고 계산해 결과까지. 단위는 뒤에 \\,[\\text{옴}] 처럼 한글로. KaTeX, $ 없이" },
                       unit:  { type: "string", description: "④단위계산식 — 숫자 대신 «단위» 만 넣어 결과 단위가 맞는지 보이는 식. 예: [\\text{옴}] = \\dfrac{[\\text{볼트}] \\times [\\text{볼트}]}{[\\text{와트}]}. KaTeX, $ 없이" },
-                      why:   { type: "string", description: "⑤왜 — 이 식을 왜 쓰는지 한글 3~6문장. 수식·기호·달러표시를 넣지 않는다. 값은 '저항 0.945옴' 처럼 글로 쓴다" } } } },
+                      why:   { type: "string", description: "⑤왜 — 군더더기 없이 «핵심만». 2~5줄, 한 줄에 한 가지. ⓐ 이 식·값을 쓰는 이유(근거 조건·규정) 한 줄 ⓑ 식에 들어간 것마다 왜 들어가는지(예: 3 → 3상이라 한 상의 3배 · 2πf → 각주파수 · V/√3 → 선간을 대지전압으로 · 10^-6 → 마이크로패럿을 패럿으로) ⓒ 표·○△− 분류는 «기준 → 그래서» 꼴로 왜 그런지만('해당 없음'·'−로 표시' 처럼 결과만 다시 말하기 금지) ⓓ 답안지가 건너뛴 것(조건 적용·단위 환산·절사·어느 값을 더하고 뺐는지)을 채움. 대입식에 이미 있는 숫자 계산을 글로 다시 읊거나('계산하면 761.36이 나옴') 문제를 되풀이하지 않는다. 식·기호는 $…$ KaTeX" } } } },
       /* ★ v329 — 논리식 변환·게이트 표를 «단계 안» 이 아니라 여기(맨 바깥)에 — 안쪽 칸은 모델이 자주 빼먹거나 바깥에 적어 검사가 못 찾았음 */
       logic:      { type: "array", description: "★ 논리식·논리회로 문제면 반드시 — NAND 만으로 · NOR 만으로 · 간략화 처럼 «식을 바꾸거나 회로를 그리는 소문항마다 하나». 다른 문제는 빈 배열",
                     items: { type: "object", required: ["q", "derive"], properties: {
@@ -547,12 +547,12 @@ const TOOL = {
                                   role: { type: "string", description: "이 게이트가 하는 일 한 줄 (한글). 예: '입력 두 개를 묶으면 NOT 과 같음 → C 를 뒤집음'" } } } } } } },
       answer:     { type: "string", description: "최종 답. 소문항이 있으면 '(1) …' 줄, '(2) …' 줄 처럼 줄을 나눠 모두 적는다. 답안지 표기를 그대로" },
       unit:       { type: "string", description: "단위. 답이 한 값일 때만. 소문항이 여럿이면 빈 문자열" },
-      check:     { type: "string", description: "답이 맞는지 거꾸로 확인하는 법. 한글 문장으로만. 수식·백슬래시를 쓰지 않고 '70제곱밀리미터로 되짚으면 저항 0.779옴' 처럼 값을 글로 쓴다" },
+      check:     { type: "string", description: "답이 맞는지 거꾸로 확인하는 법. 짧게 2~3문장. 값은 '70제곱밀리미터로 되짚으면 저항 0.779옴' 처럼 글로, 꼭 필요한 기호만 $…$ KaTeX (백슬래시를 $ 밖에 쓰지 않음)" },
       truth:     { type: "object", description: "진리표 검산 — 논리식·논리회로 문제면 반드시. 입력 조합을 «빠짐없이»(입력 3개면 8줄) · 원래 식 출력과 바꾼 회로 출력을 나란히",
                    properties: {
                      cols: { type: "array", items: { type: "string" }, description: "열 이름. 예: ['A','B','C','원래 식 Y','NAND 회로','NOR 회로']" },
                      rows: { type: "array", items: { type: "array", items: { type: "string" } }, description: "줄마다 값. 예: ['0','0','0','0','0','0']" } } },
-      trap:      { type: "string", description: "흔한 실수. 한글 문장으로만. 수식·백슬래시를 쓰지 않는다" },
+      trap:      { type: "string", description: "흔한 실수 — 무엇을 틀리고 왜 틀리는지 짧게. 기호는 $…$ KaTeX 로만 (백슬래시를 $ 밖에 쓰지 않음)" },
       memo:      { type: "string", description: "외우는 요령 한 줄. 한글로만. 필요 없으면 빈 문자열" },
       why_answer: { type: "string", description: "왜 이 답인가 — 단답·서술형에서 뜻 풀이와 근거. 한글 문장 3~6개" },
       items:      { type: "array", description: "나열형 답의 항목. 답안지 순서대로",
@@ -614,6 +614,7 @@ const SYS_SOL = [
   "- 계산이 있는 소문항만 sym·plain·num·unit 을 채운다.",
   "- answer 에는 소문항 번호를 붙여 줄을 나눠 «전부» 적는다.",
   "- 답안지에 소문항이 넷이면 풀이 단계도 최소 넷이어야 한다. 세면서 확인한다.",
+  "- ★ (1) 부터 시작한다. 그림·도면을 보고 푸는 앞 소문항((1) 변압기 용량 · (2) 정격전압 같은 것)도 이 문제의 소문항이다 — '앞 문항 결과' 로 여기고 건너뛰지 않는다.",
   "- 소문항 하나를 끝내는 단계에는 ans 에 그 소문항 답을 적는다. 화면은 «단계 이름 → 답 → 식 → 왜» 순서로 보여 준다.",
   "",
   "문제 유형(kind) — 먼저 정하고, 그 유형에 «필요한 칸만» 채운다",
@@ -694,7 +695,7 @@ const SYS_SOL = [
   "단계 빠짐 없이 — 비전공자가 따라올 수 있게",
   "- 문제가 묻는 것을 하나도 건너뛰지 않는다. 소문항·요구 항목·단위 환산·표 찾기·반올림도 저마다 한 단계.",
   "- «당연해서» 생략하던 단계(kW→W 환산, 선간→상전압, %를 소수로, 표에서 한 단계 위 고르기)도 단계로 적는다.",
-  "- why 는 ① 이 단계에서 하는 일 ② 왜 필요한지 ③ 어떻게 하는지 순서로. 앞 단계 결과를 받아 쓰면 '앞 단계에서 구한 전류 30암페어를' 처럼 이어 준다.",
+  "- why 는 핵심만: ⓐ 근거 ⓑ 식에 붙은 것마다 이유 ⓒ 답안지가 생략한 과정. 계산 결과·표 결과(−·○·해당 없음)를 글로 되풀이하지 않고 «왜 그런지» 만 쓴다.",
   "",
   "맨 아래 표 세 가지 — 비전공자용",
   "- terms(용어 풀이): 모든 유형에 3~6개. 문제·풀이에 나온 전문용어·약어의 쉬운 뜻 + 비유. 표 칸이므로 한 줄씩 짧게.",
@@ -745,12 +746,20 @@ const SYS_SOL = [
   "- unit  : ④단위계산식. 숫자 대신 «단위» 만 넣어 결과 단위가 맞는지 보인다.",
   "-   예: [\\text{옴}] = \\dfrac{[\\text{볼트}] \\times [\\text{볼트}]}{[\\text{와트}]}",
   "-   예: [\\text{제곱밀리미터}] = [\\text{옴}\\cdot\\text{제곱밀리미터}/\\text{미터}] \\times \\dfrac{[\\text{미터}]}{[\\text{옴}]}",
-  "- why   : ⑤왜 이 식을 쓰는지. 한글 3~6문장.",
+  "- why   : ⑤왜 — 핵심만 2~5줄 (한 줄에 한 가지, 줄바꿈 \\n 으로 나눔).",
+  "-   ⓐ 이 식을 쓰는 근거 한 줄 ⓑ 식에 «붙은 것» 마다 왜 붙는지 ⓒ 답안지가 생략한 과정(조건 적용·환산·절사·어떤 값을 합쳤는지).",
+  "-   예(지락전류): '건전피더 쪽은 ELB2 아래 정전용량 $C_2$·$C_{L2}$ 만 흐름 — CVCF 콘덴서 $C_0$ 는 지락난 쪽 경로라 빠짐' / '3 → 3상 각 상에서 같은 전류가 흘러 합침' / '$V/\\sqrt{3}$ → 선간 220볼트를 대지전압으로' / '$10^{-6}$ → 마이크로패럿을 패럿으로'",
+  "-   금지: 대입식 숫자를 글로 다시 읊기('계산하면 0.043095암페어가 나옴') · 문제 다시 쓰기 · '~라고 가정했으므로' 같은 군더더기.",
+  "-   ★ «무엇이 답인지» 는 답·표에 이미 보인다 — why 는 «왜 그런지» 만. '우선내는 대시(-)로 표시함' · '해당하지 않음' · '○ 가 됨' 처럼 결과만 다시 말하고 끝내지 않는다.",
+  "-   표·분류·○△− 채우기는 «기준 → 그래서» 꼴로 짧게. 같은 이유는 한 줄로 묶는다.",
+  "-     예(누전차단기 시설장소): '150볼트 이하 + 건조·우선내 → 감전돼도 몸에 흐르는 전류가 작고 물이 없어 위험 낮음 → 생략(−)'",
+  "-     '물기 있는 곳 → 젖은 몸은 저항이 확 떨어져 작은 전압에도 위험 → 전압 상관없이 반드시(○)'",
+  "-     '150볼트 넘으면 → 같은 조건에서도 흐르는 전류가 커짐 → 한 단계 엄격(− → △, △ → ○)'",
+  "-   ans 를 'answer란 표 참고' · '그림 참고' 로 비우지 않는다 — 표면 칸마다 '건조 −/△ · 습기 −/○ …' 처럼 짧게 옮겨 적는다.",
   "",
-  "글 칸에는 수식을 넣지 않는다 — 이걸 어기면 화면이 깨진다",
-  "- why · check · trap · memo · background · given 은 «글» 칸이다. 여기에는 백슬래시(\\)도 달러($)도 쓰지 않는다.",
-  "- 값을 말할 때는 글로 쓴다. '저항 0.945옴', '단면적 57.72제곱밀리미터', '전압강하 300볼트'.",
-  "- 수식은 오직 sym · plain · num · unit 네 칸에만 넣는다.",
+  "글 칸(why · check · trap · memo · background · given) 의 식",
+  "- 긴 계산은 sym · plain · num · unit 네 칸에. 글 칸에는 짧은 식·기호만 $…$ 로 감싸서 (예: $V/\\sqrt{3}$, $C_{L2}$, $\\overline{C}$).",
+  "- 값은 '저항 0.945옴' 처럼 글로 써도 됨. $ 없이 백슬래시만 쓰지 않는다.",
   "",
   "수식(KaTeX) 쓰는 법 — 어기면 화면이 깨진다",
   "- 분수는 \\dfrac{위}{아래}. (1/58) 처럼 빗금으로 쓰지 않는다.",
@@ -998,8 +1007,14 @@ async function explain(req, env, H){
     const n = Math.max(1, needOf(s));
     if (!steps.length) P.push("steps(풀이 단계)가 비었다 — 소문항마다 한 단계씩, 객체 배열로 반드시 넣는다");
     else if (steps.length < n) P.push(`소문항이 ${n}개인데 풀이 단계가 ${steps.length}개뿐이다`);
-    /* ★ v331 — 단계 수는 충분한데 이름표만 덜 붙은 것은 «보충» 으로 (다시 부르지 않음 — 시간 초과 원인) */
-    if (n > 1 && covered(s) < n) (steps.length >= n ? S : P).push(`단계 이름(say)이 (1)~(${n}) 소문항을 다 다루지 않았다 — ${covered(s)}개만`);
+    /* ★ v339 — «어느 번호가 빠졌나» 를 먼저 본다. 답(answer)·답안지 글(a_text)에 있는 (n) 인데 풀이 단계 이름에 없는 번호 = 진짜로 건너뛴 것 → 필수
+       (18-3 7: 답은 (1)~(7) 인데 풀이가 (3) 부터 — v331 의 «단계 수만 차면 보충» 에 걸려 그냥 저장됐음) */
+    const want = new Set([...subNums(s.answer, false), ...subNums(a_text, true)]);
+    const have = new Set(steps.map(x => (String(x.say || "").match(/^\s*\(\s*(\d{1,2})\s*\)/) || [])[1]).filter(Boolean));
+    const miss = [...want].filter(k => !have.has(k)).sort((p, q) => p - q);
+    if (want.size > 1 && miss.length) P.push(`소문항 (${miss.join(")·(")}) 의 풀이 단계가 없다 — 답안지의 (1)부터 하나도 건너뛰지 말고, say 를 '(${miss[0]}) …' 처럼 번호로 시작해 따로 단계를 만든다 ('앞 문항 결과' 로 넘기지 않는다)`);
+    /* ★ v331 — 번호는 다 있는데 잎(①②) 수만 덜 붙은 것은 «보충» 으로 (다시 부르지 않음 — 시간 초과 원인) */
+    else if (n > 1 && covered(s) < n) (steps.length >= n ? S : P).push(`단계 이름(say)이 (1)~(${n}) 소문항을 다 다루지 않았다 — ${covered(s)}개만`);
     if (!String(s.answer || "").trim()) P.push("answer 가 비었다");
     /* 자리표시(임시·TBD·…)로 채운 칸 */
     const PH = /^\s*(임시|미정|작성\s*예정|추후|tbd|todo|placeholder|\.{2,}|…+)\s*[.。]?\s*$/i;
@@ -1043,14 +1058,14 @@ async function explain(req, env, H){
       if (!String(s.check || "").trim()) S.push("check(검산)가 비었다 — 동작설명·조건(또는 진리표)을 하나씩 대어 보며 확인");
       if (String(s.answer || "").length > 700 && steps.length < need + 1) S.push("풀이를 answer 한 칸에 몰아 넣었다 — answer 는 소문항별 요약만, 설명은 steps 에");
     }
-    if (steps.some(x => !String(x.why || "").trim())) S.push("why(왜)가 빈 단계가 있다 — 단계마다 3~6문장");
+    if (steps.some(x => !String(x.why || "").trim())) S.push("why(왜)가 빈 단계가 있다 — 단계마다 핵심 2~5줄 (근거 · 식에 붙은 것의 이유 · 생략된 과정)");
     /* ★ v327 — 대충 넘기기: «답안지 그림처럼» · «위와 같이» 로 과정을 생략한 단계 */
     const LAZY = /답안지\s*(그림|처럼)|그림\s*(과|처럼)\s*(같이|같은)|위와\s*같(이|은)|같은\s*방법으로|마찬가지로|생략|이하\s*동일|간단히\s*정리하면/;
     const lazy = steps.filter(x => LAZY.test([x.ans, x.why].join(" "))).map(x => String(x.say || "").slice(0, 24));
     if (lazy.length) S.push(`과정을 건너뛴 말(«답안지 그림처럼» · «위와 같이» · «생략» 등)이 있다 — ${lazy.join(" · ")} — 실제 과정(연결 하나씩 · 중간식 한 줄씩)으로 바꾼다`);
     /* ★ v327 — «왜» 가 한 줄로 끝난 단계 (3~6문장이어야) */
     const thin = steps.filter(x => { const w = String(x.why || "").trim(); return w && w.length < 45; }).length;
-    if (thin && steps.length && thin >= Math.ceil(steps.length / 2)) S.push(`why(왜)가 한 줄로 끝난 단계가 ${thin}개 — 하는 일 · 왜 필요한지 · 어떻게 하는지를 3~6문장으로`);
+    if (thin && steps.length && thin >= Math.ceil(steps.length / 2)) S.push(`why(왜)가 한 줄로 끝난 단계가 ${thin}개 — 근거 · 식에 붙은 것마다 이유 · 답안지가 생략한 과정을 2~5줄로`);
     /* ★ v327 — 숫자대입식이 결과만 (= 가 하나뿐) */
     const bare = steps.filter(x => { const t = String(x.num || ""); return /\d/.test(t) && (t.match(/=/g) || []).length < 2 && !/\\(times|div|d?frac|sqrt)|[×÷*/+]/.test(t.split("=").slice(-2, -1)[0] || ""); }).length;
     if (bare) S.push(`숫자대입식(num)이 결과만 적힌 단계가 ${bare}개 — «대입한 모습 = 중간 계산 = 결과» 로`);
@@ -1180,6 +1195,13 @@ function tidyKind(s){
    ★ v297 — 예전엔 ①②③ 도 셌다. 그런데 ①②③ 은 «3가지 쓰시오» 같은 나열형 답의 «항목» 번호라,
      소문항이 하나뿐인 나열형이 «소문항 3개인데 단계가 (1)(2)(3) 을 안 다뤘다» 로 늘 걸려
      다시 받기(요금)만 되풀이하고 저장도 안 됐다. 소문항 표기는 (1)(2) 뿐이다. */
+/* ★ v339 — 글 속 소문항 번호 (n) 모음. lead=true 면 줄 맨 앞 (n) 만 (답안지 글의 식 속 괄호를 번호로 잘못 세지 않게) */
+function subNums(t, lead){
+  const x = String(t || ""), out = new Set();
+  const re = lead ? /(?:^|\n)\s*\(\s*(\d{1,2})\s*\)/g : /\(\s*(\d{1,2})\s*\)/g;
+  let m; while ((m = re.exec(x))) { const k = +m[1]; if (k >= 1 && k <= 20) out.add(String(k)); }
+  return out;
+}
 function subCount(ans){
   const t = String(ans || "");
   const a = new Set((t.match(/\(\s*(\d{1,2})\s*\)/g) || []).map(x => x.replace(/\D/g, "")));
@@ -1387,7 +1409,7 @@ export default {
         판정: 막힌곳.includes(colo)
           ? `${colo} 기지는 Anthropic 이 막는 지역입니다 — 403 의 원인입니다.`
           : `${colo} 기지는 보통 허용됩니다.`,
-        빌드: "v331"
+        빌드: "v339"
       }, 200, H);
     }
 
@@ -1443,7 +1465,7 @@ export default {
         keyHead: String(env.ANTHROPIC_API_KEY).slice(0,14) + "…",
         keyLen: String(env.ANTHROPIC_API_KEY).length,
         keyTrimmed: String(env.ANTHROPIC_API_KEY) === String(env.ANTHROPIC_API_KEY).trim(),
-        빌드: "v331",
+        빌드: "v339",
         기지: (req.cf && req.cf.colo) || "?",
         upstream: parsed || body.slice(0,600),
         vision
@@ -1451,7 +1473,7 @@ export default {
     }
 
     if (path === "/health" || path === "/")
-      return json({ ok: true, provider: "anthropic", models: T, hasKey: !!env.ANTHROPIC_API_KEY, 기지: (req.cf && req.cf.colo) || "?", 빌드: "v331" }, 200, H);
+      return json({ ok: true, provider: "anthropic", models: T, hasKey: !!env.ANTHROPIC_API_KEY, 기지: (req.cf && req.cf.colo) || "?", 빌드: "v339" }, 200, H);
 
     if (env.APP_KEY && req.headers.get("x-app-key") !== env.APP_KEY)
       return json({ error: "x-app-key 가 맞지 않습니다", detail: "x-app-key 가 맞지 않습니다" }, 401, H);
